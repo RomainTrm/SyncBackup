@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SyncBackup", "src\SyncBackup.fsproj", "{D350E1D1-E139-4203-ADED-9463A2E2B72D}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SyncBackup.Tests", "tests\SyncBackup.Tests.fsproj", "{5A35F674-3997-4F11-84D1-EF6BD705C5F0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D350E1D1-E139-4203-ADED-9463A2E2B72D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D350E1D1-E139-4203-ADED-9463A2E2B72D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D350E1D1-E139-4203-ADED-9463A2E2B72D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D350E1D1-E139-4203-ADED-9463A2E2B72D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A35F674-3997-4F11-84D1-EF6BD705C5F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A35F674-3997-4F11-84D1-EF6BD705C5F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A35F674-3997-4F11-84D1-EF6BD705C5F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A35F674-3997-4F11-84D1-EF6BD705C5F0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

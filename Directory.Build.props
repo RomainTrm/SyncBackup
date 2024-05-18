@@ -1,0 +1,17 @@
+<Project>
+    <!-- FS0025: Incomplete pattern matches -->
+    <!-- FS0193: Unused partial application -->
+    <!-- FS0049: Uppercase variable identifiers in pattern matching -->
+    <!-- FS0026: This rule will never be matched -->
+    <!-- FS3548: Pattern discard is not allowed for union case that takes no data. -->
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <MSBuildWarningsAsErrors>FS0025;FS0193;FS0049;FS0026;FS3548</MSBuildWarningsAsErrors>
+        <WarningsAsErrors>$(MSBuildWarningsAsErrors)</WarningsAsErrors>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <MSBuildWarningsAsErrors>FS0193;FS0049;FS3548</MSBuildWarningsAsErrors>
+        <WarningsAsErrors>$(MSBuildWarningsAsErrors)</WarningsAsErrors>
+    </PropertyGroup>
+</Project>

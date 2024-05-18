@@ -1,0 +1,11 @@
+# Compiled output
+bin/
+obj/
+output/
+dist/
+
+# Dependencies & tools
+packages/
+.paket/Paket.Restore.targets
+paket-files/
+.fake/
