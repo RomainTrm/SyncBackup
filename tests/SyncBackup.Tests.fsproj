@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Command.Config.fs" />
+    <Compile Include="Infra.Config.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\SyncBackup.fsproj" />

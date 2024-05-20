@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="Domain.Dsl.fs" />
     <Compile Include="Commands.Config.fs" />
+    <Compile Include="Infra.Dsl.fs" />
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
