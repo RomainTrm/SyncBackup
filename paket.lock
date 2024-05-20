@@ -2,6 +2,9 @@ STORAGE: NONE
 RESTRICTION: == net8.0
 NUGET
   remote: https://api.nuget.org/v3/index.json
+    Argu (6.2.3)
+      FSharp.Core (>= 4.3.2)
+      System.Configuration.ConfigurationManager (>= 4.4)
     FsCheck (2.16.6)
       FSharp.Core (>= 4.2.3)
     FsCheck.Xunit (2.16.6)
@@ -20,8 +23,13 @@ NUGET
       Newtonsoft.Json (>= 13.0.1)
     Newtonsoft.Json (13.0.3)
     System.Collections.Immutable (8.0)
+    System.Configuration.ConfigurationManager (8.0)
+      System.Diagnostics.EventLog (>= 8.0)
+      System.Security.Cryptography.ProtectedData (>= 8.0)
+    System.Diagnostics.EventLog (8.0)
     System.Reflection.Metadata (8.0)
       System.Collections.Immutable (>= 8.0)
+    System.Security.Cryptography.ProtectedData (8.0)
     Unquote (7.0)
       FSharp.Core (>= 8.0.100)
     xunit (2.8)
