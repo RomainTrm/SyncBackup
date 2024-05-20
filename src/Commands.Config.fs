@@ -19,7 +19,10 @@ module Init =
 module Alias =
     let add (infra: Infra) (repositoryPath: RepositoryPath) (alias: Alias) =
         infra.LoadConfig repositoryPath
-        |> Result.map (fun config ->
-            { config with Aliases = config.Aliases@[alias] }
+        |> Result.bind (fun config ->
+            if config.Aliases |> List.contains alias
+            then Ok ()
+            else
+                let config = { config with Aliases = config.Aliases@[alias] }
+                infra.UpdateConfig repositoryPath config
         )
-        |> Result.bind (infra.UpdateConfig repositoryPath)
