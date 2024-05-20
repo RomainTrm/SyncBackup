@@ -22,6 +22,8 @@ with
 let runCommand (parser: ArgumentParser<Commands>) argv =
     let commandInfra: SyncBackup.Commands.Config.Infra = {
         InitConfig = SyncBackup.Infra.Config.init
+        LoadConfig = fun _ -> failwith "not implemented"
+        UpdateConfig = fun _ -> failwith "not implemented"
     }
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
