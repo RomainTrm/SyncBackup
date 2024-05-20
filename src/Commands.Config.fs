@@ -22,6 +22,8 @@ module Alias =
         |> Result.bind (fun config ->
             if config.Aliases |> List.contains alias
             then Ok ()
+            elif config.Aliases |> List.exists (fun a -> a.Name = alias.Name)
+            then Error $"""The alias "{alias.Name}" already exists for another directory."""
             else
                 let config = { config with Aliases = config.Aliases@[alias] }
                 infra.UpdateConfig repositoryPath config

@@ -119,5 +119,27 @@ module Aliases =
             test <@ result = Ok () @>
             test <@ calls |> Seq.isEmpty @>
 
-        // TODO : missing config
-        // TODO : duplicated alias name -> return error
+        [<Fact>]
+        let ``return error if alias name exists`` () =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun repoPath ->
+                        test <@ repoPath = path @>
+                        Ok {
+                            defaultConfig with
+                                Aliases = [
+                                    { Name = "alias 1"; Path = "path 1" }
+                                    { Name = "alias 2"; Path = "path 2" }
+                                ]
+                            }
+                    UpdateConfig = fun repoPath repoConfig ->
+                        calls.Add (repoPath, repoConfig)
+                        Ok ()
+            }
+
+            let alias = { Name = "alias 1"; Path = "path 3" }
+            let result = Alias.add infra path alias
+
+            test <@ result = Error """The alias "alias 1" already exists for another directory.""" @>
+            test <@ calls |> Seq.isEmpty @>
