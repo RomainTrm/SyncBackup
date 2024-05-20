@@ -33,8 +33,8 @@ module ``init should`` =
         test <@ result = Ok () @>
 
         let expectedFileContent = [|
-            "[Main]"
-            $"IsMainRepository = {isMainRepositorySerialized}"
+            "[main]"
+            $"\tisMainRepository = {isMainRepositorySerialized}"
         |]
         test <@ readConfigFile () = expectedFileContent @>
 
@@ -42,12 +42,12 @@ module ``init should`` =
     let ``create config file when directory exists`` () =
         deleteRepository ()
         Directory.CreateDirectory directoryPath |> ignore
-        let result = init repositoryPath config
+        let result = init repositoryPath defaultConfig
         test <@ result = Ok () @>
 
         let expectedFileContent = [|
-            "[Main]"
-            "IsMainRepository = true"
+            "[main]"
+            "\tisMainRepository = true"
         |]
         test <@ readConfigFile () = expectedFileContent @>
 

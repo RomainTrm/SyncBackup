@@ -8,8 +8,8 @@ let private configFilePath rootPath = Path.Combine(rootPath, Dsl.ConfigDirectory
 module private FileSerializer =
     let write (config: RepositoryConfig) =
         [|
-            "[Main]"
-            "IsMainRepository = " + config.IsMainRepository.ToString().ToLowerInvariant()
+            "[main]"
+            "\tisMainRepository = " + config.IsMainRepository.ToString().ToLowerInvariant()
         |]
 
 module private Init =
