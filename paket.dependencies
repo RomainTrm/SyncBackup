@@ -10,3 +10,4 @@ nuget Unquote
 nuget FsCheck.xUnit
 nuget Microsoft.NET.Test.Sdk
 nuget JunitXML.TestLogger
+nuget Argu 6.2.3

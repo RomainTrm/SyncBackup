@@ -5,6 +5,11 @@
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Domain.Dsl.fs" />
+    <Compile Include="Commands.Config.fs" />
+    <Compile Include="Infra.Dsl.fs" />
+    <Compile Include="Infra.Config.fs" />
+    <Compile Include="Cli.Config.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

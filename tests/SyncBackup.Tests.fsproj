@@ -5,7 +5,11 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="UnitTest1.fs" />
+    <Compile Include="Command.Config.fs" />
+    <Compile Include="Infra.Config.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\src\SyncBackup.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
