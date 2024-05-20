@@ -25,5 +25,8 @@ module ``Init should`` =
         let result = Init.run infra path
 
         test <@ result = Ok () @>
-        let expectedConfig: RepositoryConfig = { IsMainRepository = true }
+        let expectedConfig: RepositoryConfig = {
+            IsMainRepository = true
+            Aliases = []
+        }
         test <@ calls |> Seq.toList = [ path, expectedConfig ] @>

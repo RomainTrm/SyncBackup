@@ -10,5 +10,6 @@ module Init =
     let run (infra: Infra) (repositoryPath: RepositoryPath) =
         let config = {
             IsMainRepository = true
+            Aliases = []
         }
         infra.InitConfig repositoryPath config

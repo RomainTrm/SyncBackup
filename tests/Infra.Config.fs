@@ -9,8 +9,9 @@ open SyncBackup.Infra.Dsl
 open SyncBackup.Infra.Config
 
 module ``init should`` =
-    let config : RepositoryConfig = {
+    let defaultConfig : RepositoryConfig = {
         IsMainRepository = true
+        Aliases = []
     }
 
     let repositoryPath = Environment.CurrentDirectory
@@ -28,7 +29,7 @@ module ``init should`` =
     [<InlineData(false, "false")>]
     let ``create config file`` isMainRepository isMainRepositorySerialized =
         deleteRepository ()
-        let result = init repositoryPath { IsMainRepository = isMainRepository }
+        let result = init repositoryPath { defaultConfig with IsMainRepository = isMainRepository }
         test <@ result = Ok () @>
 
         let expectedFileContent = [|
@@ -54,6 +55,6 @@ module ``init should`` =
     let ``return error if config file already exists`` () =
         deleteRepository ()
 
-        let _ = init repositoryPath config
-        let result = init repositoryPath config
+        let _ = init repositoryPath defaultConfig
+        let result = init repositoryPath defaultConfig
         test <@ result = Error "A repository is already initialized here" @>
