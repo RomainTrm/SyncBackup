@@ -2,22 +2,23 @@
 
 open System
 open System.IO
-open FsCheck.Xunit
-open SyncBackup.Domain.Dsl
 open Xunit
+open FsCheck.Xunit
 open Swensen.Unquote
+open SyncBackup.Domain.Dsl
 open SyncBackup.Infra.Dsl
 open SyncBackup.Infra.Config
 
-let repositoryPath = Environment.CurrentDirectory
-let configDirectoryPath = Path.Combine(repositoryPath, ConfigDirectory)
-let configFilePath = Path.Combine(repositoryPath, ConfigDirectory, ConfigFile)
+let [<Literal>] private UniqueTestDirectory = "test-a7922ff5-86af-466b-8adb-d11257e9f0ee"
+let cleanupTests = // Run once before tests execution
+    let testDirectoryPath = Path.Combine(Environment.CurrentDirectory, UniqueTestDirectory)
+    if Directory.Exists testDirectoryPath
+    then Directory.Delete (testDirectoryPath, true)
 
-let deleteRepository () =
-    if Directory.Exists configDirectoryPath
-    then Directory.Delete(configDirectoryPath, true)
-
-let readConfigFile () = File.ReadAllLines configFilePath
+let generateRepositoryPath () = Path.Combine(Environment.CurrentDirectory, UniqueTestDirectory, Guid.NewGuid().ToString())
+let configDirectoryPath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory)
+let configFilePath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory, ConfigFile)
+let readConfigFile = configFilePath >> File.ReadAllLines
 
 module ``init should`` =
     let defaultConfig : RepositoryConfig = {
@@ -29,7 +30,7 @@ module ``init should`` =
     [<InlineData(true)>]
     [<InlineData(false)>]
     let ``create config file`` isSourceRepository =
-        deleteRepository ()
+        let repositoryPath = generateRepositoryPath ()
         let expectedConfig = { defaultConfig with IsSourceRepository = isSourceRepository }
         let result = init repositoryPath expectedConfig
         test <@ result = Ok () @>
@@ -37,16 +38,15 @@ module ``init should`` =
 
     [<Fact>]
     let ``create config file when directory exists`` () =
-        deleteRepository ()
-        Directory.CreateDirectory configDirectoryPath |> ignore
+        let repositoryPath = generateRepositoryPath ()
+        configDirectoryPath repositoryPath |> Directory.CreateDirectory |> ignore
         let result = init repositoryPath defaultConfig
         test <@ result = Ok () @>
         test <@ load repositoryPath = Ok defaultConfig @>
 
     [<Fact>]
     let ``return error if config file already exists`` () =
-        deleteRepository ()
-
+        let repositoryPath = generateRepositoryPath ()
         let _ = init repositoryPath defaultConfig
         let result = init repositoryPath defaultConfig
         test <@ result = Error "A repository is already initialized here" @>
@@ -60,8 +60,7 @@ module ``load should`` =
 
     [<Property(MaxTest = 10)>]
     let ``return config file`` configFile =
-        deleteRepository ()
-
+        let repositoryPath = generateRepositoryPath ()
         let _ = init repositoryPath configFile
         let result = load repositoryPath
         test <@ result = Ok configFile @>
@@ -75,7 +74,7 @@ module ``update should`` =
 
     [<Property(MaxTest = 10)>]
     let ``persist new value`` oldConfigFile newConfigFile =
-        deleteRepository ()
+        let repositoryPath = generateRepositoryPath ()
         let _ = init repositoryPath oldConfigFile
         let result = update repositoryPath newConfigFile
         test <@ result = Ok () @>
