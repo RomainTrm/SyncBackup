@@ -150,7 +150,7 @@ module Aliases =
             test <@ calls |> Seq.isEmpty @>
 
         [<Fact>]
-        let ``return error if alias path doesn't exists`` () =
+        let ``return error if alias path doesn't exist`` () =
             let calls = System.Collections.Generic.List<_> ()
             let infra = {
                 defaultInfra with

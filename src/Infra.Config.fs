@@ -36,3 +36,8 @@ let init (path: FilePath) (config: RepositoryConfig) =
 
     Init.createConfigDirectory path
     |> Result.bind (fun () -> Init.createConfigFile path fileContent)
+
+let checkPathExists (path: DirectoryPath) =
+    if Directory.Exists path
+    then Ok ()
+    else Error "The specified directory path doesn't exist"

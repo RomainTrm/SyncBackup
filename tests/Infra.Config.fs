@@ -58,3 +58,16 @@ module ``init should`` =
         let _ = init repositoryPath defaultConfig
         let result = init repositoryPath defaultConfig
         test <@ result = Error "A repository is already initialized here" @>
+
+module ``checkPathExists should`` =
+    [<Fact>]
+    let ``return ok if exists`` () =
+        let path = Environment.CurrentDirectory
+        let result = checkPathExists path
+        test <@ result = Ok () @>
+
+    [<Fact>]
+    let ``return error if doesn't exist`` () =
+        let path = "wrong path"
+        let result = checkPathExists path
+        test <@ result = Error "The specified directory path doesn't exist" @>
