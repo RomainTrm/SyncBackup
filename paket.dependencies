@@ -4,6 +4,7 @@ framework: net8.0
 storage: none
 
 nuget FSharp.Core
+nuget Newtonsoft.Json 13.0.3
 nuget xunit
 nuget xunit.runner.visualstudio
 nuget Unquote

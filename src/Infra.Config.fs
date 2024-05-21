@@ -3,39 +3,55 @@
 open System.IO
 open SyncBackup.Domain.Dsl
 
-let private configFilePath rootPath = Path.Combine(rootPath, Dsl.ConfigDirectory, Dsl.ConfigFile)
+let private configFilePath repositoryPath = Path.Combine(repositoryPath, Dsl.ConfigDirectory, Dsl.ConfigFile)
 
 module private FileSerializer =
-    let write (config: RepositoryConfig) =
-        [|
-            "[main]"
-            "\tisSourceRepository = " + config.IsSourceRepository.ToString().ToLowerInvariant()
-        |]
+    open Newtonsoft.Json
+
+    let serialize (config: RepositoryConfig) = JsonConvert.SerializeObject config
+    let deserialize = JsonConvert.DeserializeObject<RepositoryConfig>
 
 module private Init =
-    let createConfigDirectory rootPath =
-        let configPath = Path.Combine(rootPath, Dsl.ConfigDirectory)
+    let createConfigDirectory repositoryPath =
+        let configPath = Path.Combine(repositoryPath, Dsl.ConfigDirectory)
         if (not<<Directory.Exists) configPath
         then Directory.CreateDirectory configPath |> ignore<DirectoryInfo>
         Ok ()
 
-    let createConfigFile rootPath repositoryConfigContent =
-        let filePath = configFilePath rootPath
+    let createConfigFile repositoryPath repositoryConfigContent =
+        let filePath = configFilePath repositoryPath
         if File.Exists filePath
         then Error "A repository is already initialized here"
         else
             use stream = File.CreateText filePath
             stream.Close ()
 
-            File.WriteAllLines (filePath, repositoryConfigContent)
+            File.WriteAllText (filePath, repositoryConfigContent)
             |> Ok
 
+let init (repositoryPath: RepositoryPath) (config: RepositoryConfig) =
+    let fileContent = FileSerializer.serialize config
 
-let init (path: FilePath) (config: RepositoryConfig) =
-    let fileContent = FileSerializer.write config
+    Init.createConfigDirectory repositoryPath
+    |> Result.bind (fun () -> Init.createConfigFile repositoryPath fileContent)
 
-    Init.createConfigDirectory path
-    |> Result.bind (fun () -> Init.createConfigFile path fileContent)
+let private getConfigFilePath (repositoryPath: RepositoryPath) =
+    let filePath = configFilePath repositoryPath
+    if (not<<File.Exists) filePath
+    then Error "No repository in the current directory"
+    else Ok filePath
+
+let update (repositoryPath: RepositoryPath) (config: RepositoryConfig) =
+    getConfigFilePath repositoryPath
+    |> Result.bind (fun configFilePath ->
+        let fileContent = FileSerializer.serialize config
+        File.WriteAllText (configFilePath, fileContent)
+        Ok ()
+    )
+
+let load (repositoryPath: RepositoryPath) =
+    getConfigFilePath repositoryPath
+    |> Result.bind (File.ReadAllText >> FileSerializer.deserialize >> Ok)
 
 let checkPathExists (path: DirectoryPath) =
     if Directory.Exists path
