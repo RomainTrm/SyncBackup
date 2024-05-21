@@ -11,5 +11,8 @@ module Alias =
         infra.LoadConfig ()
         |> Result.map (function
             | { Aliases = [] }  -> ["No alias configured"]
-            | { Aliases = aliases } -> aliases |> List.map (fun alias -> $"{alias.Name} => {alias.Path}")
+            | { Aliases = aliases } ->
+                aliases
+                |> List.sortBy _.Name
+                |> List.map (fun alias -> $"{alias.Name} => {alias.Path}")
         )

@@ -47,3 +47,23 @@ module Alias =
                 @"Alias 2 => C:\path\subpath2"
             ]
             test <@ result = Ok expectedLines @>
+
+        [<Fact>]
+        let ``sort aliases by name`` () =
+            let infra = {
+                LoadConfig = fun () -> Ok {
+                    repositoryConfig with
+                        Aliases = [
+                            { Name = "Alias 2"; Path = @"C:\path\subpath2" }
+                            { Name = "Alias 3"; Path = @"C:\path\subpath3" }
+                            { Name = "Alias 1"; Path = @"C:\path\subpath1" }
+                        ]
+                }
+            }
+            let result = Alias.list infra
+            let expectedLines = [
+                @"Alias 1 => C:\path\subpath1"
+                @"Alias 2 => C:\path\subpath2"
+                @"Alias 3 => C:\path\subpath3"
+            ]
+            test <@ result = Ok expectedLines @>
