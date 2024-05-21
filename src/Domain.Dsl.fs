@@ -9,6 +9,6 @@ type RepositoryConfig = {
     Aliases: Alias list
 }
 and Alias = {
-    Path: DirectoryPath
     Name: string
+    Path: DirectoryPath
 }

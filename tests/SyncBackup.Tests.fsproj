@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Command.Config.fs" />
+    <Compile Include="Queries.Config.fs" />
     <Compile Include="Infra.Config.fs" />
   </ItemGroup>
   <ItemGroup>
