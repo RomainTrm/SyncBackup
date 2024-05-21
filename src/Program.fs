@@ -7,11 +7,13 @@ let logger = printfn "%s"
 
 [<EntryPoint>]
 let main argv =
+    let parser = ArgumentParser.Create<Commands>()
     try
-        let parser = ArgumentParser.Create<Commands>()
-        runCommand parser argv
-        |> logger
+        runCommand parser argv |> logger
     with
+#if DEBUG
         | e -> logger (e.ToString())
-
+#else
+        | _ -> parser.PrintUsage() |> logger
+#endif
     succeedExit
