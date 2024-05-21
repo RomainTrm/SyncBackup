@@ -8,6 +8,7 @@ open SyncBackup.Commands.Config
 let defaultInfra : Infra = {
     InitConfig = fun _ _ -> failwith "not implemented"
     LoadConfig = fun _ -> failwith "not implemented"
+    CheckPathExists = fun _ -> failwith "not implemented"
     UpdateConfig = fun _ _ -> failwith "not implemented"
 }
 
@@ -47,6 +48,7 @@ module Aliases =
             let calls = System.Collections.Generic.List<_> ()
             let infra = {
                 defaultInfra with
+                    CheckPathExists = fun _ -> Ok ()
                     LoadConfig = fun repoPath ->
                         test <@ repoPath = path @>
                         Ok { defaultConfig with Aliases = [] }
@@ -66,6 +68,7 @@ module Aliases =
             let calls = System.Collections.Generic.List<_> ()
             let infra = {
                 defaultInfra with
+                    CheckPathExists = fun _ -> Ok ()
                     LoadConfig = fun repoPath ->
                         test <@ repoPath = path @>
                         Ok {
@@ -99,6 +102,7 @@ module Aliases =
             let calls = System.Collections.Generic.List<_> ()
             let infra = {
                 defaultInfra with
+                    CheckPathExists = fun _ -> Ok ()
                     LoadConfig = fun repoPath ->
                         test <@ repoPath = path @>
                         Ok {
@@ -124,6 +128,7 @@ module Aliases =
             let calls = System.Collections.Generic.List<_> ()
             let infra = {
                 defaultInfra with
+                    CheckPathExists = fun _ -> Ok ()
                     LoadConfig = fun repoPath ->
                         test <@ repoPath = path @>
                         Ok {
@@ -142,4 +147,48 @@ module Aliases =
             let result = Alias.add infra path alias
 
             test <@ result = Error """The alias "alias 1" already exists for another directory.""" @>
+            test <@ calls |> Seq.isEmpty @>
+
+        [<Fact>]
+        let ``return error if alias path doesn't exists`` () =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    CheckPathExists = function
+                        | "path" -> Error "error message"
+                        | _ -> failwith "not implemented"
+                    UpdateConfig = fun repoPath repoConfig ->
+                        calls.Add (repoPath, repoConfig)
+                        Ok ()
+            }
+
+            let alias = { Name = "alias 1"; Path = "path" }
+            let result = Alias.add infra path alias
+
+            test <@ result = Error "error message" @>
+            test <@ calls |> Seq.isEmpty @>
+
+        [<Theory>]
+        [<InlineData('\\')>]
+        [<InlineData('/')>]
+        [<InlineData(':')>]
+        [<InlineData('*')>]
+        [<InlineData('?')>]
+        [<InlineData('"')>]
+        [<InlineData('<')>]
+        [<InlineData('>')>]
+        [<InlineData('|')>]
+        let ``return error if alias name contains invalid chars`` (invalidChar: char) =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    UpdateConfig = fun repoPath repoConfig ->
+                        calls.Add (repoPath, repoConfig)
+                        Ok ()
+            }
+
+            let alias = { Name = $"alias{invalidChar}1"; Path = "path" }
+            let result = Alias.add infra path alias
+
+            test <@ result = Error "Alias name contains forbidden characters (\\/:*?\"<>|)" @>
             test <@ calls |> Seq.isEmpty @>

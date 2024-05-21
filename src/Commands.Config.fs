@@ -5,6 +5,7 @@ open SyncBackup.Domain.Dsl
 type Infra = {
     InitConfig: RepositoryPath -> RepositoryConfig -> Result<unit, string>
     LoadConfig: RepositoryPath -> Result<RepositoryConfig, string>
+    CheckPathExists: DirectoryPath -> Result<unit, string>
     UpdateConfig: RepositoryPath -> RepositoryConfig -> Result<unit, string>
 }
 
@@ -17,8 +18,16 @@ module Init =
         infra.InitConfig repositoryPath config
 
 module Alias =
+    let private validateAliasName (name: string) =
+        let forbiddenChars = "\\/:*?\"<>|"
+        if forbiddenChars |> Seq.exists name.Contains
+        then Error $"Alias name contains forbidden characters ({forbiddenChars})"
+        else Ok ()
+
     let add (infra: Infra) (repositoryPath: RepositoryPath) (alias: Alias) =
-        infra.LoadConfig repositoryPath
+        validateAliasName alias.Name
+        |> Result.bind (fun () -> infra.CheckPathExists alias.Path)
+        |> Result.bind (fun () -> infra.LoadConfig repositoryPath)
         |> Result.bind (fun config ->
             if config.Aliases |> List.contains alias
             then Ok ()
