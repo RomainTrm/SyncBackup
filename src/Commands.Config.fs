@@ -28,14 +28,12 @@ module Alias =
         validateAliasName alias.Name
         |> Result.bind (fun () -> infra.CheckPathExists alias.Path)
         |> Result.bind (fun () -> infra.LoadConfig repositoryPath)
-        |> Result.bind (fun config ->
-            if not config.IsSourceRepository
-            then Error "Aliases are only supported by source repositories"
-            elif config.Aliases |> List.contains alias
-            then Ok ()
-            elif config.Aliases |> List.exists (fun a -> a.Name = alias.Name)
-            then Error $"""The alias "{alias.Name}" already exists for another directory."""
-            else
+        |> Result.bind (function
+            | { IsSourceRepository = false } -> Error "Aliases are only supported by source repositories"
+            | { Aliases = aliases } when aliases |> List.contains alias -> Ok ()
+            | { Aliases = aliases } when aliases |> List.exists (fun a -> a.Name = alias.Name) ->
+                Error $"""The alias "{alias.Name}" already exists for another directory."""
+            | config ->
                 let config = { config with Aliases = config.Aliases@[alias] }
                 infra.UpdateConfig repositoryPath config
         )
