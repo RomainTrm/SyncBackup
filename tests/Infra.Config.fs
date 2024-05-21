@@ -10,7 +10,7 @@ open SyncBackup.Infra.Config
 
 module ``init should`` =
     let defaultConfig : RepositoryConfig = {
-        IsMainRepository = true
+        IsSourceRepository = true
         Aliases = []
     }
 
@@ -29,12 +29,12 @@ module ``init should`` =
     [<InlineData(false, "false")>]
     let ``create config file`` isMainRepository isMainRepositorySerialized =
         deleteRepository ()
-        let result = init repositoryPath { defaultConfig with IsMainRepository = isMainRepository }
+        let result = init repositoryPath { defaultConfig with IsSourceRepository = isMainRepository }
         test <@ result = Ok () @>
 
         let expectedFileContent = [|
             "[main]"
-            $"\tisMainRepository = {isMainRepositorySerialized}"
+            $"\tisSourceRepository = {isMainRepositorySerialized}"
         |]
         test <@ readConfigFile () = expectedFileContent @>
 
@@ -47,7 +47,7 @@ module ``init should`` =
 
         let expectedFileContent = [|
             "[main]"
-            "\tisMainRepository = true"
+            "\tisSourceRepository = true"
         |]
         test <@ readConfigFile () = expectedFileContent @>
 

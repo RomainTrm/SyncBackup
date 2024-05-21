@@ -5,7 +5,7 @@ type RepositoryPath = DirectoryPath
 type FilePath = string
 
 type RepositoryConfig = {
-    IsMainRepository: bool
+    IsSourceRepository: bool
     Aliases: Alias list
 }
 and Alias = {

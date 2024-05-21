@@ -29,7 +29,7 @@ module ``Init should`` =
 
         test <@ result = Ok () @>
         let expectedConfig: RepositoryConfig = {
-            IsMainRepository = true
+            IsSourceRepository = true
             Aliases = []
         }
         test <@ calls |> Seq.toList = [ path, expectedConfig ] @>
@@ -38,7 +38,7 @@ module Aliases =
     let path = "some path"
 
     let defaultConfig : RepositoryConfig = {
-        IsMainRepository = true
+        IsSourceRepository = true
         Aliases = []
     }
 
@@ -191,4 +191,24 @@ module Aliases =
             let result = Alias.add infra path alias
 
             test <@ result = Error "Alias name contains forbidden characters (\\/:*?\"<>|)" @>
+            test <@ calls |> Seq.isEmpty @>
+
+        [<Fact>]
+        let ``return error if in a backup repository`` () =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    CheckPathExists = fun _ -> Ok ()
+                    LoadConfig = fun repoPath ->
+                        test <@ repoPath = path @>
+                        Ok { defaultConfig with IsSourceRepository = false }
+                    UpdateConfig = fun repoPath repoConfig ->
+                        calls.Add (repoPath, repoConfig)
+                        Ok ()
+            }
+
+            let alias = { Name = "alias 1"; Path = "path" }
+            let result = Alias.add infra path alias
+
+            test <@ result = Error "Aliases are only supported by source repositories" @>
             test <@ calls |> Seq.isEmpty @>

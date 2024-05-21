@@ -9,7 +9,7 @@ module private FileSerializer =
     let write (config: RepositoryConfig) =
         [|
             "[main]"
-            "\tisMainRepository = " + config.IsMainRepository.ToString().ToLowerInvariant()
+            "\tisSourceRepository = " + config.IsSourceRepository.ToString().ToLowerInvariant()
         |]
 
 module private Init =

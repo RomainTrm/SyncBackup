@@ -12,7 +12,7 @@ type Infra = {
 module Init =
     let run (infra: Infra) (repositoryPath: RepositoryPath) =
         let config = {
-            IsMainRepository = true
+            IsSourceRepository = true
             Aliases = []
         }
         infra.InitConfig repositoryPath config
@@ -29,7 +29,9 @@ module Alias =
         |> Result.bind (fun () -> infra.CheckPathExists alias.Path)
         |> Result.bind (fun () -> infra.LoadConfig repositoryPath)
         |> Result.bind (fun config ->
-            if config.Aliases |> List.contains alias
+            if not config.IsSourceRepository
+            then Error "Aliases are only supported by source repositories"
+            elif config.Aliases |> List.contains alias
             then Ok ()
             elif config.Aliases |> List.exists (fun a -> a.Name = alias.Name)
             then Error $"""The alias "{alias.Name}" already exists for another directory."""
