@@ -16,5 +16,8 @@ and Alias = {
 type Content =
     | Directory of Directory
     | File of File
-and Directory = { Name: string; RelativePath: string; Content: Content list }
-and File = { Name: string; RelativePath: string }
+and Directory = { Name: string; RelativePath: RelativePath; Content: Content list }
+and File = { Name: string; RelativePath: RelativePath }
+and RelativePath =
+    | Source of string
+    | Alias of string
