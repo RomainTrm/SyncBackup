@@ -43,3 +43,16 @@ module ``scanRepositoryContent should`` =
             "path7 (file, alias)"
         ]
         test <@ result = Ok expected @>
+
+
+    [<Fact>]
+    let ``return default message when empty`` () =
+        let infra = {
+            LoadAliases = fun () -> Ok aliases
+            LoadFiles = fun a ->
+                test <@ a = aliases @>
+                []
+        }
+
+        let result = scanRepositoryContent infra ()
+        test <@ result = Ok ["Repository is empty."] @>

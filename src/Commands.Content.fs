@@ -26,3 +26,7 @@ let scanRepositoryContent (infra: Infra) () =
     infra.LoadAliases ()
     |> Result.map infra.LoadFiles
     |> Result.map (List.collect printContent)
+    |> Result.map (function
+        | [] -> ["Repository is empty."]
+        | content -> content
+    )

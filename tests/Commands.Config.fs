@@ -1,4 +1,4 @@
-module SyncBackup.Tests.Command.Config
+module SyncBackup.Tests.Commands.Config
 
 open Xunit
 open Swensen.Unquote
