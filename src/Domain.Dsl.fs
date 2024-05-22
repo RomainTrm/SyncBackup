@@ -12,3 +12,12 @@ and Alias = {
     Name: string
     Path: DirectoryPath
 }
+
+type Content =
+    | Directory of Directory
+    | File of File
+and Directory = { Name: string; RelativePath: RelativePath; Content: Content list }
+and File = { Name: string; RelativePath: RelativePath }
+and RelativePath =
+    | Source of string
+    | Alias of string

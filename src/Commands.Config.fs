@@ -19,7 +19,7 @@ module Init =
 
 module Alias =
     let private validateAliasName (name: string) =
-        let forbiddenChars = "\\/:*?\"<>|"
+        let forbiddenChars = "\\/:*?\"<>|" // TODO : use Path.GetInvalidPathChars instead
         if forbiddenChars |> Seq.exists name.Contains
         then Error $"Alias name contains forbidden characters ({forbiddenChars})"
         else Ok ()

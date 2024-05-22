@@ -1,5 +1,5 @@
 ﻿open Argu
-open SyncBackup.Cli.Config
+open SyncBackup.Cli
 
 let private succeedExit = 0
 

@@ -1,4 +1,4 @@
-﻿module SyncBackup.Cli.Config
+﻿module SyncBackup.Cli
 
 open System
 open Argu
@@ -32,37 +32,62 @@ module Aliases =
             SyncBackup.Queries.Config.Alias.list queryInfra
             |> Result.map (fun aliases -> String.Join(Environment.NewLine, aliases))
 
+module Content =
+    type Content =
+        | Scan
+    with
+        interface IArgParserTemplate with
+            member this.Usage =
+                match this with
+                | Scan -> "Display all directories and files on repository."
+
+    let runCommand commandInfra = function
+        | Scan ->
+            SyncBackup.Commands.Content.scanRepositoryContent commandInfra ()
+            |> Result.map (fun aliases -> String.Join(Environment.NewLine, aliases))
+
 type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
     | [<CliPrefix(CliPrefix.None)>] Alias of ParseResults<Aliases.Alias>
+    | [<CliPrefix(CliPrefix.None)>] Content of ParseResults<Content.Content>
 with
     interface IArgParserTemplate with
         member this.Usage =
             match this with
             | Init _ -> "Init the current directory as a source directory to sync with backups."
             | Alias _ -> "Manage aliases (pointers to directories outside the repository's directory), only available for the source directory."
+            | Content _ -> "Manage content directories and files inside the repository."
 
 let runCommand (parser: ArgumentParser<Commands>) argv =
     let currentDirectory = Environment.CurrentDirectory
-    let commandInfra: SyncBackup.Commands.Config.Infra = {
+    let configCommandInfra: SyncBackup.Commands.Config.Infra = {
         InitConfig = SyncBackup.Infra.Config.init currentDirectory
         LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
         CheckPathExists = SyncBackup.Infra.Config.checkPathExists
         UpdateConfig = SyncBackup.Infra.Config.update currentDirectory
     }
 
-    let queryInfra: SyncBackup.Queries.Config.Infra = {
+    let configQueryInfra: SyncBackup.Queries.Config.Infra = {
         LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
+    }
+
+    let contentCommandInfra: SyncBackup.Commands.Content.Infra = {
+        LoadFiles = SyncBackup.Infra.Content.Scan.run currentDirectory
+        LoadAliases = fun () -> SyncBackup.Infra.Config.load currentDirectory |> Result.map _.Aliases
     }
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
     results.TryGetSubCommand()
     |> Option.bind (function
-        | Init _ -> ConfigInit.runCommand commandInfra |> Some
+        | Init _ -> ConfigInit.runCommand configCommandInfra |> Some
         | Alias command ->
             command.GetAllResults ()
             |> List.tryExactlyOne
-            |> Option.map (Aliases.runCommand commandInfra queryInfra)
+            |> Option.map (Aliases.runCommand configCommandInfra configQueryInfra)
+        | Content command ->
+            command.GetAllResults ()
+            |> List.tryExactlyOne
+            |> Option.map (Content.runCommand contentCommandInfra)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function
