@@ -10,12 +10,9 @@ open SyncBackup.Infra.Dsl
 open SyncBackup.Infra.Config
 
 let [<Literal>] private UniqueTestDirectory = "test-a7922ff5-86af-466b-8adb-d11257e9f0ee"
-let cleanupTests = // Run once before tests execution
-    let testDirectoryPath = Path.Combine(Environment.CurrentDirectory, UniqueTestDirectory)
-    if Directory.Exists testDirectoryPath
-    then Directory.Delete (testDirectoryPath, true)
+let cleanupTests = TestHelpers.cleanupTests UniqueTestDirectory // Run once before tests execution
 
-let generateRepositoryPath () = Path.Combine(Environment.CurrentDirectory, UniqueTestDirectory, Guid.NewGuid().ToString())
+let generateRepositoryPath () = Path.Combine(TestHelpers.currentDirectory, UniqueTestDirectory, Guid.NewGuid().ToString())
 let configDirectoryPath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory)
 let configFilePath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory, ConfigFile)
 let readConfigFile = configFilePath >> File.ReadAllLines

@@ -7,7 +7,9 @@
   <ItemGroup>
     <Compile Include="Command.Config.fs" />
     <Compile Include="Queries.Config.fs" />
+    <Compile Include="Infra.TestHelpers.fs" />
     <Compile Include="Infra.Config.fs" />
+    <Compile Include="Infra.Content.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\SyncBackup.fsproj" />

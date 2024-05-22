@@ -10,6 +10,7 @@
     <Compile Include="Queries.Config.fs" />
     <Compile Include="Infra.Dsl.fs" />
     <Compile Include="Infra.Config.fs" />
+    <Compile Include="Infra.Content.fs" />
     <Compile Include="Cli.Config.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

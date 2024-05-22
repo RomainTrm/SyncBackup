@@ -3,8 +3,6 @@
 open System.IO
 open SyncBackup.Domain.Dsl
 
-let private configFilePath repositoryPath = Path.Combine(repositoryPath, Dsl.ConfigDirectory, Dsl.ConfigFile)
-
 module private FileSerializer =
     open Newtonsoft.Json
 
@@ -19,7 +17,7 @@ module private Init =
         Ok ()
 
     let createConfigFile repositoryPath repositoryConfigContent =
-        let filePath = configFilePath repositoryPath
+        let filePath = Dsl.configFilePath repositoryPath
         if File.Exists filePath
         then Error "A repository is already initialized here"
         else
@@ -36,7 +34,7 @@ let init (repositoryPath: RepositoryPath) (config: RepositoryConfig) =
     |> Result.bind (fun () -> Init.createConfigFile repositoryPath fileContent)
 
 let private getConfigFilePath (repositoryPath: RepositoryPath) =
-    let filePath = configFilePath repositoryPath
+    let filePath = Dsl.configFilePath repositoryPath
     if (not<<File.Exists) filePath
     then Error "No repository in the current directory"
     else Ok filePath
