@@ -12,7 +12,7 @@
     <Compile Include="Infra.Dsl.fs" />
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
-    <Compile Include="Cli.Config.fs" />
+    <Compile Include="Cli.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
