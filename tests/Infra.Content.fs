@@ -6,10 +6,8 @@ open Swensen.Unquote
 open SyncBackup.Infra.Content
 
 module ``scan should`` =
-    let [<Literal>] private UniqueTestDirectory = "test-5f8aeeaa-0090-4687-a361-d6db230806f0"
-
-    let private setupTestFolder () =
-        let path = TestHelpers.testDirectoryPath UniqueTestDirectory
+    let private setupTestFolder uniqueTestDirectory =
+        let path = TestHelpers.testDirectoryPath uniqueTestDirectory
         TestHelpers.cleanupTests path
         TestHelpers.createDirectory [|path|]
         TestHelpers.createFile [|path; "file"|]
@@ -26,8 +24,9 @@ module ``scan should`` =
 
     [<Fact>]
     let ``return current directory content`` () =
-        setupTestFolder ()
-        let result = scan (TestHelpers.testDirectoryPath UniqueTestDirectory) []
+        let uniqueTestDirectory = "test-5f8aeeaa-0090-4687-a361-d6db230806f0"
+        setupTestFolder uniqueTestDirectory
+        let result = scan (TestHelpers.testDirectoryPath uniqueTestDirectory) []
         let expected : Content list = [
             File { Name = "file"; RelativePath = "file" }
             Directory { Name = "1. emptyDir"; RelativePath = "1. emptyDir"; Content = [] }
@@ -46,3 +45,18 @@ module ``scan should`` =
             ] }
         ]
         test <@ result = expected @>
+
+    [<Fact>]
+    let ``ignore config directory`` () =
+        let uniqueTestDirectory = "test-e32b76b0-c553-4365-8195-2b91aeb29fd3"
+        TestHelpers.cleanupTests uniqueTestDirectory
+        let testDirectoryPath = TestHelpers.testDirectoryPath uniqueTestDirectory
+
+        SyncBackup.Infra.Config.init testDirectoryPath {
+            IsSourceRepository = true
+            Aliases = []
+        } |> ignore<Result<unit, string>>
+
+        let result = scan testDirectoryPath []
+        test <@ result = [] @>
+

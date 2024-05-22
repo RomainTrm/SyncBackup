@@ -1,6 +1,7 @@
 ﻿module SyncBackup.Infra.Content
 
 open System.IO
+open SyncBackup.Infra
 open SyncBackup.Domain.Dsl
 
 let scan (repositoryPath: RepositoryPath) (aliases: Alias list) =
@@ -17,6 +18,7 @@ let scan (repositoryPath: RepositoryPath) (aliases: Alias list) =
 
         let directories =
             Directory.GetDirectories currentDirectoryPath
+            |> Seq.filter (fun directoryPath -> directoryPath.Contains Dsl.ConfigDirectory |> not)
             |> Seq.fold (fun acc directoryPath ->
                 let directoryContent = scan' directoryPath []
                 let relativeDirectoryPath = Path.GetRelativePath(repositoryPath, directoryPath)

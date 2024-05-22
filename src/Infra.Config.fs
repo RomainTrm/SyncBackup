@@ -17,7 +17,7 @@ module private Init =
         Ok ()
 
     let createConfigFile repositoryPath repositoryConfigContent =
-        let filePath = Dsl.configFilePath repositoryPath
+        let filePath = Dsl.getFullConfigFilePath repositoryPath
         if File.Exists filePath
         then Error "A repository is already initialized here"
         else
@@ -34,7 +34,7 @@ let init (repositoryPath: RepositoryPath) (config: RepositoryConfig) =
     |> Result.bind (fun () -> Init.createConfigFile repositoryPath fileContent)
 
 let private getConfigFilePath (repositoryPath: RepositoryPath) =
-    let filePath = Dsl.configFilePath repositoryPath
+    let filePath = Dsl.getFullConfigFilePath repositoryPath
     if (not<<File.Exists) filePath
     then Error "No repository in the current directory"
     else Ok filePath
