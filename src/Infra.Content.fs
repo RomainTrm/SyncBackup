@@ -4,35 +4,41 @@ open System.IO
 open SyncBackup.Infra
 open SyncBackup.Domain.Dsl
 
-let scan (repositoryPath: RepositoryPath) (aliases: Alias list) =
-    let rec scan' (directorySourcePath: DirectoryPath) (currentDirectoryPath: DirectoryPath) (relativePath: string -> RelativePath) acc =
+module Scan =
+    let private excludeConfigFolder (directoryPath: string) =
+        directoryPath.Contains Dsl.ConfigDirectory |> not
+
+    let private sourceRelativePath (repositoryPath: RepositoryPath) fullPath =
+        let relativePath = Path.GetRelativePath(repositoryPath, fullPath)
+        Source relativePath
+
+    let private aliasRelativePath (alias: Alias) fullPath =
+        let relativePath = Path.GetRelativePath(alias.Path, fullPath)
+        Alias (Path.Combine(alias.Name, relativePath))
+
+    let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> RelativePath) =
         let files =
             Directory.GetFiles currentDirectoryPath
-            |> Seq.map Path.GetFileName
-            |> Seq.map (fun fileName ->
-                let fullFilePath = Path.Combine(currentDirectoryPath, fileName)
-                let relativeFilePath = Path.GetRelativePath(directorySourcePath, fullFilePath)
-                File { Name = fileName; RelativePath = relativePath relativeFilePath }
-            )
+            |> Seq.map (fun fullFilePath -> File {
+                Name = Path.GetFileName fullFilePath
+                RelativePath = buildRelativePath fullFilePath
+            })
             |> Seq.toList
 
         let directories =
             Directory.GetDirectories currentDirectoryPath
-            |> Seq.filter (fun directoryPath -> directoryPath.Contains Dsl.ConfigDirectory |> not)
+            |> Seq.filter excludeConfigFolder
             |> Seq.fold (fun acc directoryPath ->
-                let directoryContent = scan' directorySourcePath directoryPath relativePath []
-                let relativeDirectoryPath = Path.GetRelativePath(directorySourcePath, directoryPath)
-                let directory = Directory { Name = Path.GetFileName directoryPath; RelativePath = relativePath relativeDirectoryPath; Content = directoryContent }
-                acc@[directory]
+                acc@[Directory {
+                    Name = Path.GetFileName directoryPath
+                    RelativePath = buildRelativePath directoryPath
+                    Content = scan' directoryPath buildRelativePath
+                }]
             ) []
 
-        acc@files@directories
+        files@directories
 
-    let sourceDirectoryContent = scan' repositoryPath repositoryPath Source []
-    let aliasesDirectoriesContent =
-        aliases
-        |> List.collect (fun alias ->
-            let aliasRelativePath path = Alias (Path.Combine(alias.Name, path))
-            scan' alias.Path alias.Path aliasRelativePath []
-        )
-    sourceDirectoryContent@aliasesDirectoriesContent
+    let run (repositoryPath: RepositoryPath) (aliases: Alias list) =
+        let sourceDirectoryContent = scan' repositoryPath (sourceRelativePath repositoryPath)
+        let aliasesDirectoriesContent = List.collect (fun alias -> scan' alias.Path (aliasRelativePath alias)) aliases
+        sourceDirectoryContent@aliasesDirectoriesContent

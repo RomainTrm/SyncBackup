@@ -26,7 +26,7 @@ module ``scan should`` =
     let ``return current directory content`` () =
         let uniqueTestDirectory = "test-5f8aeeaa-0090-4687-a361-d6db230806f0"
         setupDirectoryContent uniqueTestDirectory
-        let result = scan (TestHelpers.testDirectoryPath uniqueTestDirectory) []
+        let result = Scan.run (TestHelpers.testDirectoryPath uniqueTestDirectory) []
         let expected : Content list = [
             File { Name = "file"; RelativePath = Source "file" }
             Directory { Name = "1. emptyDir"; RelativePath = Source "1. emptyDir"; Content = [] }
@@ -58,7 +58,7 @@ module ``scan should`` =
             Aliases = []
         } |> ignore<Result<unit, string>>
 
-        let result = scan testDirectoryPath []
+        let result = Scan.run testDirectoryPath []
         test <@ result = [] @>
 
     [<Fact>]
@@ -69,7 +69,7 @@ module ``scan should`` =
         TestHelpers.createDirectory [|uniqueTestDirectory|]
         setupDirectoryContent uniqueTestAliasDirectory
 
-        let result = scan (TestHelpers.testDirectoryPath uniqueTestDirectory) [
+        let result = Scan.run (TestHelpers.testDirectoryPath uniqueTestDirectory) [
             { Name = "MyAlias"; Path = TestHelpers.testDirectoryPath uniqueTestAliasDirectory }
         ]
 
