@@ -1,8 +1,9 @@
 ﻿module SyncBackup.Tests.Infra.Content
 
-open SyncBackup.Domain.Dsl
 open Xunit
 open Swensen.Unquote
+open SyncBackup.Domain.Dsl
+open SyncBackup.Infra
 open SyncBackup.Infra.Content
 
 module ``scan should`` =
@@ -53,7 +54,7 @@ module ``scan should`` =
         let testDirectoryPath = TestHelpers.testDirectoryPath uniqueTestDirectory
         TestHelpers.createDirectory [|testDirectoryPath|]
 
-        SyncBackup.Infra.Config.init testDirectoryPath {
+        Config.init testDirectoryPath {
             IsSourceRepository = true
             Aliases = []
         } |> ignore<Result<unit, string>>
@@ -91,3 +92,49 @@ module ``scan should`` =
             ] }
         ]
         test <@ result = expected @>
+
+module ``writeFile should`` =
+    let uniqueTestDirectory = "test-7c1e51c9-0eb0-4019-9268-faf20eddb0cb"
+
+    [<Fact>]
+    let ``save scan result`` () =
+        let path = TestHelpers.testDirectoryPath uniqueTestDirectory
+        TestHelpers.cleanupTests path
+        TestHelpers.createDirectory [|uniqueTestDirectory|]
+        TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+
+        let content = [
+            File { Name = "file"; RelativePath = Alias "MyAlias\\file" }
+            Directory { Name = "1. emptyDir"; RelativePath = Alias "MyAlias\\1. emptyDir"; Content = [] }
+            Directory { Name = "2. oneLevelDir"; RelativePath = Alias "MyAlias\\2. oneLevelDir"; Content = [
+                File { Name = "file1"; RelativePath = Alias "MyAlias\\2. oneLevelDir\\file1" }
+                File { Name = "file2"; RelativePath = Alias "MyAlias\\2. oneLevelDir\\file2" }
+            ] }
+            Directory { Name = "3. twoLevelsDir"; RelativePath = Alias "MyAlias\\3. twoLevelsDir"; Content = [
+                Directory { Name = "subdir1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1"; Content = [
+                    File { Name = "file1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; }
+                    File { Name = "file2"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; }
+                ] }
+                Directory { Name = "subdir2"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir2"; Content = [
+                    File { Name = "file"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file"; }
+                ] }
+            ] }
+        ]
+
+        ScanFile.writeFile path content
+        let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
+        let expected = [
+            "norule (file) \"MyAlias\\file\""
+            "norule (directory) \"MyAlias\\1. emptyDir\""
+            "norule (directory) \"MyAlias\\2. oneLevelDir\""
+            "norule (file) \"MyAlias\\2. oneLevelDir\\file1\""
+            "norule (file) \"MyAlias\\2. oneLevelDir\\file2\""
+            "norule (directory) \"MyAlias\\3. twoLevelsDir\""
+            "norule (directory) \"MyAlias\\3. twoLevelsDir\\subdir1\""
+            "norule (file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
+            "norule (file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
+            "norule (directory) \"MyAlias\\3. twoLevelsDir\\subdir2\""
+            "norule (file) \"MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+        ]
+
+        test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
