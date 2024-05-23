@@ -121,7 +121,9 @@ module ``writeFile should`` =
             ] }
         ]
 
-        ScanFile.writeFile path content
+        let result = ScanFile.writeFile path content
+        test <@ result = Ok () @>
+
         let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
         let expected = [
             "norule (file) \"MyAlias\\file\""

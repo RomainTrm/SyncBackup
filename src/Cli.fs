@@ -74,6 +74,10 @@ let runCommand (parser: ArgumentParser<Commands>) argv =
     let contentCommandInfra: SyncBackup.Commands.Content.Infra = {
         LoadFiles = SyncBackup.Infra.Content.Scan.run currentDirectory
         LoadAliases = fun () -> SyncBackup.Infra.Config.load currentDirectory |> Result.map _.Aliases
+        SaveTempContent = SyncBackup.Infra.Content.ScanFile.writeFile currentDirectory
+        OpenForUserEdition = fun () ->
+            SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
+            |> SyncBackup.Infra.Editor.VsCode.runEditor
     }
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)

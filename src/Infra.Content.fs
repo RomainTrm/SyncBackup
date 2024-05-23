@@ -75,3 +75,4 @@ module ScanFile =
         let fileContent = buildFileContent content
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
+        |> Ok
