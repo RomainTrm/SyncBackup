@@ -1,6 +1,9 @@
 ﻿module SyncBackup.Domain.Dsl
 
 type DirectoryPath = string
+module DirectoryPath =
+    let build (value: string) = value.TrimEnd [| '\\'; '\"' |]
+
 type RepositoryPath = DirectoryPath
 type FilePath = string
 

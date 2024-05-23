@@ -24,7 +24,7 @@ module Aliases =
 
     let runCommand commandInfra queryInfra = function
         | Add (name, path) ->
-            ({ Name = name; Path = path }: SyncBackup.Domain.Dsl.Alias)
+            ({ Name = name; Path = SyncBackup.Domain.Dsl.DirectoryPath.build path }: SyncBackup.Domain.Dsl.Alias)
             |> SyncBackup.Commands.Config.Alias.add commandInfra
             |> Result.map (fun () -> "Alias added.")
 

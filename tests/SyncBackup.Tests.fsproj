@@ -5,6 +5,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Domain.Dsl.fs" />
     <Compile Include="Queries.Config.fs" />
     <Compile Include="Commands.Config.fs" />
     <Compile Include="Commands.Content.fs" />
