@@ -19,6 +19,4 @@ let createDirectory (args: string[]) =
 let createFile ([<ParamArray>] args: string[]) =
     let path = Path.Combine args
     if (not<<File.Exists) path
-    then
-        use stream = File.Create path
-        stream.Close ()
+    then File.WriteAllText (path, "")
