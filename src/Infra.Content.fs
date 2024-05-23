@@ -58,7 +58,7 @@ module ScanFile =
         | File { RelativePath = Alias path } -> [ $"{SyncRules.getValue NoRule} (file) \"{path}\"" ]
 
     let private buildFileContent content =
-        String.Join (Environment.NewLine, [
+        let fileLines = [
             "# Repository scan complete!"
             "# Use '#' to comment a line"
             $"# You can specify rules to every line (directories and files), by default '{SyncRules.getValue NoRule}' is set"
@@ -68,7 +68,8 @@ module ScanFile =
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
             yield! content |> List.collect printContent
-        ])
+        ]
+        String.Join (Dsl.NewLine, fileLines)
 
     let writeFile (repositoryPath: RepositoryPath) (content: Content list) =
         let fileContent = buildFileContent content

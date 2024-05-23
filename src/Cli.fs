@@ -30,7 +30,7 @@ module Aliases =
 
         | List ->
             SyncBackup.Queries.Config.Alias.list queryInfra
-            |> Result.map (fun aliases -> String.Join(Environment.NewLine, aliases))
+            |> Result.map (fun aliases -> String.Join(SyncBackup.Infra.Dsl.NewLine, aliases))
 
 module Content =
     type Content =
@@ -44,7 +44,7 @@ module Content =
     let runCommand commandInfra = function
         | Scan ->
             SyncBackup.Commands.Content.scanRepositoryContent commandInfra ()
-            |> Result.map (fun aliases -> String.Join(Environment.NewLine, aliases))
+            |> Result.map (fun aliases -> String.Join(SyncBackup.Infra.Dsl.NewLine, aliases))
 
 type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
