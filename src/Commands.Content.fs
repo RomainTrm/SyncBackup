@@ -6,27 +6,20 @@ open SyncBackup.Domain.Dsl
 type Infra = {
     LoadAliases: unit -> Result<Alias list, string>
     LoadFiles: Alias list -> Content list
+    SaveTempContent: Content list -> Result<unit, string>
+    OpenForUserEdition: unit -> Result<unit, string>
+    ReadTempContent: unit -> Result<TrackedElement list, string>
+    SaveTrackFile: TrackedElement list -> Result<unit, string>
 }
-
-let rec private printContent = function
-    | Directory { RelativePath = Source path; Content = content } ->
-        [
-            $"{path} (directory)"
-            yield! content |> List.collect printContent
-        ]
-    | Directory { RelativePath = Alias path; Content = content } ->
-        [
-            $"{path} (directory, alias)"
-            yield! content |> List.collect printContent
-        ]
-    | File { RelativePath = Source path } -> [ $"{path} (file)" ]
-    | File { RelativePath = Alias path } -> [ $"{path} (file, alias)" ]
 
 let scanRepositoryContent (infra: Infra) () =
     infra.LoadAliases ()
     |> Result.map infra.LoadFiles
-    |> Result.map (List.collect printContent)
-    |> Result.map (function
-        | [] -> ["Repository is empty."]
-        | content -> content
+    |> Result.bind (function
+        | [] -> Error "Repository is empty."
+        | content -> Ok content
     )
+    |> Result.bind infra.SaveTempContent
+    |> Result.bind infra.OpenForUserEdition
+    |> Result.bind infra.ReadTempContent
+    |> Result.bind infra.SaveTrackFile

@@ -1,58 +1,52 @@
 ﻿module SyncBackup.Tests.Commands.Content
 
-open Xunit
+open FsCheck
+open FsCheck.Xunit
 open Swensen.Unquote
-open SyncBackup.Domain.Dsl
 open SyncBackup.Commands.Content
 
 module ``scanRepositoryContent should`` =
-    let aliases : Alias list = [
-        { Name = "alias1"; Path = "path1" }
-        { Name = "alias2"; Path = "path2" }
-    ]
+    let defaultInfra = {
+        LoadAliases = fun _ -> failwith "not implemented"
+        LoadFiles = fun _ -> failwith "not implemented"
+        SaveTempContent = fun _ -> failwith "not implemented"
+        OpenForUserEdition = fun _ -> failwith "not implemented"
+        ReadTempContent = fun _ -> failwith "not implemented"
+        SaveTrackFile = fun _ -> failwith "not implemented"
+    }
 
-    let content = [
-        Directory { Name = "dir"; RelativePath = Source "path1"; Content = [] }
-        File { Name = "file"; RelativePath = Source "path2" }
-        Directory { Name = "dir2"; RelativePath = Source "path3"; Content = [
-            File { Name = "file"; RelativePath = Source "path3\\path4" }
-            Directory { Name = "dir"; RelativePath = Source "path3\\path5"; Content = [
-                File { Name = "file"; RelativePath = Source "path3\\path5\\path6" }
-            ] }
-        ] }
-        File { Name = "file"; RelativePath = Alias "path7" }
-    ]
-
-    [<Fact>]
-    let ``retrieve content for repository and format it`` () =
+    [<Property>]
+    let ``retrieve content for repository, save it then open editor, then save track file`` aliases content contentEdited =
+        content <> [] ==> lazy
+        let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadAliases = fun () -> Ok aliases
             LoadFiles = fun a ->
                 test <@ a = aliases @>
                 content
+            SaveTempContent = fun c ->
+                test <@ c = content @>
+                calls.Add "save temp file" |> Ok
+            OpenForUserEdition = fun () -> calls.Add "open editor" |> Ok
+            ReadTempContent = fun () -> Ok contentEdited
+            SaveTrackFile = fun c ->
+                test <@ c = contentEdited @>
+                calls.Add "save track file" |> Ok
         }
 
         let result = scanRepositoryContent infra ()
-        let expected = [
-            "path1 (directory)"
-            "path2 (file)"
-            "path3 (directory)"
-            "path3\\path4 (file)"
-            "path3\\path5 (directory)"
-            "path3\\path5\\path6 (file)"
-            "path7 (file, alias)"
-        ]
-        test <@ result = Ok expected @>
+        test <@ result = Ok () @>
+        test <@ calls |> Seq.toList = ["save temp file"; "open editor"; "save track file"] @>
 
-
-    [<Fact>]
-    let ``return default message when empty`` () =
+    [<Property>]
+    let ``return default message when empty`` aliases =
         let infra = {
-            LoadAliases = fun () -> Ok aliases
-            LoadFiles = fun a ->
-                test <@ a = aliases @>
-                []
+            defaultInfra with
+                LoadAliases = fun () -> Ok aliases
+                LoadFiles = fun a ->
+                    test <@ a = aliases @>
+                    []
         }
 
         let result = scanRepositoryContent infra ()
-        test <@ result = Ok ["Repository is empty."] @>
+        test <@ result = Error "Repository is empty." @>

@@ -1,5 +1,6 @@
 ﻿module SyncBackup.Infra.Content
 
+open System
 open System.IO
 open SyncBackup.Infra
 open SyncBackup.Domain.Dsl
@@ -42,3 +43,63 @@ module Scan =
         let sourceDirectoryContent = scan' repositoryPath (sourceRelativePath repositoryPath)
         let aliasesDirectoriesContent = List.collect (fun alias -> scan' alias.Path (aliasRelativePath alias)) aliases
         sourceDirectoryContent@aliasesDirectoriesContent
+
+module ScanFile =
+    open Microsoft.FSharp.Reflection
+
+    let rec private printContent = function
+        | Directory { RelativePath = Source path; Content = content }
+        | Directory { RelativePath = Alias path; Content = content } ->
+            [
+                $"{SyncRules.getValue NoRule} (directory) \"{path}\""
+                yield! content |> List.collect printContent
+            ]
+        | File { RelativePath = Source path }
+        | File { RelativePath = Alias path } -> [ $"{SyncRules.getValue NoRule} (file) \"{path}\"" ]
+
+    let private buildFileContent content =
+        let fileLines = [
+            "# Repository scan complete!"
+            "# Use '#' to comment a line"
+            $"# You can specify rules to every line (directories and files), by default '{SyncRules.getValue NoRule}' is set"
+            "# Available rules as follows:"
+            yield! FSharpType.GetUnionCases(typeof<SyncRules>)
+                    |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> SyncRules)
+                    |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
+            ""
+            yield! content |> List.collect printContent
+        ]
+        String.Join (Dsl.NewLine, fileLines)
+
+    let writeFile (repositoryPath: RepositoryPath) (content: Content list) =
+        let fileContent = buildFileContent content
+        let filePath = Dsl.getScanFileFilePath repositoryPath
+        File.WriteAllText(filePath, fileContent)
+        |> Ok
+
+    let private removeComments (contentLine: string) =
+        not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
+
+    let private parseContent (contentLine: string) =
+        match contentLine.Split ' ' |> Seq.toList with
+        | _::"(directory)"::path -> Ok (String.Join(' ', path).Replace("\"", ""))
+        | _::"(file)"::path -> Ok (String.Join(' ', path).Replace("\"", ""))
+        | _ -> Error "Invalid format"
+
+    let readFile (repositoryPath: RepositoryPath) () =
+        Dsl.getScanFileFilePath repositoryPath
+        |> File.ReadAllLines
+        |> Seq.filter removeComments
+        |> Seq.map parseContent
+        |> Seq.fold (fun result content ->
+            match result, content with
+            | Ok result, Ok content -> Ok (result@[content])
+            | _, Error error
+            | Error error, _ -> Error error
+        ) (Ok [])
+
+module TrackFile =
+    let save (repositoryPath: RepositoryPath) (content: TrackedElement list) =
+        let filePath = Dsl.getTrackFileFilePath repositoryPath
+        File.WriteAllLines (filePath, content)
+        Ok ()

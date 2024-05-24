@@ -21,9 +21,6 @@ module private Init =
         if File.Exists filePath
         then Error "A repository is already initialized here"
         else
-            use stream = File.CreateText filePath
-            stream.Close ()
-
             File.WriteAllText (filePath, repositoryConfigContent)
             |> Ok
 

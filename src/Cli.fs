@@ -30,7 +30,7 @@ module Aliases =
 
         | List ->
             SyncBackup.Queries.Config.Alias.list queryInfra
-            |> Result.map (fun aliases -> String.Join(Environment.NewLine, aliases))
+            |> Result.map (fun aliases -> String.Join(SyncBackup.Infra.Dsl.NewLine, aliases))
 
 module Content =
     type Content =
@@ -44,7 +44,7 @@ module Content =
     let runCommand commandInfra = function
         | Scan ->
             SyncBackup.Commands.Content.scanRepositoryContent commandInfra ()
-            |> Result.map (fun aliases -> String.Join(Environment.NewLine, aliases))
+            |> Result.map (fun () -> "Scan completed.")
 
 type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
@@ -74,6 +74,12 @@ let runCommand (parser: ArgumentParser<Commands>) argv =
     let contentCommandInfra: SyncBackup.Commands.Content.Infra = {
         LoadFiles = SyncBackup.Infra.Content.Scan.run currentDirectory
         LoadAliases = fun () -> SyncBackup.Infra.Config.load currentDirectory |> Result.map _.Aliases
+        SaveTempContent = SyncBackup.Infra.Content.ScanFile.writeFile currentDirectory
+        OpenForUserEdition = fun () ->
+            SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
+            |> SyncBackup.Infra.Editor.VsCode.runEditor
+        ReadTempContent = SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
+        SaveTrackFile = SyncBackup.Infra.Content.TrackFile.save currentDirectory
     }
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
