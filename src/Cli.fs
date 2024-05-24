@@ -44,7 +44,7 @@ module Content =
     let runCommand commandInfra = function
         | Scan ->
             SyncBackup.Commands.Content.scanRepositoryContent commandInfra ()
-            |> Result.map (fun aliases -> String.Join(SyncBackup.Infra.Dsl.NewLine, aliases))
+            |> Result.map (fun () -> "Scan completed.")
 
 type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
