@@ -25,6 +25,8 @@ and RelativePath =
     | Source of string
     | Alias of string
 
+type TrackedElement = string
+
 type SyncRules =
     | NoRule
     | Exclude

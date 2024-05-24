@@ -78,7 +78,7 @@ let runCommand (parser: ArgumentParser<Commands>) argv =
         OpenForUserEdition = fun () ->
             SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
             |> SyncBackup.Infra.Editor.VsCode.runEditor
-        ReadTempContent = fun () -> failwith "not implemented"
+        ReadTempContent = SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
         SaveTrackFile = fun content -> failwith "not implemented"
     }
 

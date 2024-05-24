@@ -76,3 +76,24 @@ module ScanFile =
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
         |> Ok
+
+    let private removeComments (contentLine: string) =
+        not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
+
+    let private parseContent (contentLine: string) =
+        match contentLine.Split ' ' |> Seq.toList with
+        | _::"(directory)"::path -> Ok (String.Join(' ', path).Replace("\"", ""))
+        | _::"(file)"::path -> Ok (String.Join(' ', path).Replace("\"", ""))
+        | _ -> Error "Invalid format"
+
+    let readFile (repositoryPath: RepositoryPath) () =
+        Dsl.getScanFileFilePath repositoryPath
+        |> File.ReadAllLines
+        |> Seq.filter removeComments
+        |> Seq.map parseContent
+        |> Seq.fold (fun result content ->
+            match result, content with
+            | Ok result, Ok content -> Ok (result@[content])
+            | _, Error error
+            | Error error, _ -> Error error
+        ) (Ok [])
