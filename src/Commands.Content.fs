@@ -8,6 +8,8 @@ type Infra = {
     LoadFiles: Alias list -> Content list
     SaveTempContent: Content list -> Result<unit, string>
     OpenForUserEdition: unit -> Result<unit, string>
+    ReadTempContent: unit -> Result<Content list, string>
+    SaveTrackFile: Content list -> Result<unit, string>
 }
 
 let scanRepositoryContent (infra: Infra) () =
@@ -19,3 +21,5 @@ let scanRepositoryContent (infra: Infra) () =
     )
     |> Result.bind infra.SaveTempContent
     |> Result.bind infra.OpenForUserEdition
+    |> Result.bind infra.ReadTempContent
+    |> Result.bind infra.SaveTrackFile

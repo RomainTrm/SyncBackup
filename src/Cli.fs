@@ -78,6 +78,8 @@ let runCommand (parser: ArgumentParser<Commands>) argv =
         OpenForUserEdition = fun () ->
             SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
             |> SyncBackup.Infra.Editor.VsCode.runEditor
+        ReadTempContent = fun () -> failwith "not implemented"
+        SaveTrackFile = fun content -> failwith "not implemented"
     }
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)

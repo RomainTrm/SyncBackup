@@ -11,10 +11,12 @@ module ``scanRepositoryContent should`` =
         LoadFiles = fun _ -> failwith "not implemented"
         SaveTempContent = fun _ -> failwith "not implemented"
         OpenForUserEdition = fun _ -> failwith "not implemented"
+        ReadTempContent = fun _ -> failwith "not implemented"
+        SaveTrackFile = fun _ -> failwith "not implemented"
     }
 
     [<Property>]
-    let ``retrieve content for repository, save it then open editor`` aliases content =
+    let ``retrieve content for repository, save it then open editor, then save track file`` aliases content contentEdited =
         content <> [] ==> lazy
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
@@ -26,11 +28,15 @@ module ``scanRepositoryContent should`` =
                 test <@ c = content @>
                 calls.Add "save temp file" |> Ok
             OpenForUserEdition = fun () -> calls.Add "open editor" |> Ok
+            ReadTempContent = fun () -> Ok contentEdited
+            SaveTrackFile = fun c ->
+                test <@ c = contentEdited @>
+                calls.Add "save track file" |> Ok
         }
 
         let result = scanRepositoryContent infra ()
         test <@ result = Ok () @>
-        test <@ calls |> Seq.toList = ["save temp file"; "open editor"] @>
+        test <@ calls |> Seq.toList = ["save temp file"; "open editor"; "save track file"] @>
 
     [<Property>]
     let ``return default message when empty`` aliases =
