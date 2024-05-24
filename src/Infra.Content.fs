@@ -97,3 +97,9 @@ module ScanFile =
             | _, Error error
             | Error error, _ -> Error error
         ) (Ok [])
+
+module TrackFile =
+    let save (repositoryPath: RepositoryPath) (content: TrackedElement list) =
+        let filePath = Dsl.getTrackFileFilePath repositoryPath
+        File.WriteAllLines (filePath, content)
+        Ok ()
