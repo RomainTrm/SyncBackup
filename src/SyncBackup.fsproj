@@ -13,6 +13,7 @@
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
     <Compile Include="Infra.Editor.fs" />
+    <Compile Include="Factory.fs" />
     <Compile Include="Cli.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
