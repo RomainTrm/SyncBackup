@@ -7,6 +7,7 @@ type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
     CheckPathExists: DirectoryPath -> Result<unit, string>
     UpdateConfig: RepositoryConfig -> Result<unit, string>
+    SolveRuleConflict: Rule -> Rule -> Result<Rule, string>
 }
 
 module Init =
@@ -35,4 +36,22 @@ module Alias =
             | { Aliases = aliases } when aliases |> List.exists (fun a -> a.Name = alias.Name) ->
                 Error $"""The alias "{alias.Name}" already exists for another directory."""
             | config -> infra.UpdateConfig { config with Aliases = config.Aliases@[alias] }
+        )
+
+module Rules =
+    let add (infra: Infra) (rule: Rule) =
+        infra.LoadConfig ()
+        |> Result.bind (function
+            | { Rules = rules } when rules |> List.contains rule -> Ok ()
+            | config when config.Rules |> List.exists (fun r -> r.Path = rule.Path) ->
+                let existingRule = config.Rules |> List.find (fun r -> r.Path = rule.Path)
+                infra.SolveRuleConflict existingRule rule
+                |> Result.bind (fun ruleToSave ->
+                    let rules =
+                        config.Rules
+                        |> List.except [existingRule]
+                        |> List.append [ruleToSave]
+                    infra.UpdateConfig { config with Rules = rules }
+                )
+            | config -> infra.UpdateConfig { config with Rules = config.Rules@[rule] }
         )

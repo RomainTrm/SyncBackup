@@ -5,6 +5,7 @@ let configCommandInfra currentDirectory : SyncBackup.Commands.Config.Infra = {
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
     CheckPathExists = SyncBackup.Infra.Config.checkPathExists
     UpdateConfig = SyncBackup.Infra.Config.update currentDirectory
+    SolveRuleConflict = fun rule1 rule2 -> failwith "not implemented"
 }
 
 let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
