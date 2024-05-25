@@ -98,10 +98,10 @@ module Scan =
 module ScanFile =
     let content = [
         File { Name = "file"; RelativePath = Alias "MyAlias\\file" }
-        Directory { Name = "1. emptyDir"; RelativePath = Alias "MyAlias\\1. emptyDir"; Content = [] }
-        Directory { Name = "2. oneLevelDir"; RelativePath = Alias "MyAlias\\2. oneLevelDir"; Content = [
-            File { Name = "file1"; RelativePath = Alias "MyAlias\\2. oneLevelDir\\file1" }
-            File { Name = "file2"; RelativePath = Alias "MyAlias\\2. oneLevelDir\\file2" }
+        Directory { Name = "1. emptyDir"; RelativePath = Source "MySource\\1. emptyDir"; Content = [] }
+        Directory { Name = "2. oneLevelDir"; RelativePath = Source "MySource\\2. oneLevelDir"; Content = [
+            File { Name = "file1"; RelativePath = Source "MySource\\2. oneLevelDir\\file1" }
+            File { Name = "file2"; RelativePath = Source "MySource\\2. oneLevelDir\\file2" }
         ] }
         Directory { Name = "3. twoLevelsDir"; RelativePath = Alias "MyAlias\\3. twoLevelsDir"; Content = [
             Directory { Name = "subdir1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1"; Content = [
@@ -129,17 +129,17 @@ module ScanFile =
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
             let expected = [
-                "norule (file) \"MyAlias\\file\""
-                "norule (directory) \"MyAlias\\1. emptyDir\""
-                "norule (directory) \"MyAlias\\2. oneLevelDir\""
-                "norule (file) \"MyAlias\\2. oneLevelDir\\file1\""
-                "norule (file) \"MyAlias\\2. oneLevelDir\\file2\""
-                "norule (directory) \"MyAlias\\3. twoLevelsDir\""
-                "norule (directory) \"MyAlias\\3. twoLevelsDir\\subdir1\""
-                "norule (file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
-                "norule (file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
-                "norule (directory) \"MyAlias\\3. twoLevelsDir\\subdir2\""
-                "norule (file) \"MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+                "norule (*file) \"MyAlias\\file\""
+                "norule (directory) \"MySource\\1. emptyDir\""
+                "norule (directory) \"MySource\\2. oneLevelDir\""
+                "norule (file) \"MySource\\2. oneLevelDir\\file1\""
+                "norule (file) \"MySource\\2. oneLevelDir\\file2\""
+                "norule (*directory) \"MyAlias\\3. twoLevelsDir\""
+                "norule (*directory) \"MyAlias\\3. twoLevelsDir\\subdir1\""
+                "norule (*file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
+                "norule (*file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
+                "norule (*directory) \"MyAlias\\3. twoLevelsDir\\subdir2\""
+                "norule (*file) \"MyAlias\\3. twoLevelsDir\\subdir2\\file\""
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
@@ -158,17 +158,17 @@ module ScanFile =
 
             let result = ScanFile.readFile path ()
             let expected = [
-                "MyAlias\\file"
-                "MyAlias\\1. emptyDir"
-                "MyAlias\\2. oneLevelDir"
-                "MyAlias\\2. oneLevelDir\\file1"
-                "MyAlias\\2. oneLevelDir\\file2"
-                "MyAlias\\3. twoLevelsDir"
-                "MyAlias\\3. twoLevelsDir\\subdir1"
-                "MyAlias\\3. twoLevelsDir\\subdir1\\file1"
-                "MyAlias\\3. twoLevelsDir\\subdir1\\file2"
-                "MyAlias\\3. twoLevelsDir\\subdir2"
-                "MyAlias\\3. twoLevelsDir\\subdir2\\file"
+                Alias "MyAlias\\file"
+                Source "MySource\\1. emptyDir"
+                Source "MySource\\2. oneLevelDir"
+                Source "MySource\\2. oneLevelDir\\file1"
+                Source "MySource\\2. oneLevelDir\\file2"
+                Alias "MyAlias\\3. twoLevelsDir"
+                Alias "MyAlias\\3. twoLevelsDir\\subdir1"
+                Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1"
+                Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2"
+                Alias "MyAlias\\3. twoLevelsDir\\subdir2"
+                Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file"
             ]
             test <@ result = Ok expected @>
 
@@ -196,9 +196,9 @@ module TrackFile =
             TestHelpers.createDirectory [|uniqueTestDirectory|]
             TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
 
-            let content = ["line1"; "line2"; "line3"]
+            let content = [Source "line1"; Alias "line2"; Alias "line3"]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
 
             let fileContent = Dsl.getTrackFileFilePath path |> System.IO.File.ReadAllLines |> Seq.toList
-            test <@ fileContent = content @>
+            test <@ fileContent = ["line1"; "*line2"; "*line3"] @>

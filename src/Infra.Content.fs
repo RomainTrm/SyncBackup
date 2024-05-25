@@ -50,10 +50,13 @@ module ScanFile =
     let rec private printContent = function
         | Directory { RelativePath = relativePath; Content = content } ->
             [
-                $"{SyncRules.getValue NoRule} (directory) \"{RelativePath.getPath relativePath}\""
+                $"{SyncRules.getValue NoRule} ({RelativePath.markAlias relativePath}directory) \"{RelativePath.getPath relativePath}\""
                 yield! content |> List.collect printContent
             ]
-        | File { RelativePath = relativePath } -> [ $"{SyncRules.getValue NoRule} (file) \"{ RelativePath.getPath relativePath}\"" ]
+        | File { RelativePath = relativePath } ->
+            [
+                $"{SyncRules.getValue NoRule} ({RelativePath.markAlias relativePath}file) \"{ RelativePath.getPath relativePath}\""
+            ]
 
     let private buildFileContent content =
         let fileLines = [
@@ -79,9 +82,12 @@ module ScanFile =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
     let private parseContent (contentLine: string) =
+        let buildPath (path: string list) = String.Join(' ', path).Replace("\"", "")
         match contentLine.Split ' ' |> Seq.toList with
-        | _::"(directory)"::path -> Ok (String.Join(' ', path).Replace("\"", ""))
-        | _::"(file)"::path -> Ok (String.Join(' ', path).Replace("\"", ""))
+        | _::"(directory)"::path -> Ok (Source (buildPath path))
+        | _::"(file)"::path -> Ok (Source (buildPath path))
+        | _::"(*directory)"::path -> Ok (Alias (buildPath path))
+        | _::"(*file)"::path -> Ok (Alias (buildPath path))
         | _ -> Error "Invalid format"
 
     let readFile (repositoryPath: RepositoryPath) () =
@@ -97,7 +103,10 @@ module ScanFile =
         ) (Ok [])
 
 module TrackFile =
-    let save (repositoryPath: RepositoryPath) (content: TrackedElement list) =
+    let save (repositoryPath: RepositoryPath) (content: RelativePath list) =
         let filePath = Dsl.getTrackFileFilePath repositoryPath
-        File.WriteAllLines (filePath, content)
+        let contentLines =
+            content
+            |> List.map (fun content -> $"{RelativePath.markAlias content}{RelativePath.getPath content}")
+        File.WriteAllLines (filePath, contentLines)
         Ok ()

@@ -34,6 +34,10 @@ module RelativePath =
         | Source path -> path
         | Alias path -> path
 
+    let markAlias = function
+        | Alias _ -> "*"
+        | Source _ -> ""
+
 module SyncRules =
     let getValue = function
         | NoRule -> "norule"
@@ -56,5 +60,3 @@ type Content =
     | File of File
 and Directory = { Name: string; RelativePath: RelativePath; Content: Content list }
 and File = { Name: string; RelativePath: RelativePath }
-
-type TrackedElement = string
