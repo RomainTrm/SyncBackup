@@ -25,5 +25,5 @@ module Rules =
             | { Rules = rules } ->
                 rules
                 |> List.sortBy (fun rule -> RelativePath.getPath rule.Path)
-                |> List.map (fun rule -> $"{SyncRules.getValue rule.SyncRule} \"{(RelativePath.getPath rule.Path)}\"")
+                |> List.map (fun rule -> $"{SyncRules.getValue rule.SyncRule} \"{RelativePath.markAlias rule.Path}{(RelativePath.getPath rule.Path)}\"")
         )
