@@ -58,6 +58,7 @@ module Scan =
             Config.init testDirectoryPath {
                 IsSourceRepository = true
                 Aliases = []
+                Rules = []
             } |> ignore<Result<unit, string>>
 
             let result = Scan.run testDirectoryPath []

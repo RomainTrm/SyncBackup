@@ -28,6 +28,7 @@ module ``Init should`` =
         let expectedConfig: RepositoryConfig = {
             IsSourceRepository = true
             Aliases = []
+            Rules = []
         }
         test <@ calls |> Seq.toList = [ expectedConfig ] @>
 
@@ -37,6 +38,7 @@ module Aliases =
     let defaultConfig : RepositoryConfig = {
         IsSourceRepository = true
         Aliases = []
+        Rules = []
     }
 
     module ``add should`` =

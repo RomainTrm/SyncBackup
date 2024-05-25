@@ -14,6 +14,7 @@ module Init =
         let config = {
             IsSourceRepository = true
             Aliases = []
+            Rules = []
         }
         infra.InitConfig config
 
