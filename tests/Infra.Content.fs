@@ -158,17 +158,17 @@ module ScanFile =
 
             let result = ScanFile.readFile path ()
             let expected = [
-                Alias "MyAlias\\file"
-                Source "MySource\\1. emptyDir"
-                Source "MySource\\2. oneLevelDir"
-                Source "MySource\\2. oneLevelDir\\file1"
-                Source "MySource\\2. oneLevelDir\\file2"
-                Alias "MyAlias\\3. twoLevelsDir"
-                Alias "MyAlias\\3. twoLevelsDir\\subdir1"
-                Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1"
-                Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2"
-                Alias "MyAlias\\3. twoLevelsDir\\subdir2"
-                Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file"
+                { SyncRule = NoRule; Path = Alias "MyAlias\\file" }
+                { SyncRule = NoRule; Path = Source "MySource\\1. emptyDir" }
+                { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir" }
+                { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file1" }
+                { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file2" }
+                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir" }
+                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1" }
+                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1" }
+                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2" }
+                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2" }
+                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file" }
             ]
             test <@ result = Ok expected @>
 

@@ -102,14 +102,14 @@ module Rules =
                     repositoryConfig with
                         Rules = [
                             { Path = Source @"C:\path\subpath1"; SyncRule = SyncRules.Exclude }
-                            { Path = Source @"C:\path\subpath2"; SyncRule = SyncRules.Include }
+                            { Path = Alias @"C:\path\subpath2"; SyncRule = SyncRules.Include }
                         ]
                 }
             }
             let result = Rules.list infra
             let expectedLines = [
                 "exclude \"C:\\path\\subpath1\""
-                "include \"C:\\path\\subpath2\""
+                "include \"*C:\\path\\subpath2\""
             ]
             test <@ result = Ok expectedLines @>
 
