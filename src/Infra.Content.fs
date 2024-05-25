@@ -48,18 +48,10 @@ module Scan =
 module ScanFile =
     open Microsoft.FSharp.Reflection
 
-    let rec private printContent = function
-        | Directory { RelativePath = relativePath; Content = content } ->
-            [
-                $"{SyncRules.getValue NoRule} ({RelativePath.markAlias relativePath}directory) \"{RelativePath.getPath relativePath}\""
-                yield! content |> List.collect printContent
-            ]
-        | File { RelativePath = relativePath } ->
-            [
-                $"{SyncRules.getValue NoRule} ({RelativePath.markAlias relativePath}file) \"{ RelativePath.getPath relativePath}\""
-            ]
+    let rec private printRule rule =
+        $"{SyncRules.getValue rule.SyncRule} \"{RelativePath.markAlias rule.Path}{ RelativePath.getPath rule.Path}\""
 
-    let private buildFileContent content =
+    let private buildFileContent rules =
         let fileLines = [
             "# Repository scan complete!"
             "# Use '#' to comment a line"
@@ -69,12 +61,12 @@ module ScanFile =
                     |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> SyncRules)
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
-            yield! content |> List.collect printContent
+            yield! rules |> List.map printRule
         ]
         String.Join (Dsl.NewLine, fileLines)
 
-    let writeFile (repositoryPath: RepositoryPath) (content: Content list) =
-        let fileContent = buildFileContent content
+    let writeFile (repositoryPath: RepositoryPath) (rules: Rule list) =
+        let fileContent = buildFileContent rules
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
         |> Ok
@@ -82,22 +74,22 @@ module ScanFile =
     let private removeComments (contentLine: string) =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
-    let private parseContent (contentLine: string) =
-        let buildPath pathCtor (path: string list) = pathCtor (String.Join(' ', path).Replace("\"", ""))
+    let private parseRule (contentLine: string) =
+        let buildPath pathCtor (path: string list) = pathCtor (String.Join(' ', path).Replace("\"", "").Replace("*", ""))
         let buildRule path = SyncRules.parse >> Result.map (fun rule -> { SyncRule = rule; Path = path })
 
         match contentLine.Split ' ' |> Seq.toList with
-        | rule::"(directory)"::path
-        | rule::"(file)"::path -> rule |> buildRule (buildPath Source path)
-        | rule::"(*directory)"::path
-        | rule::"(*file)"::path -> rule |> buildRule (buildPath Alias path)
+        | [ _ ] -> Error "Invalid format"
+        | rule::pathHead::pathTail when pathHead.StartsWith "\"*" ->
+            rule |> buildRule (buildPath Alias (pathHead::pathTail))
+        | rule::path -> rule |> buildRule (buildPath Source path)
         | _ -> Error "Invalid format"
 
     let readFile (repositoryPath: RepositoryPath) () =
         Dsl.getScanFileFilePath repositoryPath
         |> File.ReadAllLines
         |> Seq.filter removeComments
-        |> Seq.map parseContent
+        |> Seq.map parseRule
         |> Seq.fold (fun result content ->
             match result, content with
             | Ok result, Ok content -> Ok (result@[content])

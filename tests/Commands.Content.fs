@@ -1,5 +1,6 @@
 ﻿module SyncBackup.Tests.Commands.Content
 
+open Xunit
 open FsCheck
 open FsCheck.Xunit
 open Swensen.Unquote
@@ -24,7 +25,7 @@ module ``scanRepositoryContent should`` =
     }
 
     [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator> |])>]
-    let ``retrieve content for repository, save it then open editor, then save track file`` aliases content (contentEdited: Dsl.Rule list) =
+    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.Rule list) =
         content <> [] ==> lazy
         let contentEdited = contentEdited |> List.distinctBy _.Path
         let calls = System.Collections.Generic.List<_> ()
@@ -33,8 +34,7 @@ module ``scanRepositoryContent should`` =
             LoadFiles = fun a ->
                 test <@ a = aliases @>
                 content
-            SaveTempContent = fun c ->
-                test <@ c = content @>
+            SaveTempContent = fun _ ->
                 calls.Add "save temp file" |> Ok
             OpenForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadTempContent = fun () -> Ok contentEdited
@@ -51,6 +51,37 @@ module ``scanRepositoryContent should`` =
         let result = scanRepositoryContent infra ()
         test <@ result = Ok () @>
         test <@ calls |> Seq.toList = ["save temp file"; "open editor"; "save track file"; "save rules"] @>
+
+    [<Fact>]
+    let ``build apply existing rules to scanned content`` () =
+        let savedRules = System.Collections.Generic.List<_> ()
+        let infra = {
+            defaultInfra with
+                LoadConfig = fun () -> Ok {
+                    defaultConfig with
+                        Rules = [
+                            { Path = Dsl.Source "path1"; SyncRule = Dsl.Include }
+                            { Path = Dsl.Source "path2"; SyncRule = Dsl.Exclude }
+                        ]
+                }
+                LoadFiles = fun _ -> [
+                    Dsl.File { Name = "file1"; RelativePath = Dsl.Source "path1" }
+                    Dsl.File { Name = "file2"; RelativePath = Dsl.Source "path2" }
+                    Dsl.File { Name = "file3"; RelativePath = Dsl.Source "path3" }
+                ]
+                SaveTempContent = fun rules ->
+                    savedRules.AddRange rules
+                    Error "I don't want to setup the rest of the infra"
+        }
+
+        let _ = scanRepositoryContent infra ()
+
+        let expected: Dsl.Rule list = [
+            { Path = Dsl.Source "path1"; SyncRule = Dsl.Include }
+            { Path = Dsl.Source "path2"; SyncRule = Dsl.Exclude }
+            { Path = Dsl.Source "path3"; SyncRule = Dsl.NoRule }
+        ]
+        test <@ savedRules |> Seq.toList = expected @>
 
     [<Property>]
     let ``return default message when empty`` aliases =

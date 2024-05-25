@@ -97,21 +97,17 @@ module Scan =
 
 module ScanFile =
     let content = [
-        File { Name = "file"; RelativePath = Alias "MyAlias\\file" }
-        Directory { Name = "1. emptyDir"; RelativePath = Source "MySource\\1. emptyDir"; Content = [] }
-        Directory { Name = "2. oneLevelDir"; RelativePath = Source "MySource\\2. oneLevelDir"; Content = [
-            File { Name = "file1"; RelativePath = Source "MySource\\2. oneLevelDir\\file1" }
-            File { Name = "file2"; RelativePath = Source "MySource\\2. oneLevelDir\\file2" }
-        ] }
-        Directory { Name = "3. twoLevelsDir"; RelativePath = Alias "MyAlias\\3. twoLevelsDir"; Content = [
-            Directory { Name = "subdir1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1"; Content = [
-                File { Name = "file1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; }
-                File { Name = "file2"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; }
-            ] }
-            Directory { Name = "subdir2"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir2"; Content = [
-                File { Name = "file"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file"; }
-            ] }
-        ] }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\file" }
+        { SyncRule = NoRule; Path = Source "MySource\\1. emptyDir" }
+        { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir" }
+        { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file1" }
+        { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file2" }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir" }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1" }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1" }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2" }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2" }
+        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file" }
     ]
 
     module ``writeFile should`` =
@@ -129,17 +125,17 @@ module ScanFile =
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
             let expected = [
-                "norule (*file) \"MyAlias\\file\""
-                "norule (directory) \"MySource\\1. emptyDir\""
-                "norule (directory) \"MySource\\2. oneLevelDir\""
-                "norule (file) \"MySource\\2. oneLevelDir\\file1\""
-                "norule (file) \"MySource\\2. oneLevelDir\\file2\""
-                "norule (*directory) \"MyAlias\\3. twoLevelsDir\""
-                "norule (*directory) \"MyAlias\\3. twoLevelsDir\\subdir1\""
-                "norule (*file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
-                "norule (*file) \"MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
-                "norule (*directory) \"MyAlias\\3. twoLevelsDir\\subdir2\""
-                "norule (*file) \"MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+                "norule \"*MyAlias\\file\""
+                "norule \"MySource\\1. emptyDir\""
+                "norule \"MySource\\2. oneLevelDir\""
+                "norule \"MySource\\2. oneLevelDir\\file1\""
+                "norule \"MySource\\2. oneLevelDir\\file2\""
+                "norule \"*MyAlias\\3. twoLevelsDir\""
+                "norule \"*MyAlias\\3. twoLevelsDir\\subdir1\""
+                "norule \"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
+                "norule \"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
+                "norule \"*MyAlias\\3. twoLevelsDir\\subdir2\""
+                "norule \"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
@@ -172,8 +168,10 @@ module ScanFile =
             ]
             test <@ result = Ok expected @>
 
-        [<Fact>]
-        let ``should return error if invalid file content format`` () =
+        [<Theory>]
+        [<InlineData("invalid")>]
+        [<InlineData("norule")>]
+        let ``should return error if invalid file content format`` (line: string) =
             let uniqueTestDirectory = "test-b694318b-35db-4f20-a42e-b2123d189773"
             let path = TestHelpers.testDirectoryPath uniqueTestDirectory
             TestHelpers.cleanupTests path
@@ -181,7 +179,7 @@ module ScanFile =
             TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
 
             let filePath = Dsl.getScanFileFilePath path
-            System.IO.File.WriteAllText (filePath, "invalid")
+            System.IO.File.WriteAllText (filePath, line)
 
             let result = ScanFile.readFile path ()
             test <@ result = Error "Invalid format" @>
