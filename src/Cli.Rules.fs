@@ -6,11 +6,7 @@ open SyncBackup.Domain
 open Microsoft.FSharp.Reflection
 
 let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, string> =
-    let path =
-        match rule1.Path with
-        | Dsl.Alias path -> path
-        | Dsl.Source path -> path
-
+    let path = Dsl.RelativePath.getPath rule1.Path
     logger $"Rules conflict for path \"{path}\":"
     logger $"1 {Dsl.SyncRules.getValue rule1.SyncRule}"
     logger $"2 {Dsl.SyncRules.getValue rule2.SyncRule}"

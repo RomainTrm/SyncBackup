@@ -48,14 +48,12 @@ module ScanFile =
     open Microsoft.FSharp.Reflection
 
     let rec private printContent = function
-        | Directory { RelativePath = Source path; Content = content }
-        | Directory { RelativePath = Alias path; Content = content } ->
+        | Directory { RelativePath = relativePath; Content = content } ->
             [
-                $"{SyncRules.getValue NoRule} (directory) \"{path}\""
+                $"{SyncRules.getValue NoRule} (directory) \"{RelativePath.getPath relativePath}\""
                 yield! content |> List.collect printContent
             ]
-        | File { RelativePath = Source path }
-        | File { RelativePath = Alias path } -> [ $"{SyncRules.getValue NoRule} (file) \"{path}\"" ]
+        | File { RelativePath = relativePath } -> [ $"{SyncRules.getValue NoRule} (file) \"{ RelativePath.getPath relativePath}\"" ]
 
     let private buildFileContent content =
         let fileLines = [

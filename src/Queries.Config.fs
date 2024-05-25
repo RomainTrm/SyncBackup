@@ -24,16 +24,6 @@ module Rules =
             | { Rules = [] }  -> ["No rule configured"]
             | { Rules = rules } ->
                 rules
-                |> List.sortBy (fun rule ->
-                    match rule.Path with
-                    | Source path -> path
-                    | Alias path -> path
-                )
-                |> List.map (fun rule ->
-                    let path =
-                        match rule.Path with
-                        | Source path -> path
-                        | Alias path -> path
-                    $"{SyncRules.getValue rule.SyncRule} \"{path}\""
-                )
+                |> List.sortBy (fun rule -> RelativePath.getPath rule.Path)
+                |> List.map (fun rule -> $"{SyncRules.getValue rule.SyncRule} \"{(RelativePath.getPath rule.Path)}\"")
         )

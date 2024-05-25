@@ -29,6 +29,11 @@ and SyncRules =
     | Exclude
     | Include
 
+module RelativePath =
+    let getPath = function
+        | Source path -> path
+        | Alias path -> path
+
 module SyncRules =
     let getValue = function
         | NoRule -> "norule"
