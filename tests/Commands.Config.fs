@@ -258,6 +258,23 @@ module Rules =
             test <@ result = Ok () @>
             test <@ calls |> Seq.isEmpty @>
 
+        [<Fact>]
+        let ``do nothing if adding 'norule'`` () =
+            let rule = { Path = Source "directory path"; SyncRule = SyncRules.NoRule }
+            let config = { defaultConfig with Rules = [] }
+
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok config
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.add infra rule
+
+            test <@ result = Ok () @>
+            test <@ calls |> Seq.isEmpty @>
+
         let ``ask for rules conflict - test cases`` () : obj[] list = [
             [| SyncRules.Exclude; SyncRules.Include; SyncRules.Exclude |]
             [| SyncRules.Exclude; SyncRules.Include; SyncRules.Include |]
@@ -286,3 +303,25 @@ module Rules =
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [ ruleChoseOnConflict ] } ] @>
+
+        [<Fact>]
+        let ``remove rule conflict resolution said norule`` () =
+            let existingRule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let newRule = { Path = Source "directory path"; SyncRule = SyncRules.NoRule }
+            let ruleChoseOnConflict = { Path = Source "directory path"; SyncRule = SyncRules.NoRule }
+
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok { defaultConfig with Rules = [ existingRule ] }
+                    SolveRuleConflict = fun rule1 rule2 ->
+                        test <@ rule1 = existingRule @>
+                        test <@ rule2 = newRule @>
+                        Ok ruleChoseOnConflict
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.add infra newRule
+
+            test <@ result = Ok () @>
+            test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [] } ] @>
