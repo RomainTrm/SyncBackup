@@ -68,3 +68,67 @@ module Alias =
                 @"Alias 3 => C:\path\subpath3"
             ]
             test <@ result = Ok expectedLines @>
+
+module Rules =
+    module ``list should`` =
+        let repositoryConfig : RepositoryConfig = {
+            IsSourceRepository = true
+            Aliases = []
+            Rules = []
+        }
+
+        [<Fact>]
+        let ``return error if load fail`` () =
+            let infra = {
+                LoadConfig = fun () -> Error "some error"
+            }
+            let result = Rules.list infra
+            test <@ result = Error "some error" @>
+
+        [<Fact>]
+        let ``return message when no alias`` () =
+            let infra = {
+                LoadConfig = fun () -> Ok {
+                    repositoryConfig with Rules = []
+                }
+            }
+            let result = Rules.list infra
+            test <@ result = Ok ["No rule configured"] @>
+
+        [<Fact>]
+        let ``return formatted aliases`` () =
+            let infra = {
+                LoadConfig = fun () -> Ok {
+                    repositoryConfig with
+                        Rules = [
+                            { Path = Source @"C:\path\subpath1"; SyncRule = SyncRules.Exclude }
+                            { Path = Source @"C:\path\subpath2"; SyncRule = SyncRules.Include }
+                        ]
+                }
+            }
+            let result = Rules.list infra
+            let expectedLines = [
+                "exclude \"C:\\path\\subpath1\""
+                "include \"C:\\path\\subpath2\""
+            ]
+            test <@ result = Ok expectedLines @>
+
+        [<Fact>]
+        let ``sort rules by path`` () =
+            let infra = {
+                LoadConfig = fun () -> Ok {
+                    repositoryConfig with
+                        Rules = [
+                            { Path = Source @"C:\path\subpath3"; SyncRule = SyncRules.Exclude }
+                            { Path = Source @"C:\path\subpath1"; SyncRule = SyncRules.Exclude }
+                            { Path = Source @"C:\path\subpath2"; SyncRule = SyncRules.Exclude }
+                        ]
+                }
+            }
+            let result = Rules.list infra
+            let expectedLines = [
+                "exclude \"C:\\path\\subpath1\""
+                "exclude \"C:\\path\\subpath2\""
+                "exclude \"C:\\path\\subpath3\""
+            ]
+            test <@ result = Ok expectedLines @>
