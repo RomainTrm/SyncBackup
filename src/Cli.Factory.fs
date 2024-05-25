@@ -1,10 +1,11 @@
-﻿module SyncBackup.Factory
+﻿module SyncBackup.Cli.Factory
 
-let configCommandInfra currentDirectory : SyncBackup.Commands.Config.Infra = {
+let configCommandInfra logger currentDirectory : SyncBackup.Commands.Config.Infra = {
     InitConfig = SyncBackup.Infra.Config.init currentDirectory
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
     CheckPathExists = SyncBackup.Infra.Config.checkPathExists
     UpdateConfig = SyncBackup.Infra.Config.update currentDirectory
+    SolveRuleConflict = Rules.solveConflict logger
 }
 
 let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {

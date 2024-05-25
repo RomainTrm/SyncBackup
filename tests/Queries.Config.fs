@@ -10,6 +10,7 @@ module Alias =
         let repositoryConfig : RepositoryConfig = {
             IsSourceRepository = true
             Aliases = []
+            Rules = []
         }
 
         [<Fact>]

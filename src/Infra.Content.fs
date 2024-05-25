@@ -41,7 +41,7 @@ module Scan =
 
     let run (repositoryPath: RepositoryPath) (aliases: Alias list) =
         let sourceDirectoryContent = scan' repositoryPath (sourceRelativePath repositoryPath)
-        let aliasesDirectoriesContent = List.collect (fun alias -> scan' alias.Path (aliasRelativePath alias)) aliases
+        let aliasesDirectoriesContent = List.collect (fun (alias: Alias) -> scan' alias.Path (aliasRelativePath alias)) aliases
         sourceDirectoryContent@aliasesDirectoriesContent
 
 module ScanFile =

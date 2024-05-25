@@ -13,8 +13,12 @@
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
     <Compile Include="Infra.Editor.fs" />
-    <Compile Include="Factory.fs" />
-    <Compile Include="Cli.fs" />
+    <Compile Include="Cli.Aliases.fs" />
+    <Compile Include="Cli.Content.fs" />
+    <Compile Include="Cli.ConfigInit.fs" />
+    <Compile Include="Cli.Rules.fs" />
+    <Compile Include="Cli.Factory.fs" />
+    <Compile Include="Cli.Worker.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

@@ -10,6 +10,13 @@ let defaultInfra : Infra = {
     LoadConfig = fun _ -> failwith "not implemented"
     CheckPathExists = fun _ -> failwith "not implemented"
     UpdateConfig = fun _ -> failwith "not implemented"
+    SolveRuleConflict = fun _ _ -> failwith "not implemented"
+}
+
+let defaultConfig : RepositoryConfig = {
+    IsSourceRepository = true
+    Aliases = []
+    Rules = []
 }
 
 module ``Init should`` =
@@ -28,16 +35,12 @@ module ``Init should`` =
         let expectedConfig: RepositoryConfig = {
             IsSourceRepository = true
             Aliases = []
+            Rules = []
         }
         test <@ calls |> Seq.toList = [ expectedConfig ] @>
 
 module Aliases =
     let path = "some path"
-
-    let defaultConfig : RepositoryConfig = {
-        IsSourceRepository = true
-        Aliases = []
-    }
 
     module ``add should`` =
         [<Fact>]
@@ -190,3 +193,96 @@ module Aliases =
 
             test <@ result = Error "Aliases are only supported by source repositories" @>
             test <@ calls |> Seq.isEmpty @>
+
+module Rules =
+    module ``Add should`` =
+        [<Fact>]
+        let ``add rule to config`` () =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () ->
+                        Ok { defaultConfig with Rules = [] }
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let rule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let result = Rules.add infra rule
+
+            test <@ result = Ok () @>
+            test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [ rule ] } ] @>
+
+        [<Fact>]
+        let ``add rule to config with existing rules`` () =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () ->
+                        Ok {
+                            defaultConfig with
+                                Rules = [
+                                    { Path = Source "path1"; SyncRule = SyncRules.Exclude }
+                                    { Path = Source "path2"; SyncRule = SyncRules.Include }
+                                ]
+                        }
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let rule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let result = Rules.add infra rule
+
+            test <@ result = Ok () @>
+            test <@ calls |> Seq.toList = [ {
+                defaultConfig with
+                    Rules = [
+                        { Path = Source "path1"; SyncRule = SyncRules.Exclude }
+                        { Path = Source "path2"; SyncRule = SyncRules.Include }
+                        rule
+                    ]
+                } ] @>
+
+        [<Fact>]
+        let ``do nothing if rule already exists`` () =
+            let rule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let config = { defaultConfig with Rules = [ rule ] }
+
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok config
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.add infra rule
+
+            test <@ result = Ok () @>
+            test <@ calls |> Seq.isEmpty @>
+
+        let ``ask for rules conflict - test cases`` () : obj[] list = [
+            [| SyncRules.Exclude; SyncRules.Include; SyncRules.Exclude |]
+            [| SyncRules.Exclude; SyncRules.Include; SyncRules.Include |]
+            [| SyncRules.Include; SyncRules.Exclude; SyncRules.Include |]
+            [| SyncRules.Include; SyncRules.Exclude; SyncRules.Exclude |]
+        ]
+
+        [<Theory; MemberData(nameof ``ask for rules conflict - test cases``)>]
+        let ``ask for rules conflict`` (existingRule: SyncRules) (newRule: SyncRules) (ruleChoseOnConflict: SyncRules) =
+            let existingRule = { Path = Source "directory path"; SyncRule = existingRule }
+            let newRule = { Path = Source "directory path"; SyncRule = newRule }
+            let ruleChoseOnConflict = { Path = Source "directory path"; SyncRule = ruleChoseOnConflict }
+
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok { defaultConfig with Rules = [ existingRule ] }
+                    SolveRuleConflict = fun rule1 rule2 ->
+                        test <@ rule1 = existingRule @>
+                        test <@ rule2 = newRule @>
+                        Ok ruleChoseOnConflict
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.add infra newRule
+
+            test <@ result = Ok () @>
+            test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [ ruleChoseOnConflict ] } ] @>

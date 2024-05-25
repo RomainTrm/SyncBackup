@@ -21,6 +21,7 @@ module ``init should`` =
     let defaultConfig : RepositoryConfig = {
         IsSourceRepository = true
         Aliases = []
+        Rules = []
     }
 
     [<Theory>]
