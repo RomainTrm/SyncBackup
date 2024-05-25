@@ -39,19 +39,18 @@ module Alias =
         )
 
 module Rules =
+    open SyncBackup.Domain.Rules
+
     let add (infra: Infra) (rule: Rule) =
         infra.LoadConfig ()
-        |> Result.bind (function
-            | { Rules = rules } when rules |> List.contains rule -> Ok ()
-            | config when config.Rules |> List.exists (fun r -> r.Path = rule.Path) ->
-                let existingRule = config.Rules |> List.find (fun r -> r.Path = rule.Path)
-                infra.SolveRuleConflict existingRule rule
+        |> Result.bind (fun config ->
+            match add rule config.Rules with
+            | Added rules -> infra.UpdateConfig { config with Rules = rules }
+            | Conflict(rule1, rule2) ->
+                infra.SolveRuleConflict rule1 rule2
                 |> Result.bind (fun ruleToSave ->
-                    let rules =
-                        config.Rules
-                        |> List.except [existingRule]
-                        |> List.append [ruleToSave]
+                    let rules = replace config.Rules ruleToSave
                     infra.UpdateConfig { config with Rules = rules }
                 )
-            | config -> infra.UpdateConfig { config with Rules = config.Rules@[rule] }
+            | RuleAlreadyThere -> Ok ()
         )
