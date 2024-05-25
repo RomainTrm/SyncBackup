@@ -20,9 +20,9 @@ with
             | Alias _ -> "Manage aliases (pointers to directories outside the repository's directory), only available for the source directory."
             | Content _ -> "Manage content directories and files inside the repository."
 
-let runCommand (parser: ArgumentParser<Commands>) argv =
+let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv =
     let currentDirectory = Environment.CurrentDirectory
-    let configCommandInfra = Factory.configCommandInfra currentDirectory
+    let configCommandInfra = Factory.configCommandInfra logger currentDirectory
     let configQueryInfra = Factory.configQueryInfra currentDirectory
     let contentCommandInfra = Factory.contentCommandInfra currentDirectory
 
@@ -35,5 +35,5 @@ let runCommand (parser: ArgumentParser<Commands>) argv =
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function
-        | Ok value -> value
-        | Error error -> $"An error occured: {error}"
+        | Ok value -> logger value
+        | Error error -> logger $"An error occured: {error}"

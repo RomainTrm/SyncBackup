@@ -16,6 +16,7 @@
     <Compile Include="Cli.Aliases.fs" />
     <Compile Include="Cli.Content.fs" />
     <Compile Include="Cli.ConfigInit.fs" />
+    <Compile Include="Cli.Rules.fs" />
     <Compile Include="Cli.Factory.fs" />
     <Compile Include="Cli.Worker.fs" />
     <Compile Include="Program.fs" />

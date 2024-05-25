@@ -9,7 +9,7 @@ let logger = printfn "%s"
 let main argv =
     let parser = ArgumentParser.Create<Worker.Commands>()
     try
-        Worker.runCommand parser argv |> logger
+        Worker.runCommand parser logger argv
     with
 #if DEBUG
         | e -> logger (e.ToString())
