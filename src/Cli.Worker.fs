@@ -2,50 +2,11 @@
 
 open System
 open Argu
-open SyncBackup.Domain.Dsl
 
-module ConfigInit =
-    type Init = | [<Hidden>] NoOption
-    with interface IArgParserTemplate with member this.Usage = ""
-
-    let runCommand commandInfra =
-        SyncBackup.Commands.Config.Init.run commandInfra
-        |> Result.map (fun () -> "Repository initialized")
-
-module Aliases =
-    type Alias =
-        | Add of Name: string * Path: string
-        | List
-    with
-        interface IArgParserTemplate with
-            member this.Usage =
-                match this with
-                | Add _ -> "Add a new alias to the repository."
-                | List -> "Display all aliases."
-
-    let runCommand commandInfra queryInfra = function
-        | Add (name, path) ->
-            ({ Name = name; Path = SyncBackup.Domain.Dsl.DirectoryPath.build path }: SyncBackup.Domain.Dsl.Alias)
-            |> SyncBackup.Commands.Config.Alias.add commandInfra
-            |> Result.map (fun () -> "Alias added.")
-
-        | List ->
-            SyncBackup.Queries.Config.Alias.list queryInfra
-            |> Result.map (fun aliases -> String.Join(SyncBackup.Infra.Dsl.NewLine, aliases))
-
-module Content =
-    type Content =
-        | Scan
-    with
-        interface IArgParserTemplate with
-            member this.Usage =
-                match this with
-                | Scan -> "Display all directories and files on repository."
-
-    let runCommand commandInfra = function
-        | Scan ->
-            SyncBackup.Commands.Content.scanRepositoryContent commandInfra ()
-            |> Result.map (fun () -> "Scan completed.")
+let private executeCommand<'c when 'c :> IArgParserTemplate> run (command: ParseResults<'c>) =
+    command.GetAllResults ()
+    |> List.tryExactlyOne
+    |> Option.map run
 
 type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
@@ -69,14 +30,8 @@ let runCommand (parser: ArgumentParser<Commands>) argv =
     results.TryGetSubCommand()
     |> Option.bind (function
         | Init _ -> ConfigInit.runCommand configCommandInfra |> Some
-        | Alias command ->
-            command.GetAllResults ()
-            |> List.tryExactlyOne
-            |> Option.map (Aliases.runCommand configCommandInfra configQueryInfra)
-        | Content command ->
-            command.GetAllResults ()
-            |> List.tryExactlyOne
-            |> Option.map (Content.runCommand contentCommandInfra)
+        | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
+        | Content command -> command |> executeCommand (Content.runCommand contentCommandInfra)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function

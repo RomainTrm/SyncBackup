@@ -13,6 +13,9 @@
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
     <Compile Include="Infra.Editor.fs" />
+    <Compile Include="Cli.Aliases.fs" />
+    <Compile Include="Cli.Content.fs" />
+    <Compile Include="Cli.ConfigInit.fs" />
     <Compile Include="Cli.Factory.fs" />
     <Compile Include="Cli.Worker.fs" />
     <Compile Include="Program.fs" />
