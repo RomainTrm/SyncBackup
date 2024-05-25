@@ -26,7 +26,7 @@ let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, 
 
 type Rule =
     | Add of Rule: string * Path: string
-
+    | List
 with
     interface IArgParserTemplate with
         member this.Usage =
@@ -38,11 +38,16 @@ with
                     |> Seq.map Dsl.SyncRules.getValue
                     |> fun rules -> String.Join('|', rules)
                 $"Add a new rule to the repository. Available rules: {availableRules}"
+            | List -> "Display all rules."
 
-let runCommand commandInfra = function
+let runCommand commandInfra queryInfra = function
     | Add (name, path) ->
         name
         |> Dsl.SyncRules.parse
         |> Result.map (fun rule -> ({ SyncRule = rule; Path = Dsl.Source path }: Dsl.Rule))
         |> Result.bind (SyncBackup.Commands.Config.Rules.add commandInfra)
         |> Result.map (fun () -> "Rule added")
+
+    | List ->
+        SyncBackup.Queries.Config.Rules.list queryInfra
+        |> Result.map (fun rules -> String.Join(SyncBackup.Infra.Dsl.NewLine, rules))
