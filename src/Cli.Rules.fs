@@ -3,6 +3,7 @@
 open System
 open Argu
 open SyncBackup.Domain
+open Microsoft.FSharp.Reflection
 
 let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, string> =
     let path =
@@ -23,15 +24,25 @@ let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, 
         | _ -> solveConflict' ()
     solveConflict' ()
 
-type Alias =
+type Rule =
     | Add of Rule: string * Path: string
 
 with
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Add _ -> "Add a new rule to the repository."
+            | Add _ ->
+                let availableRules =
+                    FSharpType.GetUnionCases(typeof<Dsl.SyncRules>)
+                    |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> Dsl.SyncRules)
+                    |> Seq.map Dsl.SyncRules.getValue
+                    |> fun rules -> String.Join('|', rules)
+                $"Add a new rule to the repository. Available rules: {availableRules}"
 
-let runCommand commandInfra queryInfra = function
+let runCommand commandInfra = function
     | Add (name, path) ->
-        "not implemented"
+        name
+        |> Dsl.SyncRules.parse
+        |> Result.map (fun rule -> ({ SyncRule = rule; Path = Dsl.Source path }: Dsl.Rule))
+        |> Result.bind (SyncBackup.Commands.Config.Rules.add commandInfra)
+        |> Result.map (fun () -> "Rule added")

@@ -40,6 +40,12 @@ module SyncRules =
         | Exclude -> $"{getValue Exclude}: this directory or file must not be saved into backup, even if parents are included."
         | Include -> $"{getValue Include}: this directory or file must be saved into backup, even if parents are excluded."
 
+    let parse = function
+        | "norule" -> Ok NoRule
+        | "exclude" -> Ok Exclude
+        | "include" -> Ok Include
+        | _ -> Error "Invalid rule"
+
 type Content =
     | Directory of Directory
     | File of File

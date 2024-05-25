@@ -12,6 +12,7 @@ type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
     | [<CliPrefix(CliPrefix.None)>] Alias of ParseResults<Aliases.Alias>
     | [<CliPrefix(CliPrefix.None)>] Content of ParseResults<Content.Content>
+    | [<CliPrefix(CliPrefix.None)>] Rules of ParseResults<Rules.Rule>
 with
     interface IArgParserTemplate with
         member this.Usage =
@@ -19,6 +20,7 @@ with
             | Init _ -> "Init the current directory as a source directory to sync with backups."
             | Alias _ -> "Manage aliases (pointers to directories outside the repository's directory), only available for the source directory."
             | Content _ -> "Manage content directories and files inside the repository."
+            | Rules _ -> "Manage rules for synchronization."
 
 let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv =
     let currentDirectory = Environment.CurrentDirectory
@@ -32,6 +34,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
         | Init _ -> ConfigInit.runCommand configCommandInfra |> Some
         | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
         | Content command -> command |> executeCommand (Content.runCommand contentCommandInfra)
+        | Rules command -> command |> executeCommand (Rules.runCommand configCommandInfra)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function
