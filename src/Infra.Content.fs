@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open Microsoft.FSharp.Core
 open SyncBackup.Infra
 open SyncBackup.Domain.Dsl
 
@@ -82,12 +83,14 @@ module ScanFile =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
     let private parseContent (contentLine: string) =
-        let buildPath (path: string list) = String.Join(' ', path).Replace("\"", "")
+        let buildPath pathCtor (path: string list) = pathCtor (String.Join(' ', path).Replace("\"", ""))
+        let buildRule path = SyncRules.parse >> Result.map (fun rule -> { SyncRule = rule; Path = path })
+
         match contentLine.Split ' ' |> Seq.toList with
-        | _::"(directory)"::path -> Ok (Source (buildPath path))
-        | _::"(file)"::path -> Ok (Source (buildPath path))
-        | _::"(*directory)"::path -> Ok (Alias (buildPath path))
-        | _::"(*file)"::path -> Ok (Alias (buildPath path))
+        | rule::"(directory)"::path
+        | rule::"(file)"::path -> rule |> buildRule (buildPath Source path)
+        | rule::"(*directory)"::path
+        | rule::"(*file)"::path -> rule |> buildRule (buildPath Alias path)
         | _ -> Error "Invalid format"
 
     let readFile (repositoryPath: RepositoryPath) () =

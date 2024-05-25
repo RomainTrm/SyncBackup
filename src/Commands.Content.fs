@@ -8,7 +8,7 @@ type Infra = {
     LoadFiles: Alias list -> Content list
     SaveTempContent: Content list -> Result<unit, string>
     OpenForUserEdition: unit -> Result<unit, string>
-    ReadTempContent: unit -> Result<RelativePath list, string>
+    ReadTempContent: unit -> Result<Rule list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>
 }
 
@@ -22,4 +22,6 @@ let scanRepositoryContent (infra: Infra) () =
     |> Result.bind infra.SaveTempContent
     |> Result.bind infra.OpenForUserEdition
     |> Result.bind infra.ReadTempContent
-    |> Result.bind infra.SaveTrackFile
+    |> Result.bind (fun rules ->
+        rules |> List.map _.Path |> infra.SaveTrackFile
+    )

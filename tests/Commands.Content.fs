@@ -30,7 +30,8 @@ module ``scanRepositoryContent should`` =
             OpenForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadTempContent = fun () -> Ok contentEdited
             SaveTrackFile = fun c ->
-                test <@ c = contentEdited @>
+                let expected = contentEdited |> List.map _.Path
+                test <@ c = expected @>
                 calls.Add "save track file" |> Ok
         }
 
