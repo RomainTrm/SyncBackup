@@ -14,11 +14,15 @@ let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
 
 let contentCommandInfra currentDirectory : SyncBackup.Commands.Content.Infra = {
     LoadFiles = SyncBackup.Infra.Content.Scan.run currentDirectory
-    LoadAliases = fun () -> SyncBackup.Infra.Config.load currentDirectory |> Result.map _.Aliases
+    LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
     SaveTempContent = SyncBackup.Infra.Content.ScanFile.writeFile currentDirectory
     OpenForUserEdition = fun () ->
         SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
         |> SyncBackup.Infra.Editor.VsCode.runEditor
     ReadTempContent = SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
     SaveTrackFile = SyncBackup.Infra.Content.TrackFile.save currentDirectory
+    SaveRules = fun rules ->
+        SyncBackup.Infra.Config.load currentDirectory
+        |> Result.map (fun config -> { config with Rules = rules })
+        |> Result.bind (SyncBackup.Infra.Config.update currentDirectory)
 }

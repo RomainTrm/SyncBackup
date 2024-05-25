@@ -5,6 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Helpers.fs" />
     <Compile Include="Domain.Dsl.fs" />
     <Compile Include="Domain.Rules.fs" />
     <Compile Include="Queries.Config.fs" />

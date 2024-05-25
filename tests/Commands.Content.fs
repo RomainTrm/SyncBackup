@@ -3,24 +3,33 @@
 open FsCheck
 open FsCheck.Xunit
 open Swensen.Unquote
+open SyncBackup.Domain
 open SyncBackup.Commands.Content
+open SyncBackup.Tests.Properties.CustomGenerators
 
 module ``scanRepositoryContent should`` =
     let defaultInfra = {
-        LoadAliases = fun _ -> failwith "not implemented"
+        LoadConfig = fun _ -> failwith "not implemented"
         LoadFiles = fun _ -> failwith "not implemented"
         SaveTempContent = fun _ -> failwith "not implemented"
         OpenForUserEdition = fun _ -> failwith "not implemented"
         ReadTempContent = fun _ -> failwith "not implemented"
         SaveTrackFile = fun _ -> failwith "not implemented"
+        SaveRules = fun _ -> failwith "not implemented"
+    }
+    let defaultConfig : Dsl.RepositoryConfig = {
+        IsSourceRepository = true
+        Aliases = []
+        Rules = []
     }
 
-    [<Property>]
-    let ``retrieve content for repository, save it then open editor, then save track file`` aliases content contentEdited =
+    [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator> |])>]
+    let ``retrieve content for repository, save it then open editor, then save track file`` aliases content (contentEdited: Dsl.Rule list) =
         content <> [] ==> lazy
+        let contentEdited = contentEdited |> List.distinctBy _.Path
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
-            LoadAliases = fun () -> Ok aliases
+            LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
             LoadFiles = fun a ->
                 test <@ a = aliases @>
                 content
@@ -33,17 +42,21 @@ module ``scanRepositoryContent should`` =
                 let expected = contentEdited |> List.map _.Path
                 test <@ c = expected @>
                 calls.Add "save track file" |> Ok
+            SaveRules = fun rules ->
+                let expected = contentEdited |> List.filter (fun rule -> rule.SyncRule <> Dsl.NoRule)
+                test <@ rules = expected @>
+                calls.Add "save rules" |> Ok
         }
 
         let result = scanRepositoryContent infra ()
         test <@ result = Ok () @>
-        test <@ calls |> Seq.toList = ["save temp file"; "open editor"; "save track file"] @>
+        test <@ calls |> Seq.toList = ["save temp file"; "open editor"; "save track file"; "save rules"] @>
 
     [<Property>]
     let ``return default message when empty`` aliases =
         let infra = {
             defaultInfra with
-                LoadAliases = fun () -> Ok aliases
+                LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
                 LoadFiles = fun a ->
                     test <@ a = aliases @>
                     []
