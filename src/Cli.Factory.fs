@@ -1,4 +1,4 @@
-﻿module SyncBackup.Factory
+﻿module SyncBackup.Cli.Factory
 
 let configCommandInfra currentDirectory : SyncBackup.Commands.Config.Infra = {
     InitConfig = SyncBackup.Infra.Config.init currentDirectory

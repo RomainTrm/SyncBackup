@@ -1,7 +1,8 @@
-﻿module SyncBackup.Cli
+﻿module SyncBackup.Cli.Worker
 
 open System
 open Argu
+open SyncBackup.Domain.Dsl
 
 module ConfigInit =
     type Init = | [<Hidden>] NoOption
