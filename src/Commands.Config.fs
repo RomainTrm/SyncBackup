@@ -44,7 +44,7 @@ module Rules =
     let add (infra: Infra) (rule: Rule) =
         infra.LoadConfig ()
         |> Result.bind (fun config ->
-            match add rule config.Rules with
+            match add config.Rules rule with
             | Added rules -> infra.UpdateConfig { config with Rules = rules }
             | Conflict(rule1, rule2) ->
                 infra.SolveRuleConflict rule1 rule2

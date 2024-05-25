@@ -10,26 +10,16 @@ type AddRuleResult =
     | Conflict of Rule * Rule
     | RuleAlreadyThere
 
-let private rulesToAdd rule =
-    [
-        match rule.SyncRule with
-        | NoRule -> ()
-        | _ -> rule
-    ]
-
-let add (rule: Rule) (rules: Rule list) =
-    if rules |> List.contains rule then RuleAlreadyThere
-    elif rules |> List.exists (fun r -> r.Path = rule.Path)
-    then
+let add (rules: Rule list) = function
+    | rule when rules |> List.contains rule -> RuleAlreadyThere
+    | rule when rules |> List.exists (fun r -> r.Path = rule.Path) ->
         let existingRule = rules |> List.find (fun r -> r.Path = rule.Path)
         Conflict (existingRule, rule)
-    else
-        match rulesToAdd rule with
-        | [] -> RuleAlreadyThere
-        | newRules -> Added (rules@newRules)
+    | { SyncRule = NoRule } -> RuleAlreadyThere
+    | rule -> Added (rules@[rule])
 
 let replace (rules: Rule list) (rule: Rule) =
-    let existingRule = rules |> List.find (fun r -> r.Path = rule.Path)
-    rules
-    |> List.except [existingRule]
-    |> List.append (rulesToAdd rule)
+    let rules = rules |> List.filter (fun r -> r.Path <> rule.Path)
+    match rule.SyncRule with
+    | NoRule -> rules
+    | _ -> rules |> List.append [rule]
