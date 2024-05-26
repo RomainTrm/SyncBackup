@@ -21,8 +21,8 @@ and Rule = {
     SyncRule: SyncRules
 }
 and RelativePath = {
-    Path: string
-    PathType: PathType
+    Value: string
+    Type: PathType
     ContentType: ContentType
 }
 and PathType = Source | Alias
@@ -35,8 +35,8 @@ and SyncRules =
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"
     let markAlias = function
-        | { PathType = Alias } -> AliasSymbol
-        | { PathType = Source } -> ""
+        | { Type = Alias } -> AliasSymbol
+        | { Type = Source } -> ""
 
     let [<Literal>] FilePrefix = "file::"
     let [<Literal>] DirectoryPrefix = "dir::"

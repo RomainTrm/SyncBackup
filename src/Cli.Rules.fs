@@ -6,7 +6,7 @@ open SyncBackup.Domain
 open Microsoft.FSharp.Reflection
 
 let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, string> =
-    logger $"Rules conflict for path \"{rule1.Path.Path}\":"
+    logger $"Rules conflict for path \"{rule1.Path.Value}\":"
     logger $"1 {Dsl.SyncRules.getValue rule1.SyncRule}"
     logger $"2 {Dsl.SyncRules.getValue rule2.SyncRule}"
 
@@ -40,7 +40,7 @@ let runCommand commandInfra queryInfra = function
         name
         |> Dsl.SyncRules.parse
         // TODO : build path correctly
-        |> Result.map (fun rule -> ({ SyncRule = rule; Path = { Path = path; ContentType = Dsl.File; PathType = Dsl.Source } }: Dsl.Rule))
+        |> Result.map (fun rule -> ({ SyncRule = rule; Path = { Value = path; ContentType = Dsl.File; Type = Dsl.Source } }: Dsl.Rule))
         |> Result.bind (SyncBackup.Commands.Config.Rules.add commandInfra)
         |> Result.map (fun () -> "Rule added")
 

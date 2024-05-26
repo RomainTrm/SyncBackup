@@ -24,6 +24,6 @@ module Rules =
             | { Rules = [] }  -> ["No rule configured"]
             | { Rules = rules } ->
                 rules
-                |> List.sortBy _.Path.Path
-                |> List.map (fun rule -> $"{SyncRules.getValue rule.SyncRule} \"{RelativePath.markAlias rule.Path}{rule.Path.Path}\"")
+                |> List.sortBy _.Path.Value
+                |> List.map (fun rule -> $"{SyncRules.getValue rule.SyncRule} \"{RelativePath.markAlias rule.Path}{rule.Path.Value}\"")
         )

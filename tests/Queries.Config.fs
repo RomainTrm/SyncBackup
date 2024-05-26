@@ -101,8 +101,8 @@ module Rules =
                 LoadConfig = fun () -> Ok {
                     repositoryConfig with
                         Rules = [
-                            { Path = { PathType = Source; Path = @"C:\path\subpath1"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
-                            { Path = { PathType = Alias; Path = @"C:\path\subpath2"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Include }
+                            { Path = { Type = Source; Value = @"C:\path\subpath1"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
+                            { Path = { Type = Alias; Value = @"C:\path\subpath2"; ContentType = Directory }; SyncRule = SyncRules.Include }
                         ]
                 }
             }
@@ -119,9 +119,9 @@ module Rules =
                 LoadConfig = fun () -> Ok {
                     repositoryConfig with
                         Rules = [
-                            { Path = { PathType = Source; Path = @"C:\path\subpath3"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
-                            { Path = { PathType = Source; Path = @"C:\path\subpath1"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
-                            { Path = { PathType = Source; Path = @"C:\path\subpath2"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
+                            { Path = { Type = Source; Value = @"C:\path\subpath3"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
+                            { Path = { Type = Source; Value = @"C:\path\subpath1"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
+                            { Path = { Type = Source; Value = @"C:\path\subpath2"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
                         ]
                 }
             }
