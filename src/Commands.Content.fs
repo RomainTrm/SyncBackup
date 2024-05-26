@@ -31,11 +31,7 @@ let scanRepositoryContent (infra: Infra) () =
         let! repositoryContent =
             config.Aliases
             |> infra.ScanRepositoryContent
-            |> Rules.buildRules config.Rules
-            |> List.map (fun rule -> rule, Added)
-            |> function
-                | [] -> Error "Repository is empty."
-                | content -> Ok content
+            |> Scan.buildScanResult config.Rules []
 
         do! infra.SaveScanFileContent repositoryContent
         do! infra.OpenScanFileForUserEdition ()
