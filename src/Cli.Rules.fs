@@ -39,9 +39,7 @@ let runCommand commandInfra queryInfra = function
     | Add (name, path) ->
         name
         |> Dsl.SyncRules.parse
-        // TODO : build path correctly
-        |> Result.map (fun rule -> ({ SyncRule = rule; Path = { Value = path; ContentType = Dsl.File; Type = Dsl.Source } }: Dsl.Rule))
-        |> Result.bind (SyncBackup.Commands.Config.Rules.add commandInfra)
+        |> Result.bind (fun rule -> SyncBackup.Commands.Config.Rules.add commandInfra rule path)
         |> Result.map (fun () -> "Rule added")
 
     | List ->

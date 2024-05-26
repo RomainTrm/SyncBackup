@@ -77,16 +77,3 @@ module ``update should`` =
         let result = update repositoryPath newConfigFile
         test <@ result = Ok () @>
         test <@ load repositoryPath = Ok newConfigFile @>
-
-module ``checkPathExists should`` =
-    [<Fact>]
-    let ``return ok if exists`` () =
-        let path = Environment.CurrentDirectory
-        let result = checkPathExists path
-        test <@ result = Ok () @>
-
-    [<Fact>]
-    let ``return error if doesn't exist`` () =
-        let path = "wrong path"
-        let result = checkPathExists path
-        test <@ result = Error "The specified directory path doesn't exist" @>

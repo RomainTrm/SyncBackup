@@ -4,8 +4,11 @@ type DirectoryPath = string
 module DirectoryPath =
     let build (value: DirectoryPath) = value.TrimEnd [| '\\'; '\"' |]
 
-type RepositoryPath = DirectoryPath
 type FilePath = string
+/// Some path provided by the user, code doesn't known if it points to an element in the source or in an alias, neither if it's a directory or a file
+type UnverifiedPath = string
+/// Root path of the repository
+type RepositoryPath = DirectoryPath
 
 type RepositoryConfig = {
     IsSourceRepository: bool
@@ -44,6 +47,27 @@ module RelativePath =
     let printContentType = function
         | { ContentType = File } -> FilePrefix
         | { ContentType = Directory } -> DirectoryPrefix
+
+    let serialize path = $"{printContentType path}\"{markAlias path}{path.Value}\""
+
+    let deserialize (strValue: string) =
+        let buildPath (path: string) =
+            path.Replace("\"", "")
+                .Replace(AliasSymbol, "")
+                .Replace(FilePrefix, "")
+                .Replace(DirectoryPrefix, "")
+
+        match strValue with
+        | _ when strValue.StartsWith $"{FilePrefix}\"{AliasSymbol}" ->
+            Ok { Value = buildPath strValue; ContentType = ContentType.File; Type = Alias }
+        | _ when strValue.StartsWith $"{DirectoryPrefix}\"{AliasSymbol}" ->
+            Ok { Value = buildPath strValue; ContentType = ContentType.Directory; Type = Alias }
+        | _ when strValue.StartsWith FilePrefix ->
+            Ok { Value = buildPath strValue; ContentType = ContentType.File; Type = Source }
+        | _ when strValue.StartsWith DirectoryPrefix ->
+            Ok { Value = buildPath strValue; ContentType = ContentType.Directory; Type = Source }
+        | _ -> Error "Invalid format"
+
 
 module SyncRules =
     let getValue = function

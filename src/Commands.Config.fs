@@ -1,11 +1,13 @@
 ﻿module SyncBackup.Commands.Config
 
+open SyncBackup
 open SyncBackup.Domain.Dsl
 
 type Infra = {
     InitConfig: RepositoryConfig -> Result<unit, string>
     LoadConfig: unit -> Result<RepositoryConfig, string>
     CheckPathExists: DirectoryPath -> Result<unit, string>
+    BuildRelativePath: Alias list -> UnverifiedPath -> Result<RelativePath, string>
     UpdateConfig: RepositoryConfig -> Result<unit, string>
     SolveRuleConflict: Rule -> Rule -> Result<Rule, string>
 }
@@ -41,16 +43,19 @@ module Alias =
 module Rules =
     open SyncBackup.Domain.Rules
 
-    let add (infra: Infra) (rule: Rule) =
-        infra.LoadConfig ()
-        |> Result.bind (fun config ->
+    let add (infra: Infra) (rule: SyncRules) (unverifiedPath: UnverifiedPath) =
+        result {
+            let! config = infra.LoadConfig ()
+            let! path = infra.BuildRelativePath config.Aliases unverifiedPath
+            let rule = { SyncRule = rule; Path = path }
             match add config.Rules rule with
-            | Added rules -> infra.UpdateConfig { config with Rules = rules }
+            | Added rules -> return! infra.UpdateConfig { config with Rules = rules }
             | Conflict(rule1, rule2) ->
-                infra.SolveRuleConflict rule1 rule2
-                |> Result.bind (fun ruleToSave ->
-                    let rules = replace config.Rules ruleToSave
-                    infra.UpdateConfig { config with Rules = rules }
-                )
-            | RuleAlreadyThere -> Ok ()
-        )
+                return!
+                    infra.SolveRuleConflict rule1 rule2
+                    |> Result.bind (fun ruleToSave ->
+                        let rules = replace config.Rules ruleToSave
+                        infra.UpdateConfig { config with Rules = rules }
+                    )
+            | RuleAlreadyThere -> return ()
+        }

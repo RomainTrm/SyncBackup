@@ -3,6 +3,7 @@
 open System
 open System.IO
 open Microsoft.FSharp.Core
+open SyncBackup
 open SyncBackup.Infra
 open SyncBackup.Domain.Dsl
 
@@ -43,7 +44,7 @@ module ScanFile =
     open Microsoft.FSharp.Reflection
 
     let rec private printRule rule =
-        $"{SyncRules.getValue rule.SyncRule} {RelativePath.printContentType rule.Path}\"{RelativePath.markAlias rule.Path}{rule.Path.Value}\""
+        $"{SyncRules.getValue rule.SyncRule} {RelativePath.serialize rule.Path}"
 
     let private buildFileContent rules =
         let fileLines = [
@@ -69,20 +70,15 @@ module ScanFile =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
     let private parseRule (contentLine: string) =
-        let buildPath (path: string list) = String.Join(' ', path).Replace("\"", "").Replace(RelativePath.AliasSymbol, "").Replace(RelativePath.FilePrefix, "").Replace(RelativePath.DirectoryPrefix, "")
-        let buildRule path = SyncRules.parse >> Result.map (fun rule -> { SyncRule = rule; Path = path })
-
         match contentLine.Split ' ' |> Seq.toList with
-        | [ _ ] -> Error "Invalid format"
-        | rule::pathHead::pathTail when pathHead.StartsWith $"{RelativePath.FilePrefix}\"{RelativePath.AliasSymbol}" ->
-            rule |> buildRule { Value = buildPath (pathHead::pathTail); ContentType = ContentType.File; Type = Alias }
-        | rule::pathHead::pathTail when pathHead.StartsWith $"{RelativePath.DirectoryPrefix}\"{RelativePath.AliasSymbol}" ->
-            rule |> buildRule { Value = buildPath (pathHead::pathTail); ContentType = ContentType.Directory; Type = Alias }
-        | rule::pathHead::pathTail when pathHead.StartsWith RelativePath.FilePrefix ->
-            rule |> buildRule { Value = buildPath (pathHead::pathTail); ContentType = ContentType.File; Type = Source }
-        | rule::pathHead::pathTail when pathHead.StartsWith RelativePath.DirectoryPrefix ->
-            rule |> buildRule { Value = buildPath (pathHead::pathTail); ContentType = ContentType.Directory; Type = Source }
-        | _ -> Error "Invalid format"
+        | []
+        | [_] -> Error "Invalid format"
+        | rule::path ->
+            result {
+                let! rule = SyncRules.parse rule
+                let! path = String.Join(' ', path) |> RelativePath.deserialize
+                return { SyncRule = rule; Path = path }
+            }
 
     let readFile (repositoryPath: RepositoryPath) () =
         Dsl.getScanFileFilePath repositoryPath
@@ -99,8 +95,6 @@ module ScanFile =
 module TrackFile =
     let save (repositoryPath: RepositoryPath) (contentPaths: RelativePath list) =
         let filePath = Dsl.getTrackFileFilePath repositoryPath
-        let contentLines =
-            contentPaths
-            |> List.map (fun relativePath -> $"{RelativePath.markAlias relativePath}{relativePath.Value}")
+        let contentLines = contentPaths |> List.map RelativePath.serialize
         File.WriteAllLines (filePath, contentLines)
         Ok ()

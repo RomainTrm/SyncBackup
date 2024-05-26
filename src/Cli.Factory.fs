@@ -3,7 +3,8 @@
 let configCommandInfra logger currentDirectory : SyncBackup.Commands.Config.Infra = {
     InitConfig = SyncBackup.Infra.Config.init currentDirectory
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
-    CheckPathExists = SyncBackup.Infra.Config.checkPathExists
+    CheckPathExists = SyncBackup.Infra.Core.checkPathExists
+    BuildRelativePath = SyncBackup.Infra.Core.buildRelativePath currentDirectory
     UpdateConfig = SyncBackup.Infra.Config.update currentDirectory
     SolveRuleConflict = Rules.solveConflict logger
 }
