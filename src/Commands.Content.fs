@@ -8,7 +8,7 @@ open SyncBackup.Domain.Dsl
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
     ScanRepositoryContent: Alias list -> RelativePath list
-    SaveScanFileContent: (Rule * ScanDiff) list -> Result<unit, string>
+    SaveScanFileContent: ScanResult list -> Result<unit, string>
     OpenScanFileForUserEdition: unit -> Result<unit, string>
     ReadScanFileContent: unit -> Result<Rule list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>

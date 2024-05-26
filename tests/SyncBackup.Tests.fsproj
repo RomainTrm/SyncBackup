@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="Properties.CustomGenerators.fs" />
     <Compile Include="Domain.Dsl.fs" />
+    <Compile Include="Domain.Scan.fs" />
     <Compile Include="Queries.Config.fs" />
     <Compile Include="Commands.Config.fs" />
     <Compile Include="Commands.Content.fs" />

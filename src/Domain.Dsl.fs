@@ -34,7 +34,11 @@ and SyncRules =
     | NoRule
     | Exclude
     | Include
-and ScanDiff = Added | Removed
+and ScanDiff =
+    | AddedToRepository
+    | RemovedFromRepository
+    | RuleReminder
+and ScanResult = Rule * ScanDiff
 
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"
@@ -94,5 +98,6 @@ module SyncRules =
 
 module ScanDiff =
     let serialize = function
-        | Added -> "(added)"
-        | Removed -> "(removed)"
+        | AddedToRepository -> "(added)"
+        | RemovedFromRepository -> "(removed)"
+        | RuleReminder -> "(nochange)"

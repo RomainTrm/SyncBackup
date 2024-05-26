@@ -77,9 +77,9 @@ module ``scanRepositoryContent should`` =
         let _ = scanRepositoryContent infra ()
 
         let expected: (Dsl.Rule * Dsl.ScanDiff) list = [
-            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include }, Dsl.Added
-            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }, Dsl.Added
-            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule }, Dsl.Added
+            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include }, Dsl.AddedToRepository
+            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }, Dsl.AddedToRepository
+            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule }, Dsl.AddedToRepository
         ]
         test <@ savedRules |> Seq.toList = expected @>
 

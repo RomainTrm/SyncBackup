@@ -19,4 +19,5 @@ type PathStringGenerator () =
                 Arb.Default.UnicodeString ()
                 |> Arb.toGen
                 |> Gen.map _.Get
+                |> Gen.filter (not<<String.IsNullOrWhiteSpace)
         }

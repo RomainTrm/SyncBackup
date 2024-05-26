@@ -60,7 +60,7 @@ module ScanFile =
         ]
         String.Join (Dsl.NewLine, fileLines)
 
-    let writeFile (repositoryPath: RepositoryPath) (rules: (Rule * ScanDiff) list) =
+    let writeFile (repositoryPath: RepositoryPath) (rules: ScanResult list) =
         let fileContent = buildFileContent rules
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
