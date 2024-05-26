@@ -61,9 +61,3 @@ module SyncRules =
         | "exclude" -> Ok Exclude
         | "include" -> Ok Include
         | _ -> Error "Invalid rule"
-
-type Content =
-    | Directory of Directory
-    | File of File
-and Directory = { Name: string; RelativePath: RelativePath; Content: Content list }
-and File = { Name: string; RelativePath: RelativePath }

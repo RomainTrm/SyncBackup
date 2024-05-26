@@ -21,21 +21,15 @@ module Scan =
     let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> ContentType -> RelativePath) =
         let files =
             Directory.GetFiles currentDirectoryPath
-            |> Seq.map (fun fullFilePath -> File {
-                Name = Path.GetFileName fullFilePath
-                RelativePath = buildRelativePath fullFilePath ContentType.File
-            })
+            |> Seq.map (fun fullFilePath -> buildRelativePath fullFilePath ContentType.File)
             |> Seq.toList
 
         let directories =
             Directory.GetDirectories currentDirectoryPath
             |> Seq.filter excludeConfigFolder
             |> Seq.fold (fun acc directoryPath ->
-                acc@[Directory {
-                    Name = Path.GetFileName directoryPath
-                    RelativePath = buildRelativePath directoryPath ContentType.Directory
-                    Content = scan' directoryPath buildRelativePath
-                }]
+                let path = buildRelativePath directoryPath ContentType.Directory
+                acc@[path]@(scan' directoryPath buildRelativePath)
             ) []
 
         files@directories

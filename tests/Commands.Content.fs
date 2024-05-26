@@ -11,7 +11,7 @@ open SyncBackup.Tests.Properties.CustomGenerators
 module ``scanRepositoryContent should`` =
     let defaultInfra = {
         LoadConfig = fun _ -> failwith "not implemented"
-        LoadFiles = fun _ -> failwith "not implemented"
+        LoadRepositoryContent = fun _ -> failwith "not implemented"
         SaveTempContent = fun _ -> failwith "not implemented"
         OpenForUserEdition = fun _ -> failwith "not implemented"
         ReadTempContent = fun _ -> failwith "not implemented"
@@ -31,7 +31,7 @@ module ``scanRepositoryContent should`` =
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
-            LoadFiles = fun a ->
+            LoadRepositoryContent = fun a ->
                 test <@ a = aliases @>
                 content
             SaveTempContent = fun _ ->
@@ -64,10 +64,10 @@ module ``scanRepositoryContent should`` =
                             { Path = { PathType = Dsl.Source; Path = "path2"; ContentType = Dsl.ContentType.Directory }; SyncRule = Dsl.Exclude }
                         ]
                 }
-                LoadFiles = fun _ -> [
-                    Dsl.Content.File { Name = "file1"; RelativePath = { PathType = Dsl.Source; Path = "path1"; ContentType = Dsl.ContentType.Directory } }
-                    Dsl.Content.File { Name = "file2"; RelativePath = { PathType = Dsl.Source; Path = "path2"; ContentType = Dsl.ContentType.Directory } }
-                    Dsl.Content.File { Name = "file3"; RelativePath = { PathType = Dsl.Source; Path = "path3"; ContentType = Dsl.ContentType.Directory } }
+                LoadRepositoryContent = fun _ -> [
+                    { PathType = Dsl.Source; Path = "path1"; ContentType = Dsl.ContentType.Directory }
+                    { PathType = Dsl.Source; Path = "path2"; ContentType = Dsl.ContentType.Directory }
+                    { PathType = Dsl.Source; Path = "path3"; ContentType = Dsl.ContentType.Directory }
                 ]
                 SaveTempContent = fun rules ->
                     savedRules.AddRange rules
@@ -88,7 +88,7 @@ module ``scanRepositoryContent should`` =
         let infra = {
             defaultInfra with
                 LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
-                LoadFiles = fun a ->
+                LoadRepositoryContent = fun a ->
                     test <@ a = aliases @>
                     []
         }

@@ -6,7 +6,7 @@ open SyncBackup.Domain
 
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
-    LoadFiles: Alias list -> Content list
+    LoadRepositoryContent: Alias list -> RelativePath list
     SaveTempContent: Rule list -> Result<unit, string>
     OpenForUserEdition: unit -> Result<unit, string>
     ReadTempContent: unit -> Result<Rule list, string>
@@ -24,18 +24,10 @@ let private updateRules oldRules =
             Rules.replace rules rule
     ) oldRules
 
-let rec private buildRule (existingRules: Map<RelativePath, Rule>) content =
-    let getRule path =
-        existingRules
-        |> Map.tryFind path
-        |> Option.defaultValue { Path = path; SyncRule = NoRule }
-
-    match content with
-    | File file -> [ getRule file.RelativePath ]
-    | Directory directory -> [
-        getRule directory.RelativePath
-        yield! directory.Content |> List.collect (buildRule existingRules)
-    ]
+let rec private buildRule (existingRules: Map<RelativePath, Rule>) path =
+    existingRules
+    |> Map.tryFind path
+    |> Option.defaultValue { Path = path; SyncRule = NoRule }
 
 let scanRepositoryContent (infra: Infra) () =
     SyncBackup.Helpers.result {
@@ -43,10 +35,10 @@ let scanRepositoryContent (infra: Infra) () =
         let existingRules = config.Rules |> Seq.map (fun rule -> rule.Path, rule) |> Map
         let! repositoryContent =
             config.Aliases
-            |> infra.LoadFiles
+            |> infra.LoadRepositoryContent
             |> function
                 | [] -> Error "Repository is empty."
-                | content -> content |> List.collect (buildRule existingRules) |> Ok
+                | content -> content |> List.map (buildRule existingRules) |> Ok
 
         do! infra.SaveTempContent repositoryContent
         do! infra.OpenForUserEdition ()
