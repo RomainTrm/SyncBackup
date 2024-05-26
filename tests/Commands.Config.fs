@@ -9,6 +9,7 @@ let defaultInfra : Infra = {
     InitConfig = fun _ -> failwith "not implemented"
     LoadConfig = fun _ -> failwith "not implemented"
     CheckPathExists = fun _ -> failwith "not implemented"
+    BuildRelativePath = fun _ _ -> failwith "not implemented"
     UpdateConfig = fun _ -> failwith "not implemented"
     SolveRuleConflict = fun _ _ -> failwith "not implemented"
 }
@@ -199,15 +200,19 @@ module Rules =
         [<Fact>]
         let ``add rule to config`` () =
             let calls = System.Collections.Generic.List<_> ()
+            let rule = { Path = { Type = Source; Value = "directory path"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
             let infra = {
                 defaultInfra with
                     LoadConfig = fun () ->
                         Ok { defaultConfig with Rules = [] }
+                    BuildRelativePath = fun _ unverifiedPath ->
+                        test <@ unverifiedPath = rule.Path.Value @>
+                        Ok rule.Path
                     UpdateConfig = calls.Add >> Ok
             }
 
             let rule = { Path = { Type = Source; Value = "directory path"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
-            let result = Rules.add infra rule
+            let result = Rules.add infra rule.SyncRule rule.Path.Value
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [ rule ] } ] @>
@@ -215,6 +220,7 @@ module Rules =
         [<Fact>]
         let ``add rule to config with existing rules`` () =
             let calls = System.Collections.Generic.List<_> ()
+            let rule = { Path = { Type = Source; Value = "directory path"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
             let infra = {
                 defaultInfra with
                     LoadConfig = fun () ->
@@ -225,11 +231,13 @@ module Rules =
                                     { Path = { Type = Source; Value = "path2"; ContentType = Directory }; SyncRule = SyncRules.Include }
                                 ]
                         }
+                    BuildRelativePath = fun _ unverifiedPath ->
+                        test <@ unverifiedPath = rule.Path.Value @>
+                        Ok rule.Path
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let rule = { Path = { Type = Source; Value = "directory path"; ContentType = Directory }; SyncRule = SyncRules.Exclude }
-            let result = Rules.add infra rule
+            let result = Rules.add infra rule.SyncRule rule.Path.Value
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ {
@@ -250,10 +258,13 @@ module Rules =
             let infra = {
                 defaultInfra with
                     LoadConfig = fun () -> Ok config
+                    BuildRelativePath = fun _ unverifiedPath ->
+                        test <@ unverifiedPath = rule.Path.Value @>
+                        Ok rule.Path
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let result = Rules.add infra rule
+            let result = Rules.add infra rule.SyncRule rule.Path.Value
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.isEmpty @>
@@ -267,10 +278,13 @@ module Rules =
             let infra = {
                 defaultInfra with
                     LoadConfig = fun () -> Ok config
+                    BuildRelativePath = fun _ unverifiedPath ->
+                        test <@ unverifiedPath = rule.Path.Value @>
+                        Ok rule.Path
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let result = Rules.add infra rule
+            let result = Rules.add infra rule.SyncRule rule.Path.Value
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.isEmpty @>
@@ -292,6 +306,9 @@ module Rules =
             let infra = {
                 defaultInfra with
                     LoadConfig = fun () -> Ok { defaultConfig with Rules = [ existingRule ] }
+                    BuildRelativePath = fun _ unverifiedPath ->
+                        test <@ unverifiedPath = newRule.Path.Value @>
+                        Ok newRule.Path
                     SolveRuleConflict = fun rule1 rule2 ->
                         test <@ rule1 = existingRule @>
                         test <@ rule2 = newRule @>
@@ -299,7 +316,7 @@ module Rules =
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let result = Rules.add infra newRule
+            let result = Rules.add infra newRule.SyncRule newRule.Path.Value
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [ ruleChoseOnConflict ] } ] @>
@@ -314,6 +331,9 @@ module Rules =
             let infra = {
                 defaultInfra with
                     LoadConfig = fun () -> Ok { defaultConfig with Rules = [ existingRule ] }
+                    BuildRelativePath = fun _ unverifiedPath ->
+                        test <@ unverifiedPath = newRule.Path.Value @>
+                        Ok newRule.Path
                     SolveRuleConflict = fun rule1 rule2 ->
                         test <@ rule1 = existingRule @>
                         test <@ rule2 = newRule @>
@@ -321,7 +341,7 @@ module Rules =
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let result = Rules.add infra newRule
+            let result = Rules.add infra newRule.SyncRule newRule.Path.Value
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [] } ] @>

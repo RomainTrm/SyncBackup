@@ -4,8 +4,11 @@ type DirectoryPath = string
 module DirectoryPath =
     let build (value: DirectoryPath) = value.TrimEnd [| '\\'; '\"' |]
 
-type RepositoryPath = DirectoryPath
 type FilePath = string
+/// Some path provided by the user, code doesn't known if it points to an element in the source or in an alias, neither if it's a directory or a file
+type UnverifiedPath = string
+/// Root path of the repository
+type RepositoryPath = DirectoryPath
 
 type RepositoryConfig = {
     IsSourceRepository: bool
