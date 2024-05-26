@@ -1,8 +1,9 @@
 ﻿module SyncBackup.Commands.Content
 
 open Microsoft.FSharp.Core
-open SyncBackup.Domain.Dsl
+open SyncBackup
 open SyncBackup.Domain
+open SyncBackup.Domain.Dsl
 
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
@@ -30,7 +31,7 @@ let rec private buildRule (existingRules: Map<RelativePath, Rule>) path =
     |> Option.defaultValue { Path = path; SyncRule = NoRule }
 
 let scanRepositoryContent (infra: Infra) () =
-    SyncBackup.Helpers.result {
+    result {
         let! config = infra.LoadConfig ()
         let existingRules = config.Rules |> Seq.map (fun rule -> rule.Path, rule) |> Map
         let! repositoryContent =

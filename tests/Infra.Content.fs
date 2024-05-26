@@ -189,10 +189,14 @@ module TrackFile =
             let content = [
                 { Type = Source; Value = "line1"; ContentType = File }
                 { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = File }
+                { Type = Alias; Value = "line3"; ContentType = Directory }
             ]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
 
             let fileContent = Dsl.getTrackFileFilePath path |> System.IO.File.ReadAllLines |> Seq.toList
-            test <@ fileContent = ["line1"; "*line2"; "*line3"] @>
+            test <@ fileContent = [
+                "file::\"line1\""
+                "file::\"*line2\""
+                "dir::\"*line3\""
+            ] @>
