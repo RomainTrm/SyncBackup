@@ -48,14 +48,14 @@ module Rules =
             let! config = infra.LoadConfig ()
             let! path = infra.BuildRelativePath config.Aliases unverifiedPath
             let rule = { SyncRule = rule; Path = path }
-            return!
-                match add config.Rules rule with
-                | Added rules -> infra.UpdateConfig { config with Rules = rules }
-                | Conflict(rule1, rule2) ->
+            match add config.Rules rule with
+            | Added rules -> return! infra.UpdateConfig { config with Rules = rules }
+            | Conflict(rule1, rule2) ->
+                return!
                     infra.SolveRuleConflict rule1 rule2
                     |> Result.bind (fun ruleToSave ->
                         let rules = replace config.Rules ruleToSave
                         infra.UpdateConfig { config with Rules = rules }
                     )
-                | RuleAlreadyThere -> Ok ()
+            | RuleAlreadyThere -> return ()
         }
