@@ -20,23 +20,30 @@ and Rule = {
     Path: RelativePath
     SyncRule: SyncRules
 }
-and RelativePath =
-    | Source of string
-    | Alias of string
-
+and RelativePath = {
+    Path: string
+    PathType: PathType
+    ContentType: ContentType
+}
+and PathType = Source | Alias
+and ContentType = Directory | File
 and SyncRules =
     | NoRule
     | Exclude
     | Include
 
 module RelativePath =
-    let getPath = function
-        | Source path -> path
-        | Alias path -> path
-
+    let [<Literal>] AliasSymbol = "*"
     let markAlias = function
-        | Alias _ -> "*"
-        | Source _ -> ""
+        | { PathType = Alias } -> AliasSymbol
+        | { PathType = Source } -> ""
+
+    let [<Literal>] FilePrefix = "file::"
+    let [<Literal>] DirectoryPrefix = "dir::"
+
+    let printContentType = function
+        | { ContentType = File } -> FilePrefix
+        | { ContentType = Directory } -> DirectoryPrefix
 
 module SyncRules =
     let getValue = function

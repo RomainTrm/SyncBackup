@@ -10,20 +10,20 @@ module Scan =
     let private excludeConfigFolder (directoryPath: string) =
         directoryPath.Contains Dsl.ConfigDirectory |> not
 
-    let private sourceRelativePath (repositoryPath: RepositoryPath) fullPath =
+    let private sourceRelativePath (repositoryPath: RepositoryPath) fullPath (contentType: ContentType) =
         let relativePath = Path.GetRelativePath(repositoryPath, fullPath)
-        Source relativePath
+        { Path = relativePath; ContentType = contentType; PathType = Source }
 
-    let private aliasRelativePath (alias: Alias) fullPath =
+    let private aliasRelativePath (alias: Alias) fullPath (contentType: ContentType) =
         let relativePath = Path.GetRelativePath(alias.Path, fullPath)
-        Alias (Path.Combine(alias.Name, relativePath))
+        { Path = Path.Combine(alias.Name, relativePath); ContentType = contentType; PathType = Alias }
 
-    let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> RelativePath) =
+    let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> ContentType -> RelativePath) =
         let files =
             Directory.GetFiles currentDirectoryPath
             |> Seq.map (fun fullFilePath -> File {
                 Name = Path.GetFileName fullFilePath
-                RelativePath = buildRelativePath fullFilePath
+                RelativePath = buildRelativePath fullFilePath ContentType.File
             })
             |> Seq.toList
 
@@ -33,7 +33,7 @@ module Scan =
             |> Seq.fold (fun acc directoryPath ->
                 acc@[Directory {
                     Name = Path.GetFileName directoryPath
-                    RelativePath = buildRelativePath directoryPath
+                    RelativePath = buildRelativePath directoryPath ContentType.Directory
                     Content = scan' directoryPath buildRelativePath
                 }]
             ) []
@@ -49,7 +49,7 @@ module ScanFile =
     open Microsoft.FSharp.Reflection
 
     let rec private printRule rule =
-        $"{SyncRules.getValue rule.SyncRule} \"{RelativePath.markAlias rule.Path}{ RelativePath.getPath rule.Path}\""
+        $"{SyncRules.getValue rule.SyncRule} {RelativePath.printContentType rule.Path}\"{RelativePath.markAlias rule.Path}{rule.Path.Path}\""
 
     let private buildFileContent rules =
         let fileLines = [
@@ -75,14 +75,19 @@ module ScanFile =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
     let private parseRule (contentLine: string) =
-        let buildPath pathCtor (path: string list) = pathCtor (String.Join(' ', path).Replace("\"", "").Replace("*", ""))
+        let buildPath (path: string list) = String.Join(' ', path).Replace("\"", "").Replace(RelativePath.AliasSymbol, "").Replace(RelativePath.FilePrefix, "").Replace(RelativePath.DirectoryPrefix, "")
         let buildRule path = SyncRules.parse >> Result.map (fun rule -> { SyncRule = rule; Path = path })
 
         match contentLine.Split ' ' |> Seq.toList with
         | [ _ ] -> Error "Invalid format"
-        | rule::pathHead::pathTail when pathHead.StartsWith "\"*" ->
-            rule |> buildRule (buildPath Alias (pathHead::pathTail))
-        | rule::path -> rule |> buildRule (buildPath Source path)
+        | rule::pathHead::pathTail when pathHead.StartsWith $"{RelativePath.FilePrefix}\"{RelativePath.AliasSymbol}" ->
+            rule |> buildRule { Path = buildPath (pathHead::pathTail); ContentType = ContentType.File; PathType = Alias }
+        | rule::pathHead::pathTail when pathHead.StartsWith $"{RelativePath.DirectoryPrefix}\"{RelativePath.AliasSymbol}" ->
+            rule |> buildRule { Path = buildPath (pathHead::pathTail); ContentType = ContentType.Directory; PathType = Alias }
+        | rule::pathHead::pathTail when pathHead.StartsWith RelativePath.FilePrefix ->
+            rule |> buildRule { Path = buildPath (pathHead::pathTail); ContentType = ContentType.File; PathType = Source }
+        | rule::pathHead::pathTail when pathHead.StartsWith RelativePath.DirectoryPrefix ->
+            rule |> buildRule { Path = buildPath (pathHead::pathTail); ContentType = ContentType.Directory; PathType = Source }
         | _ -> Error "Invalid format"
 
     let readFile (repositoryPath: RepositoryPath) () =
@@ -98,10 +103,10 @@ module ScanFile =
         ) (Ok [])
 
 module TrackFile =
-    let save (repositoryPath: RepositoryPath) (content: RelativePath list) =
+    let save (repositoryPath: RepositoryPath) (contentPaths: RelativePath list) =
         let filePath = Dsl.getTrackFileFilePath repositoryPath
         let contentLines =
-            content
-            |> List.map (fun content -> $"{RelativePath.markAlias content}{RelativePath.getPath content}")
+            contentPaths
+            |> List.map (fun relativePath -> $"{RelativePath.markAlias relativePath}{relativePath.Path}")
         File.WriteAllLines (filePath, contentLines)
         Ok ()

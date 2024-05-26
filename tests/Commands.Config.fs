@@ -206,7 +206,7 @@ module Rules =
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let rule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let rule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
             let result = Rules.add infra rule
 
             test <@ result = Ok () @>
@@ -221,29 +221,29 @@ module Rules =
                         Ok {
                             defaultConfig with
                                 Rules = [
-                                    { Path = Source "path1"; SyncRule = SyncRules.Exclude }
-                                    { Path = Source "path2"; SyncRule = SyncRules.Include }
+                                    { Path = { PathType = Source; Path = "path1"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
+                                    { Path = { PathType = Source; Path = "path2"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Include }
                                 ]
                         }
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let rule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let rule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
             let result = Rules.add infra rule
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ {
                 defaultConfig with
                     Rules = [
-                        { Path = Source "path1"; SyncRule = SyncRules.Exclude }
-                        { Path = Source "path2"; SyncRule = SyncRules.Include }
+                        { Path = { PathType = Source; Path = "path1"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
+                        { Path = { PathType = Source; Path = "path2"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Include }
                         rule
                     ]
                 } ] @>
 
         [<Fact>]
         let ``do nothing if rule already exists`` () =
-            let rule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
+            let rule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
             let config = { defaultConfig with Rules = [ rule ] }
 
             let calls = System.Collections.Generic.List<_> ()
@@ -260,7 +260,7 @@ module Rules =
 
         [<Fact>]
         let ``do nothing if adding 'norule'`` () =
-            let rule = { Path = Source "directory path"; SyncRule = SyncRules.NoRule }
+            let rule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.NoRule }
             let config = { defaultConfig with Rules = [] }
 
             let calls = System.Collections.Generic.List<_> ()
@@ -284,9 +284,9 @@ module Rules =
 
         [<Theory; MemberData(nameof ``ask for rules conflict - test cases``)>]
         let ``ask for rules conflict`` (existingRule: SyncRules) (newRule: SyncRules) (ruleChoseOnConflict: SyncRules) =
-            let existingRule = { Path = Source "directory path"; SyncRule = existingRule }
-            let newRule = { Path = Source "directory path"; SyncRule = newRule }
-            let ruleChoseOnConflict = { Path = Source "directory path"; SyncRule = ruleChoseOnConflict }
+            let existingRule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = existingRule }
+            let newRule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = newRule }
+            let ruleChoseOnConflict = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = ruleChoseOnConflict }
 
             let calls = System.Collections.Generic.List<_> ()
             let infra = {
@@ -306,9 +306,9 @@ module Rules =
 
         [<Fact>]
         let ``remove rule conflict resolution said norule`` () =
-            let existingRule = { Path = Source "directory path"; SyncRule = SyncRules.Exclude }
-            let newRule = { Path = Source "directory path"; SyncRule = SyncRules.NoRule }
-            let ruleChoseOnConflict = { Path = Source "directory path"; SyncRule = SyncRules.NoRule }
+            let existingRule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.Exclude }
+            let newRule = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.NoRule }
+            let ruleChoseOnConflict = { Path = { PathType = Source; Path = "directory path"; ContentType = ContentType.Directory }; SyncRule = SyncRules.NoRule }
 
             let calls = System.Collections.Generic.List<_> ()
             let infra = {

@@ -60,14 +60,14 @@ module ``scanRepositoryContent should`` =
                 LoadConfig = fun () -> Ok {
                     defaultConfig with
                         Rules = [
-                            { Path = Dsl.Source "path1"; SyncRule = Dsl.Include }
-                            { Path = Dsl.Source "path2"; SyncRule = Dsl.Exclude }
+                            { Path = { PathType = Dsl.Source; Path = "path1"; ContentType = Dsl.ContentType.Directory }; SyncRule = Dsl.Include }
+                            { Path = { PathType = Dsl.Source; Path = "path2"; ContentType = Dsl.ContentType.Directory }; SyncRule = Dsl.Exclude }
                         ]
                 }
                 LoadFiles = fun _ -> [
-                    Dsl.File { Name = "file1"; RelativePath = Dsl.Source "path1" }
-                    Dsl.File { Name = "file2"; RelativePath = Dsl.Source "path2" }
-                    Dsl.File { Name = "file3"; RelativePath = Dsl.Source "path3" }
+                    Dsl.Content.File { Name = "file1"; RelativePath = { PathType = Dsl.Source; Path = "path1"; ContentType = Dsl.ContentType.Directory } }
+                    Dsl.Content.File { Name = "file2"; RelativePath = { PathType = Dsl.Source; Path = "path2"; ContentType = Dsl.ContentType.Directory } }
+                    Dsl.Content.File { Name = "file3"; RelativePath = { PathType = Dsl.Source; Path = "path3"; ContentType = Dsl.ContentType.Directory } }
                 ]
                 SaveTempContent = fun rules ->
                     savedRules.AddRange rules
@@ -77,9 +77,9 @@ module ``scanRepositoryContent should`` =
         let _ = scanRepositoryContent infra ()
 
         let expected: Dsl.Rule list = [
-            { Path = Dsl.Source "path1"; SyncRule = Dsl.Include }
-            { Path = Dsl.Source "path2"; SyncRule = Dsl.Exclude }
-            { Path = Dsl.Source "path3"; SyncRule = Dsl.NoRule }
+            { Path = { PathType = Dsl.Source; Path = "path1"; ContentType = Dsl.ContentType.Directory }; SyncRule = Dsl.Include }
+            { Path = { PathType = Dsl.Source; Path = "path2"; ContentType = Dsl.ContentType.Directory }; SyncRule = Dsl.Exclude }
+            { Path = { PathType = Dsl.Source; Path = "path3"; ContentType = Dsl.ContentType.Directory }; SyncRule = Dsl.NoRule }
         ]
         test <@ savedRules |> Seq.toList = expected @>
 

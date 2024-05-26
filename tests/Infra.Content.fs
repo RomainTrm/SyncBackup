@@ -30,19 +30,19 @@ module Scan =
             setupDirectoryContent uniqueTestDirectory
             let result = Scan.run (TestHelpers.testDirectoryPath uniqueTestDirectory) []
             let expected : Content list = [
-                File { Name = "file"; RelativePath = Source "file" }
-                Directory { Name = "1. emptyDir"; RelativePath = Source "1. emptyDir"; Content = [] }
-                Directory { Name = "2. oneLevelDir"; RelativePath = Source "2. oneLevelDir"; Content = [
-                    File { Name = "file1"; RelativePath = Source "2. oneLevelDir\\file1" }
-                    File { Name = "file2"; RelativePath = Source "2. oneLevelDir\\file2" }
+                File { Name = "file"; RelativePath = { PathType = Source; Path = "file"; ContentType = ContentType.File } }
+                Directory { Name = "1. emptyDir"; RelativePath = { PathType = Source; Path = "1. emptyDir"; ContentType = ContentType.Directory }; Content = [] }
+                Directory { Name = "2. oneLevelDir"; RelativePath = { PathType = Source; Path = "2. oneLevelDir"; ContentType = ContentType.Directory }; Content = [
+                    File { Name = "file1"; RelativePath = { PathType = Source; Path = "2. oneLevelDir\\file1"; ContentType = ContentType.File } }
+                    File { Name = "file2"; RelativePath = { PathType = Source; Path = "2. oneLevelDir\\file2"; ContentType = ContentType.File } }
                 ] }
-                Directory { Name = "3. twoLevelsDir"; RelativePath = Source "3. twoLevelsDir"; Content = [
-                    Directory { Name = "subdir1"; RelativePath = Source "3. twoLevelsDir\\subdir1"; Content = [
-                        File { Name = "file1"; RelativePath = Source "3. twoLevelsDir\\subdir1\\file1"; }
-                        File { Name = "file2"; RelativePath = Source "3. twoLevelsDir\\subdir1\\file2"; }
+                Directory { Name = "3. twoLevelsDir"; RelativePath = { PathType = Source; Path = "3. twoLevelsDir"; ContentType = ContentType.Directory }; Content = [
+                    Directory { Name = "subdir1"; RelativePath = { PathType = Source; Path = "3. twoLevelsDir\\subdir1"; ContentType = ContentType.Directory }; Content = [
+                        File { Name = "file1"; RelativePath = { PathType = Source; Path = "3. twoLevelsDir\\subdir1\\file1"; ContentType = ContentType.File } }
+                        File { Name = "file2"; RelativePath = { PathType = Source; Path = "3. twoLevelsDir\\subdir1\\file2"; ContentType = ContentType.File } }
                     ] }
-                    Directory { Name = "subdir2"; RelativePath = Source "3. twoLevelsDir\\subdir2"; Content = [
-                        File { Name = "file"; RelativePath = Source "3. twoLevelsDir\\subdir2\\file"; }
+                    Directory { Name = "subdir2"; RelativePath = { PathType = Source; Path = "3. twoLevelsDir\\subdir2"; ContentType = ContentType.Directory }; Content = [
+                        File { Name = "file"; RelativePath = { PathType = Source; Path = "3. twoLevelsDir\\subdir2\\file"; ContentType = ContentType.File } }
                     ] }
                 ] }
             ]
@@ -77,19 +77,19 @@ module Scan =
             ]
 
             let expected : Content list = [
-                File { Name = "file"; RelativePath = Alias "MyAlias\\file" }
-                Directory { Name = "1. emptyDir"; RelativePath = Alias "MyAlias\\1. emptyDir"; Content = [] }
-                Directory { Name = "2. oneLevelDir"; RelativePath = Alias "MyAlias\\2. oneLevelDir"; Content = [
-                    File { Name = "file1"; RelativePath = Alias "MyAlias\\2. oneLevelDir\\file1" }
-                    File { Name = "file2"; RelativePath = Alias "MyAlias\\2. oneLevelDir\\file2" }
+                File { Name = "file"; RelativePath = { PathType = Alias; Path = "MyAlias\\file"; ContentType = ContentType.File } }
+                Directory { Name = "1. emptyDir"; RelativePath = { PathType = Alias; Path = "MyAlias\\1. emptyDir"; ContentType = ContentType.Directory }; Content = [] }
+                Directory { Name = "2. oneLevelDir"; RelativePath = { PathType = Alias; Path = "MyAlias\\2. oneLevelDir"; ContentType = ContentType.Directory }; Content = [
+                    File { Name = "file1"; RelativePath = { PathType = Alias; Path = "MyAlias\\2. oneLevelDir\\file1"; ContentType = ContentType.File } }
+                    File { Name = "file2"; RelativePath = { PathType = Alias; Path = "MyAlias\\2. oneLevelDir\\file2"; ContentType = ContentType.File } }
                 ] }
-                Directory { Name = "3. twoLevelsDir"; RelativePath = Alias "MyAlias\\3. twoLevelsDir"; Content = [
-                    Directory { Name = "subdir1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1"; Content = [
-                        File { Name = "file1"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; }
-                        File { Name = "file2"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; }
+                Directory { Name = "3. twoLevelsDir"; RelativePath = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir"; ContentType = ContentType.Directory }; Content = [
+                    Directory { Name = "subdir1"; RelativePath = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1"; ContentType = ContentType.Directory }; Content = [
+                        File { Name = "file1"; RelativePath = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = ContentType.File } }
+                        File { Name = "file2"; RelativePath = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = ContentType.File } }
                     ] }
-                    Directory { Name = "subdir2"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir2"; Content = [
-                        File { Name = "file"; RelativePath = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file"; }
+                    Directory { Name = "subdir2"; RelativePath = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = ContentType.Directory }; Content = [
+                        File { Name = "file"; RelativePath = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = ContentType.File } }
                     ] }
                 ] }
             ]
@@ -97,17 +97,17 @@ module Scan =
 
 module ScanFile =
     let content = [
-        { SyncRule = NoRule; Path = Alias "MyAlias\\file" }
-        { SyncRule = NoRule; Path = Source "MySource\\1. emptyDir" }
-        { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir" }
-        { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file1" }
-        { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file2" }
-        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir" }
-        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1" }
-        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1" }
-        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2" }
-        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2" }
-        { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file" }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\file"; ContentType = ContentType.File } }
+        { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\1. emptyDir"; ContentType = ContentType.Directory } }
+        { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\2. oneLevelDir"; ContentType = ContentType.Directory } }
+        { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\2. oneLevelDir\\file1"; ContentType = ContentType.File } }
+        { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\2. oneLevelDir\\file2"; ContentType = ContentType.File } }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir"; ContentType = ContentType.Directory } }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1"; ContentType = ContentType.Directory } }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = ContentType.File } }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = ContentType.File } }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = ContentType.Directory } }
+        { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = ContentType.File } }
     ]
 
     module ``writeFile should`` =
@@ -125,17 +125,17 @@ module ScanFile =
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
             let expected = [
-                "norule \"*MyAlias\\file\""
-                "norule \"MySource\\1. emptyDir\""
-                "norule \"MySource\\2. oneLevelDir\""
-                "norule \"MySource\\2. oneLevelDir\\file1\""
-                "norule \"MySource\\2. oneLevelDir\\file2\""
-                "norule \"*MyAlias\\3. twoLevelsDir\""
-                "norule \"*MyAlias\\3. twoLevelsDir\\subdir1\""
-                "norule \"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
-                "norule \"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
-                "norule \"*MyAlias\\3. twoLevelsDir\\subdir2\""
-                "norule \"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+                "norule file::\"*MyAlias\\file\""
+                "norule dir::\"MySource\\1. emptyDir\""
+                "norule dir::\"MySource\\2. oneLevelDir\""
+                "norule file::\"MySource\\2. oneLevelDir\\file1\""
+                "norule file::\"MySource\\2. oneLevelDir\\file2\""
+                "norule dir::\"*MyAlias\\3. twoLevelsDir\""
+                "norule dir::\"*MyAlias\\3. twoLevelsDir\\subdir1\""
+                "norule file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
+                "norule file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
+                "norule dir::\"*MyAlias\\3. twoLevelsDir\\subdir2\""
+                "norule file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
@@ -154,17 +154,17 @@ module ScanFile =
 
             let result = ScanFile.readFile path ()
             let expected = [
-                { SyncRule = NoRule; Path = Alias "MyAlias\\file" }
-                { SyncRule = NoRule; Path = Source "MySource\\1. emptyDir" }
-                { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir" }
-                { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file1" }
-                { SyncRule = NoRule; Path = Source "MySource\\2. oneLevelDir\\file2" }
-                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir" }
-                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1" }
-                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file1" }
-                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir1\\file2" }
-                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2" }
-                { SyncRule = NoRule; Path = Alias "MyAlias\\3. twoLevelsDir\\subdir2\\file" }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\file"; ContentType = ContentType.File } }
+                { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\1. emptyDir"; ContentType = ContentType.Directory } }
+                { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\2. oneLevelDir"; ContentType = ContentType.Directory } }
+                { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\2. oneLevelDir\\file1"; ContentType = ContentType.File } }
+                { SyncRule = NoRule; Path = { PathType = Source; Path = "MySource\\2. oneLevelDir\\file2"; ContentType = ContentType.File } }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir"; ContentType = ContentType.Directory } }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1"; ContentType = ContentType.Directory } }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = ContentType.File } }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = ContentType.File } }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = ContentType.Directory } }
+                { SyncRule = NoRule; Path = { PathType = Alias; Path = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = ContentType.File } }
             ]
             test <@ result = Ok expected @>
 
@@ -194,7 +194,11 @@ module TrackFile =
             TestHelpers.createDirectory [|uniqueTestDirectory|]
             TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
 
-            let content = [Source "line1"; Alias "line2"; Alias "line3"]
+            let content = [
+                { PathType = Source; Path = "line1"; ContentType = ContentType.File }
+                { PathType = Alias; Path = "line2"; ContentType = ContentType.File }
+                { PathType = Alias; Path = "line3"; ContentType = ContentType.File }
+            ]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
 
