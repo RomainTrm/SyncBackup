@@ -11,6 +11,7 @@
     <Compile Include="Commands.Config.fs" />
     <Compile Include="Commands.Content.fs" />
     <Compile Include="Infra.TestHelpers.fs" />
+    <Compile Include="Infra.Core.fs" />
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
   </ItemGroup>

@@ -47,8 +47,3 @@ let update (repositoryPath: RepositoryPath) (config: RepositoryConfig) =
 let load (repositoryPath: RepositoryPath) =
     getConfigFilePath repositoryPath
     |> Result.bind (File.ReadAllText >> FileSerializer.deserialize >> Ok)
-
-let checkPathExists (path: DirectoryPath) =
-    if Directory.Exists path
-    then Ok ()
-    else Error "The specified directory path doesn't exist"

@@ -12,6 +12,7 @@
     <Compile Include="Commands.Config.fs" />
     <Compile Include="Commands.Content.fs" />
     <Compile Include="Infra.Dsl.fs" />
+    <Compile Include="Infra.Core.fs" />
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
     <Compile Include="Infra.Editor.fs" />
