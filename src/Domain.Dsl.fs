@@ -69,6 +69,12 @@ module RelativePath =
             Ok { Value = buildPath strValue; ContentType = ContentType.Directory; Type = Source }
         | _ -> Error "Invalid format"
 
+    let contains child parent =
+        match child, parent with
+        | _ when child = parent -> true
+        | { Type = childType }, { Type = parentType } when childType <> parentType -> false
+        | { Value = childPath }, { Value = parentPath } -> childPath.StartsWith parentPath
+
 module SyncRules =
     let getValue = function
         | NoRule -> "norule"

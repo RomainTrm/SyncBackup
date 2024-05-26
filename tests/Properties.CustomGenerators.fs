@@ -9,5 +9,14 @@ type NonWhiteSpaceStringGenerator () =
             override x.Generator =
                 Arb.Default.NonWhiteSpaceString ()
                 |> Arb.toGen
-                |> Gen.map (fun x -> x.Get)
+                |> Gen.map _.Get
+        }
+
+type PathStringGenerator () =
+    static member String() = {
+        new Arbitrary<String>() with
+            override x.Generator =
+                Arb.Default.UnicodeString ()
+                |> Arb.toGen
+                |> Gen.map _.Get
         }
