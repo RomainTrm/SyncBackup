@@ -85,3 +85,8 @@ module SyncRules =
         | "exclude" -> Ok Exclude
         | "include" -> Ok Include
         | _ -> Error "Invalid rule"
+
+module ScanDiff =
+    let serialize = function
+        | Added -> "(added)"
+        | Removed -> "(removed)"

@@ -117,17 +117,17 @@ module ScanFile =
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
             let expected = [
-                "norule file::\"*MyAlias\\file\""
-                "norule dir::\"MySource\\1. emptyDir\""
-                "norule dir::\"MySource\\2. oneLevelDir\""
-                "norule file::\"MySource\\2. oneLevelDir\\file1\""
-                "norule file::\"MySource\\2. oneLevelDir\\file2\""
-                "norule dir::\"*MyAlias\\3. twoLevelsDir\""
-                "norule dir::\"*MyAlias\\3. twoLevelsDir\\subdir1\""
-                "norule file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
-                "norule file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
-                "norule dir::\"*MyAlias\\3. twoLevelsDir\\subdir2\""
-                "norule file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+                "norule (added) file::\"*MyAlias\\file\""
+                "norule (added) dir::\"MySource\\1. emptyDir\""
+                "norule (added) dir::\"MySource\\2. oneLevelDir\""
+                "norule (added) file::\"MySource\\2. oneLevelDir\\file1\""
+                "norule (added) file::\"MySource\\2. oneLevelDir\\file2\""
+                "norule (added) dir::\"*MyAlias\\3. twoLevelsDir\""
+                "norule (added) dir::\"*MyAlias\\3. twoLevelsDir\\subdir1\""
+                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
+                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
+                "norule (added) dir::\"*MyAlias\\3. twoLevelsDir\\subdir2\""
+                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
