@@ -25,21 +25,16 @@ let private updateRules oldRules =
             Rules.replace rules rule
     ) oldRules
 
-let rec private buildRule (existingRules: Map<RelativePath, Rule>) path =
-    existingRules
-    |> Map.tryFind path
-    |> Option.defaultValue { Path = path; SyncRule = NoRule }
-
 let scanRepositoryContent (infra: Infra) () =
     result {
         let! config = infra.LoadConfig ()
-        let existingRules = config.Rules |> Seq.map (fun rule -> rule.Path, rule) |> Map
         let! repositoryContent =
             config.Aliases
             |> infra.LoadRepositoryContent
+            |> Rules.buildRules config.Rules
             |> function
                 | [] -> Error "Repository is empty."
-                | content -> content |> List.map (buildRule existingRules) |> Ok
+                | content -> Ok content
 
         do! infra.SaveTempContent repositoryContent
         do! infra.OpenForUserEdition ()
