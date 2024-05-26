@@ -11,10 +11,10 @@ open SyncBackup.Tests.Properties.CustomGenerators
 module ``scanRepositoryContent should`` =
     let defaultInfra = {
         LoadConfig = fun _ -> failwith "not implemented"
-        LoadRepositoryContent = fun _ -> failwith "not implemented"
-        SaveTempContent = fun _ -> failwith "not implemented"
-        OpenForUserEdition = fun _ -> failwith "not implemented"
-        ReadTempContent = fun _ -> failwith "not implemented"
+        ScanRepositoryContent = fun _ -> failwith "not implemented"
+        SaveScanFileContent = fun _ -> failwith "not implemented"
+        OpenScanFileForUserEdition = fun _ -> failwith "not implemented"
+        ReadScanFileContent = fun _ -> failwith "not implemented"
         SaveTrackFile = fun _ -> failwith "not implemented"
         SaveRules = fun _ -> failwith "not implemented"
     }
@@ -31,13 +31,13 @@ module ``scanRepositoryContent should`` =
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
-            LoadRepositoryContent = fun a ->
+            ScanRepositoryContent = fun a ->
                 test <@ a = aliases @>
                 content
-            SaveTempContent = fun _ ->
+            SaveScanFileContent = fun _ ->
                 calls.Add "save temp file" |> Ok
-            OpenForUserEdition = fun () -> calls.Add "open editor" |> Ok
-            ReadTempContent = fun () -> Ok contentEdited
+            OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
+            ReadScanFileContent = fun () -> Ok contentEdited
             SaveTrackFile = fun c ->
                 let expected = contentEdited |> List.map _.Path
                 test <@ c = expected @>
@@ -64,12 +64,12 @@ module ``scanRepositoryContent should`` =
                             { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }
                         ]
                 }
-                LoadRepositoryContent = fun _ -> [
+                ScanRepositoryContent = fun _ -> [
                     { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
                     { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
                     { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
                 ]
-                SaveTempContent = fun rules ->
+                SaveScanFileContent = fun rules ->
                     savedRules.AddRange rules
                     Error "I don't want to setup the rest of the infra"
         }
@@ -88,7 +88,7 @@ module ``scanRepositoryContent should`` =
         let infra = {
             defaultInfra with
                 LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
-                LoadRepositoryContent = fun a ->
+                ScanRepositoryContent = fun a ->
                     test <@ a = aliases @>
                     []
         }
