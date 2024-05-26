@@ -56,11 +56,11 @@ module ScanFile =
                     |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> SyncRules)
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
-            yield! rules |> List.map printRule
+            yield! rules |> List.map (fst >> printRule)
         ]
         String.Join (Dsl.NewLine, fileLines)
 
-    let writeFile (repositoryPath: RepositoryPath) (rules: Rule list) =
+    let writeFile (repositoryPath: RepositoryPath) (rules: (Rule * ScanDiff) list) =
         let fileContent = buildFileContent rules
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)

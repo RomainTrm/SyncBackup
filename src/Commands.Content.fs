@@ -8,7 +8,7 @@ open SyncBackup.Domain.Dsl
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
     LoadRepositoryContent: Alias list -> RelativePath list
-    SaveTempContent: Rule list -> Result<unit, string>
+    SaveTempContent: (Rule * ScanDiff) list -> Result<unit, string>
     OpenForUserEdition: unit -> Result<unit, string>
     ReadTempContent: unit -> Result<Rule list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>
@@ -32,6 +32,7 @@ let scanRepositoryContent (infra: Infra) () =
             config.Aliases
             |> infra.LoadRepositoryContent
             |> Rules.buildRules config.Rules
+            |> List.map (fun rule -> rule, Added)
             |> function
                 | [] -> Error "Repository is empty."
                 | content -> Ok content

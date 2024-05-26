@@ -34,6 +34,7 @@ and SyncRules =
     | NoRule
     | Exclude
     | Include
+and ScanDiff = Added | Removed
 
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"
@@ -67,7 +68,6 @@ module RelativePath =
         | _ when strValue.StartsWith DirectoryPrefix ->
             Ok { Value = buildPath strValue; ContentType = ContentType.Directory; Type = Source }
         | _ -> Error "Invalid format"
-
 
 module SyncRules =
     let getValue = function
