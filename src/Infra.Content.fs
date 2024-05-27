@@ -43,8 +43,8 @@ module Scan =
 module ScanFile =
     open Microsoft.FSharp.Reflection
 
-    let rec private printRule (rule, diff) =
-        $"{ScanDiff.activeLine diff}{SyncRules.getValue rule.SyncRule} {ScanDiff.serialize diff} {RelativePath.serialize rule.Path}"
+    let rec private print scanResult =
+        $"{ScanDiff.activeLine scanResult.Diff}{SyncRules.getValue scanResult.SyncRule} {ScanDiff.serialize scanResult.Diff} {RelativePath.serialize scanResult.Path}"
 
     let private buildFileContent (rules: ScanResult list) =
         let fileLines = [
@@ -56,7 +56,7 @@ module ScanFile =
                     |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> SyncRules)
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
-            yield! rules |> List.map printRule
+            yield! rules |> List.map print
         ]
         String.Join (Dsl.NewLine, fileLines)
 
@@ -76,7 +76,7 @@ module ScanFile =
                 let! rule = SyncRules.parse rule
                 let! path = String.Join(' ', path) |> RelativePath.deserialize
                 let! diff = ScanDiff.deserialize scanDiff
-                return { SyncRule = rule; Path = path }, diff
+                return { SyncRule = rule; Path = path; Diff = diff }
             }
         | _ -> Error "Invalid format"
 

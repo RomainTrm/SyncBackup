@@ -13,34 +13,35 @@ let buildScanResult (existingRules: Rule list) (trackedElements: RelativePath li
             Set.difference scannedElements trackedElements
             |> Set.toList
             |> Rules.buildRules existingRules
-            |> List.map (fun rule -> rule, AddedToRepository)
+            |> List.map (ScanResult.build AddedToRepository)
 
         let removed =
             Set.difference trackedElements scannedElements
             |> Set.toList
             |> Rules.buildRules existingRules
-            |> List.map (fun rule -> rule, RemovedFromRepository)
+            |> List.map (ScanResult.build RemovedFromRepository)
 
         let delta = added@removed
         let rulesReminders =
             existingRules
             |> List.collect (fun existingRule ->
-                let deltaPaths = delta |> Seq.map (fst>>_.Path)
+                let deltaPaths = delta |> Seq.map _.Path
                 match deltaPaths |> Seq.contains existingRule.Path with
                 | true -> []
                 | false ->
                     if deltaPaths |> Seq.exists (fun childPath -> RelativePath.contains childPath existingRule.Path)
-                    then [existingRule, RuleReminder]
+                    then [ScanResult.build RuleReminder existingRule]
                     else []
             )
 
         (delta@rulesReminders)
-        |> List.sortBy (fun (rule, _) -> rule.Path.Value)
+        |> List.sortBy _.Path.Value
         |> Ok
 
 let defineTrackedElements (trackedElements: RelativePath list) (scannedElements: ScanResult list) =
-    let removedElements = scannedElements |> Seq.filter (fun scan -> (snd scan) = RemovedFromRepository) |> Seq.map (fst>>_.Path) |> Set
-    let addedElements = scannedElements |> Seq.filter (fun scan -> (snd scan) = AddedToRepository) |> Seq.map (fst>>_.Path) |> Set
+    let filter diff = scannedElements |> Seq.filter (fun scan -> scan.Diff = diff) |> Seq.map _.Path |> Set
+    let removedElements = filter RemovedFromRepository
+    let addedElements = filter AddedToRepository
 
     Set.difference (Set trackedElements) removedElements
     |> Set.union addedElements

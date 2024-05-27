@@ -40,7 +40,7 @@ let scanRepositoryContent (infra: Infra) () =
 
         let! editedRules = infra.ReadScanFileContent ()
         do! infra.SaveTrackFile (Scan.defineTrackedElements trackedElements editedRules)
-        let rulesToSave = editedRules |> List.map fst |> updateRules config.Rules
+        let rulesToSave = editedRules |> List.map _.Rule |> updateRules config.Rules
         do! infra.SaveRules rulesToSave
 
         return ()

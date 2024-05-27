@@ -38,7 +38,11 @@ and ScanDiff =
     | AddedToRepository
     | RemovedFromRepository
     | RuleReminder
-and ScanResult = Rule * ScanDiff
+and ScanResult = {
+    Path: RelativePath
+    SyncRule: SyncRules
+    Diff: ScanDiff
+} with member this.Rule = { Path = this.Path; SyncRule = this.SyncRule }
 
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"
@@ -95,6 +99,13 @@ module SyncRules =
         | "exclude" -> Ok Exclude
         | "include" -> Ok Include
         | _ -> Error "Invalid rule"
+
+module ScanResult =
+    let build diff (rule: Rule) = {
+        Path = rule.Path
+        SyncRule = rule.SyncRule
+        Diff = diff
+    }
 
 module ScanDiff =
     let serialize = function

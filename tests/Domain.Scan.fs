@@ -23,14 +23,14 @@ module ``buildScanResult should`` =
     let ``return all paths as added without rule when no tracked neither rules`` paths =
         paths <> [] ==> lazy
         let result = buildScanResult [] [] paths
-        let expected = paths |> List.map (fun path -> { SyncRule = NoRule; Path = path }, AddedToRepository)
+        let expected = paths |> List.map (fun path -> { SyncRule = NoRule; Path = path; Diff = AddedToRepository })
         result |> isAsExpected expected
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
     let ``return path with existing rule`` path syncRule =
         let rule = { SyncRule = syncRule; Path = path }
         let result = buildScanResult [rule] [] [path]
-        result |> isAsExpected [rule, AddedToRepository]
+        result |> isAsExpected [ScanResult.build AddedToRepository rule]
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
     let ``return only delta between scan and tracked elements`` (paths: RelativePath list) =
@@ -39,8 +39,8 @@ module ``buildScanResult should`` =
         let added::removed::common = paths
         let result = buildScanResult [] (removed::common) (added::common)
         let expected = [
-            { SyncRule = NoRule; Path = removed }, RemovedFromRepository
-            { SyncRule = NoRule; Path = added }, AddedToRepository
+            { SyncRule = NoRule; Path = removed; Diff = RemovedFromRepository }
+            { SyncRule = NoRule; Path = added; Diff = AddedToRepository }
         ]
         result |> isAsExpected expected
 
@@ -52,8 +52,8 @@ module ``buildScanResult should`` =
         let result = buildScanResult [{ SyncRule = Include; Path = subPath }] [subPath] [subPath; path]
 
         let expected = [
-            { SyncRule = Include; Path = subPath }, RuleReminder
-            { SyncRule = NoRule; Path = path }, AddedToRepository
+            { SyncRule = Include; Path = subPath; Diff = RuleReminder }
+            { SyncRule = NoRule; Path = path; Diff = AddedToRepository }
         ]
         result |> isAsExpected expected
 
@@ -65,10 +65,10 @@ module ``defineTrackedElements should`` =
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
     let ``add elements that are flag as added`` tracked element =
-        let result = defineTrackedElements tracked [element, AddedToRepository]
+        let result = defineTrackedElements tracked [ScanResult.build AddedToRepository element]
         test <@ Set  result = Set (tracked@[element.Path]) @>
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
-    let ``removed elements that are flag as removed`` tracked element =
-        let result = defineTrackedElements (tracked@[element.Path]) [element, RemovedFromRepository]
+    let ``removed elements that are flag as removed`` tracked (rule: Rule) =
+        let result = defineTrackedElements (tracked@[rule.Path]) [ScanResult.build RemovedFromRepository rule]
         test <@ Set result = Set tracked @>

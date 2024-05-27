@@ -28,7 +28,7 @@ module ``scanRepositoryContent should`` =
     [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator> |])>]
     let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.ScanResult list) =
         content <> [] ==> lazy
-        let contentEdited = contentEdited |> List.distinctBy (fst>>_.Path)
+        let contentEdited = contentEdited |> List.distinctBy _.Path
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
@@ -41,11 +41,11 @@ module ``scanRepositoryContent should`` =
             OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadScanFileContent = fun () -> Ok contentEdited
             SaveTrackFile = fun c ->
-                let expected = contentEdited |> List.filter (fun scan -> (snd scan) = Dsl.AddedToRepository) |> List.map (fst>>_.Path)
+                let expected = contentEdited |> List.filter (fun scan -> scan.Diff = Dsl.AddedToRepository) |> List.map _.Path
                 test <@ Set c = Set expected @>
                 calls.Add "save track file" |> Ok
             SaveRules = fun rules ->
-                let expected = contentEdited |> List.filter (fun scanResult -> (fst scanResult).SyncRule <> Dsl.NoRule) |> List.map fst
+                let expected = contentEdited |> List.filter (fun scanResult -> scanResult.SyncRule <> Dsl.NoRule) |> List.map _.Rule
                 test <@ rules = expected @>
                 calls.Add "save rules" |> Ok
         }
@@ -79,10 +79,10 @@ module ``scanRepositoryContent should`` =
 
         let _ = scanRepositoryContent infra ()
 
-        let expected: (Dsl.Rule * Dsl.ScanDiff) list = [
-            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include }, Dsl.AddedToRepository
-            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }, Dsl.AddedToRepository
-            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule }, Dsl.AddedToRepository
+        let expected: Dsl.ScanResult list = [
+            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule; Diff = Dsl.AddedToRepository }
         ]
         test <@ savedRules |> Seq.toList = expected @>
 
