@@ -89,9 +89,9 @@ module Scan =
 
 module ScanFile =
     let content = [
-        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\file"; ContentType = File } }, AddedToRepository
+        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\file"; ContentType = File } }, RemovedFromRepository
         { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\1. emptyDir"; ContentType = Directory } }, AddedToRepository
-        { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir"; ContentType = Directory } }, AddedToRepository
+        { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir"; ContentType = Directory } }, RuleReminder
         { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir\\file1"; ContentType = File } }, AddedToRepository
         { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir\\file2"; ContentType = File } }, AddedToRepository
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir"; ContentType = Directory } }, AddedToRepository
@@ -117,9 +117,9 @@ module ScanFile =
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
             let expected = [
-                "norule (added) file::\"*MyAlias\\file\""
+                "norule (removed) file::\"*MyAlias\\file\""
                 "norule (added) dir::\"MySource\\1. emptyDir\""
-                "norule (added) dir::\"MySource\\2. oneLevelDir\""
+                "# norule (nochange) dir::\"MySource\\2. oneLevelDir\""
                 "norule (added) file::\"MySource\\2. oneLevelDir\\file1\""
                 "norule (added) file::\"MySource\\2. oneLevelDir\\file2\""
                 "norule (added) dir::\"*MyAlias\\3. twoLevelsDir\""
@@ -144,19 +144,18 @@ module ScanFile =
             let result = ScanFile.writeFile path content
             test <@ result = Ok () @>
 
-            let result = ScanFile.readFile path ()
+            let result = ScanFile.readFile path
             let expected = [
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\file"; ContentType = File } }
-                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\1. emptyDir"; ContentType = Directory } }
-                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir"; ContentType = Directory } }
-                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir\\file1"; ContentType = File } }
-                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir\\file2"; ContentType = File } }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir"; ContentType = Directory } }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1"; ContentType = Directory } }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = File } }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = File } }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory } }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File } }
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\file"; ContentType = File } }, RemovedFromRepository
+                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\1. emptyDir"; ContentType = Directory } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir\\file1"; ContentType = File } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Source; Value = "MySource\\2. oneLevelDir\\file2"; ContentType = File } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir"; ContentType = Directory } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1"; ContentType = Directory } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = File } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = File } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory } }, AddedToRepository
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File } }, AddedToRepository
             ]
             test <@ result = Ok expected @>
 
@@ -173,7 +172,7 @@ module ScanFile =
             let filePath = Dsl.getScanFileFilePath path
             System.IO.File.WriteAllText (filePath, line)
 
-            let result = ScanFile.readFile path ()
+            let result = ScanFile.readFile path
             test <@ result = Error "Invalid format" @>
 
 module TrackFile =

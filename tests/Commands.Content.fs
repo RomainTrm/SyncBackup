@@ -26,9 +26,9 @@ module ``scanRepositoryContent should`` =
     }
 
     [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator> |])>]
-    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.Rule list) =
+    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.ScanResult list) =
         content <> [] ==> lazy
-        let contentEdited = contentEdited |> List.distinctBy _.Path
+        let contentEdited = contentEdited |> List.distinctBy (fst>>_.Path)
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
@@ -41,11 +41,11 @@ module ``scanRepositoryContent should`` =
             OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadScanFileContent = fun () -> Ok contentEdited
             SaveTrackFile = fun c ->
-                let expected = contentEdited |> List.map _.Path
+                let expected = contentEdited |> List.map (fst>>_.Path)
                 test <@ c = expected @>
                 calls.Add "save track file" |> Ok
             SaveRules = fun rules ->
-                let expected = contentEdited |> List.filter (fun rule -> rule.SyncRule <> Dsl.NoRule)
+                let expected = contentEdited |> List.filter (fun scanResult -> (fst scanResult).SyncRule <> Dsl.NoRule) |> List.map fst
                 test <@ rules = expected @>
                 calls.Add "save rules" |> Ok
         }

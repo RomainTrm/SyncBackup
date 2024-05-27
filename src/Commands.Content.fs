@@ -10,7 +10,7 @@ type Infra = {
     ScanRepositoryContent: Alias list -> RelativePath list
     SaveScanFileContent: ScanResult list -> Result<unit, string>
     OpenScanFileForUserEdition: unit -> Result<unit, string>
-    ReadScanFileContent: unit -> Result<Rule list, string>
+    ReadScanFileContent: unit -> Result<ScanResult list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>
     LoadTrackFile: unit -> Result<RelativePath list, string>
     SaveRules: Rule list -> Result<unit, string>
@@ -39,8 +39,8 @@ let scanRepositoryContent (infra: Infra) () =
         do! infra.OpenScanFileForUserEdition ()
 
         let! editedRules = infra.ReadScanFileContent ()
-        do! infra.SaveTrackFile (editedRules |> List.map _.Path)
-        let rulesToSave = editedRules |> updateRules config.Rules
+        do! infra.SaveTrackFile (editedRules |> List.map (fst>>_.Path))
+        let rulesToSave = editedRules |> List.map fst |> updateRules config.Rules
         do! infra.SaveRules rulesToSave
 
         return ()

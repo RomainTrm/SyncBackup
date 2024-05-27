@@ -21,7 +21,7 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Content.Infra = {
     OpenScanFileForUserEdition = fun () ->
         SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
         |> SyncBackup.Infra.Editor.VsCode.runEditor
-    ReadScanFileContent = SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
+    ReadScanFileContent = fun () -> SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
     SaveTrackFile = SyncBackup.Infra.Content.TrackFile.save currentDirectory
     SaveRules = fun rules ->
         SyncBackup.Infra.Config.load currentDirectory

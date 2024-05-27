@@ -102,6 +102,12 @@ module ScanDiff =
         | RemovedFromRepository -> "(removed)"
         | RuleReminder -> "(nochange)"
 
+    let deserialize = function
+        | "(added)" -> Ok AddedToRepository
+        | "(removed)" -> Ok RemovedFromRepository
+        | "(nochange)" -> Ok RuleReminder
+        | _ -> Error "Invalid diff"
+
     let activeLine = function
         | AddedToRepository -> ""
         | RemovedFromRepository -> ""

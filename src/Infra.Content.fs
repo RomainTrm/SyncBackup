@@ -69,21 +69,22 @@ module ScanFile =
     let private removeComments (contentLine: string) =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
-    let private parseRule (contentLine: string) =
+    let private parseSyncResult (contentLine: string) =
         match contentLine.Split ' ' |> Seq.toList with
-        | rule::_::path ->
+        | rule::scanDiff::path ->
             result {
                 let! rule = SyncRules.parse rule
                 let! path = String.Join(' ', path) |> RelativePath.deserialize
-                return { SyncRule = rule; Path = path }
+                let! diff = ScanDiff.deserialize scanDiff
+                return { SyncRule = rule; Path = path }, diff
             }
         | _ -> Error "Invalid format"
 
-    let readFile (repositoryPath: RepositoryPath) () =
+    let readFile (repositoryPath: RepositoryPath) =
         Dsl.getScanFileFilePath repositoryPath
         |> File.ReadAllLines
         |> Seq.filter removeComments
-        |> Seq.map parseRule
+        |> Seq.map parseSyncResult
         |> Seq.fold (fun result content ->
             match result, content with
             | Ok result, Ok content -> Ok (result@[content])
