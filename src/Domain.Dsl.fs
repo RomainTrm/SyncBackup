@@ -34,6 +34,15 @@ and SyncRules =
     | NoRule
     | Exclude
     | Include
+and ScanDiff =
+    | AddedToRepository
+    | RemovedFromRepository
+    | RuleReminder
+and ScanResult = {
+    Path: RelativePath
+    SyncRule: SyncRules
+    Diff: ScanDiff
+} with member this.Rule = { Path = this.Path; SyncRule = this.SyncRule }
 
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"
@@ -68,6 +77,11 @@ module RelativePath =
             Ok { Value = buildPath strValue; ContentType = ContentType.Directory; Type = Source }
         | _ -> Error "Invalid format"
 
+    let contains child parent =
+        match child, parent with
+        | _ when child = parent -> true
+        | { Type = childType }, { Type = parentType } when childType <> parentType -> false
+        | { Value = childPath }, { Value = parentPath } -> childPath.StartsWith parentPath
 
 module SyncRules =
     let getValue = function
@@ -85,3 +99,27 @@ module SyncRules =
         | "exclude" -> Ok Exclude
         | "include" -> Ok Include
         | _ -> Error "Invalid rule"
+
+module ScanResult =
+    let build diff (rule: Rule) = {
+        Path = rule.Path
+        SyncRule = rule.SyncRule
+        Diff = diff
+    }
+
+module ScanDiff =
+    let serialize = function
+        | AddedToRepository -> "(added)"
+        | RemovedFromRepository -> "(removed)"
+        | RuleReminder -> "(nochange)"
+
+    let deserialize = function
+        | "(added)" -> Ok AddedToRepository
+        | "(removed)" -> Ok RemovedFromRepository
+        | "(nochange)" -> Ok RuleReminder
+        | _ -> Error "Invalid diff"
+
+    let activeLine = function
+        | AddedToRepository -> ""
+        | RemovedFromRepository -> ""
+        | RuleReminder -> "# "

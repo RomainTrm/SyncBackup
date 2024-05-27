@@ -43,10 +43,10 @@ module Scan =
 module ScanFile =
     open Microsoft.FSharp.Reflection
 
-    let rec private printRule rule =
-        $"{SyncRules.getValue rule.SyncRule} {RelativePath.serialize rule.Path}"
+    let rec private print scanResult =
+        $"{ScanDiff.activeLine scanResult.Diff}{SyncRules.getValue scanResult.SyncRule} {ScanDiff.serialize scanResult.Diff} {RelativePath.serialize scanResult.Path}"
 
-    let private buildFileContent rules =
+    let private buildFileContent (rules: ScanResult list) =
         let fileLines = [
             "# Repository scan complete!"
             "# Use '#' to comment a line"
@@ -56,11 +56,11 @@ module ScanFile =
                     |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> SyncRules)
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
-            yield! rules |> List.map printRule
+            yield! rules |> List.map print
         ]
         String.Join (Dsl.NewLine, fileLines)
 
-    let writeFile (repositoryPath: RepositoryPath) (rules: Rule list) =
+    let writeFile (repositoryPath: RepositoryPath) (rules: ScanResult list) =
         let fileContent = buildFileContent rules
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
@@ -69,22 +69,22 @@ module ScanFile =
     let private removeComments (contentLine: string) =
         not (String.IsNullOrWhiteSpace contentLine || contentLine.StartsWith "#")
 
-    let private parseRule (contentLine: string) =
+    let private parseSyncResult (contentLine: string) =
         match contentLine.Split ' ' |> Seq.toList with
-        | []
-        | [_] -> Error "Invalid format"
-        | rule::path ->
+        | rule::scanDiff::path ->
             result {
                 let! rule = SyncRules.parse rule
                 let! path = String.Join(' ', path) |> RelativePath.deserialize
-                return { SyncRule = rule; Path = path }
+                let! diff = ScanDiff.deserialize scanDiff
+                return { SyncRule = rule; Path = path; Diff = diff }
             }
+        | _ -> Error "Invalid format"
 
-    let readFile (repositoryPath: RepositoryPath) () =
+    let readFile (repositoryPath: RepositoryPath) =
         Dsl.getScanFileFilePath repositoryPath
         |> File.ReadAllLines
         |> Seq.filter removeComments
-        |> Seq.map parseRule
+        |> Seq.map parseSyncResult
         |> Seq.fold (fun result content ->
             match result, content with
             | Ok result, Ok content -> Ok (result@[content])
@@ -98,3 +98,17 @@ module TrackFile =
         let contentLines = contentPaths |> List.map RelativePath.serialize
         File.WriteAllLines (filePath, contentLines)
         Ok ()
+
+    let load (repositoryPath: RepositoryPath) =
+        let filePath = Dsl.getTrackFileFilePath repositoryPath
+        if not (File.Exists filePath)
+        then Ok []
+        else
+            File.ReadAllLines filePath
+            |> Seq.fold (fun paths line ->
+                paths
+                |> Result.bind (fun paths ->
+                    RelativePath.deserialize line
+                    |> Result.map (fun path -> paths@[path])
+                )
+            ) (Ok [])

@@ -11,10 +11,11 @@ open SyncBackup.Tests.Properties.CustomGenerators
 module ``scanRepositoryContent should`` =
     let defaultInfra = {
         LoadConfig = fun _ -> failwith "not implemented"
-        LoadRepositoryContent = fun _ -> failwith "not implemented"
-        SaveTempContent = fun _ -> failwith "not implemented"
-        OpenForUserEdition = fun _ -> failwith "not implemented"
-        ReadTempContent = fun _ -> failwith "not implemented"
+        LoadTrackFile = fun _ -> failwith "not implemented"
+        ScanRepositoryContent = fun _ -> failwith "not implemented"
+        SaveScanFileContent = fun _ -> failwith "not implemented"
+        OpenScanFileForUserEdition = fun _ -> failwith "not implemented"
+        ReadScanFileContent = fun _ -> failwith "not implemented"
         SaveTrackFile = fun _ -> failwith "not implemented"
         SaveRules = fun _ -> failwith "not implemented"
     }
@@ -25,25 +26,26 @@ module ``scanRepositoryContent should`` =
     }
 
     [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator> |])>]
-    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.Rule list) =
+    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.ScanResult list) =
         content <> [] ==> lazy
         let contentEdited = contentEdited |> List.distinctBy _.Path
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
-            LoadRepositoryContent = fun a ->
+            LoadTrackFile = fun () -> Ok []
+            ScanRepositoryContent = fun a ->
                 test <@ a = aliases @>
                 content
-            SaveTempContent = fun _ ->
+            SaveScanFileContent = fun _ ->
                 calls.Add "save temp file" |> Ok
-            OpenForUserEdition = fun () -> calls.Add "open editor" |> Ok
-            ReadTempContent = fun () -> Ok contentEdited
+            OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
+            ReadScanFileContent = fun () -> Ok contentEdited
             SaveTrackFile = fun c ->
-                let expected = contentEdited |> List.map _.Path
-                test <@ c = expected @>
+                let expected = contentEdited |> List.filter (fun scan -> scan.Diff = Dsl.AddedToRepository) |> List.map _.Path
+                test <@ Set c = Set expected @>
                 calls.Add "save track file" |> Ok
             SaveRules = fun rules ->
-                let expected = contentEdited |> List.filter (fun rule -> rule.SyncRule <> Dsl.NoRule)
+                let expected = contentEdited |> List.filter (fun scanResult -> scanResult.SyncRule <> Dsl.NoRule) |> List.map _.Rule
                 test <@ rules = expected @>
                 calls.Add "save rules" |> Ok
         }
@@ -64,22 +66,23 @@ module ``scanRepositoryContent should`` =
                             { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }
                         ]
                 }
-                LoadRepositoryContent = fun _ -> [
+                LoadTrackFile = fun () -> Ok []
+                ScanRepositoryContent = fun _ -> [
                     { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
                     { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
                     { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
                 ]
-                SaveTempContent = fun rules ->
+                SaveScanFileContent = fun rules ->
                     savedRules.AddRange rules
                     Error "I don't want to setup the rest of the infra"
         }
 
         let _ = scanRepositoryContent infra ()
 
-        let expected: Dsl.Rule list = [
-            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include }
-            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }
-            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule }
+        let expected: Dsl.ScanResult list = [
+            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule; Diff = Dsl.AddedToRepository }
         ]
         test <@ savedRules |> Seq.toList = expected @>
 
@@ -88,10 +91,43 @@ module ``scanRepositoryContent should`` =
         let infra = {
             defaultInfra with
                 LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
-                LoadRepositoryContent = fun a ->
+                LoadTrackFile = fun () -> Ok []
+                ScanRepositoryContent = fun a ->
                     test <@ a = aliases @>
                     []
         }
 
         let result = scanRepositoryContent infra ()
         test <@ result = Error "Repository is empty." @>
+
+    [<Fact>]
+    let ``remove deleted elements from track and not discard unmodified elements`` () =
+        let savedTrackedElements = System.Collections.Generic.List<_> ()
+        let scanResult = System.Collections.Generic.List<_> ()
+        let infra = {
+            LoadConfig = fun () -> Ok defaultConfig
+            LoadTrackFile = fun () -> Ok [
+                { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+            ]
+            ScanRepositoryContent = fun _ -> [
+                { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path4"; ContentType = Dsl.Directory }
+            ]
+            SaveScanFileContent = scanResult.AddRange >> Ok
+            OpenScanFileForUserEdition = Ok
+            ReadScanFileContent = fun () -> scanResult |> Seq.toList |> Ok
+            SaveTrackFile = savedTrackedElements.AddRange >> Ok
+            SaveRules = fun _ -> Ok ()
+        }
+
+        let _ = scanRepositoryContent infra ()
+
+        let expected : Dsl.RelativePath list = [
+            { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
+            { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+            { Type = Dsl.Source; Value = "path4"; ContentType = Dsl.Directory }
+        ]
+        test <@ savedTrackedElements |> Seq.toList = expected @>

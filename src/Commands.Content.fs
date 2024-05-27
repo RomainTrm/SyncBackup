@@ -7,11 +7,12 @@ open SyncBackup.Domain.Dsl
 
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
-    LoadRepositoryContent: Alias list -> RelativePath list
-    SaveTempContent: Rule list -> Result<unit, string>
-    OpenForUserEdition: unit -> Result<unit, string>
-    ReadTempContent: unit -> Result<Rule list, string>
+    ScanRepositoryContent: Alias list -> RelativePath list
+    SaveScanFileContent: ScanResult list -> Result<unit, string>
+    OpenScanFileForUserEdition: unit -> Result<unit, string>
+    ReadScanFileContent: unit -> Result<ScanResult list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>
+    LoadTrackFile: unit -> Result<RelativePath list, string>
     SaveRules: Rule list -> Result<unit, string>
 }
 
@@ -28,20 +29,18 @@ let private updateRules oldRules =
 let scanRepositoryContent (infra: Infra) () =
     result {
         let! config = infra.LoadConfig ()
+        let! trackedElements = infra.LoadTrackFile ()
         let! repositoryContent =
             config.Aliases
-            |> infra.LoadRepositoryContent
-            |> Rules.buildRules config.Rules
-            |> function
-                | [] -> Error "Repository is empty."
-                | content -> Ok content
+            |> infra.ScanRepositoryContent
+            |> Scan.buildScanResult config.Rules trackedElements
 
-        do! infra.SaveTempContent repositoryContent
-        do! infra.OpenForUserEdition ()
+        do! infra.SaveScanFileContent repositoryContent
+        do! infra.OpenScanFileForUserEdition ()
 
-        let! editedRules = infra.ReadTempContent ()
-        do! infra.SaveTrackFile (editedRules |> List.map _.Path)
-        let rulesToSave = editedRules |> updateRules config.Rules
+        let! editedRules = infra.ReadScanFileContent ()
+        do! infra.SaveTrackFile (Scan.defineTrackedElements trackedElements editedRules)
+        let rulesToSave = editedRules |> List.map _.Rule |> updateRules config.Rules
         do! infra.SaveRules rulesToSave
 
         return ()

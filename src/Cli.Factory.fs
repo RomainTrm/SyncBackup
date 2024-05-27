@@ -14,13 +14,14 @@ let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
 }
 
 let contentCommandInfra currentDirectory : SyncBackup.Commands.Content.Infra = {
-    LoadRepositoryContent = SyncBackup.Infra.Content.Scan.run currentDirectory
+    ScanRepositoryContent = SyncBackup.Infra.Content.Scan.run currentDirectory
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
-    SaveTempContent = SyncBackup.Infra.Content.ScanFile.writeFile currentDirectory
-    OpenForUserEdition = fun () ->
+    LoadTrackFile = fun () -> SyncBackup.Infra.Content.TrackFile.load currentDirectory
+    SaveScanFileContent = SyncBackup.Infra.Content.ScanFile.writeFile currentDirectory
+    OpenScanFileForUserEdition = fun () ->
         SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory
         |> SyncBackup.Infra.Editor.VsCode.runEditor
-    ReadTempContent = SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
+    ReadScanFileContent = fun () -> SyncBackup.Infra.Content.ScanFile.readFile currentDirectory
     SaveTrackFile = SyncBackup.Infra.Content.TrackFile.save currentDirectory
     SaveRules = fun rules ->
         SyncBackup.Infra.Config.load currentDirectory
