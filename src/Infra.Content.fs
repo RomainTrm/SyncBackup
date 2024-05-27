@@ -57,6 +57,8 @@ module ScanFile =
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
             yield! rules |> List.map print
+            if rules = []
+            then "# No change, your repository is up to date."
         ]
         String.Join (Dsl.NewLine, fileLines)
 

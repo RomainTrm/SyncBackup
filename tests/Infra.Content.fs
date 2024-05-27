@@ -103,10 +103,10 @@ module ScanFile =
     ]
 
     module ``writeFile should`` =
-        let uniqueTestDirectory = "test-7c1e51c9-0eb0-4019-9268-faf20eddb0cb"
 
         [<Fact>]
         let ``save scan result`` () =
+            let uniqueTestDirectory = "test-7c1e51c9-0eb0-4019-9268-faf20eddb0cb"
             let path = TestHelpers.testDirectoryPath uniqueTestDirectory
             TestHelpers.cleanupTests path
             TestHelpers.createDirectory [|uniqueTestDirectory|]
@@ -131,6 +131,20 @@ module ScanFile =
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
+
+        [<Fact>]
+        let ``empty scan result should display "up to date"`` () =
+            let uniqueTestDirectory = "test-7b1de11a-20c3-4e08-b67c-871a4bc10cb5"
+            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
+            TestHelpers.cleanupTests path
+            TestHelpers.createDirectory [|uniqueTestDirectory|]
+            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+
+            let result = ScanFile.writeFile path []
+            test <@ result = Ok () @>
+
+            let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
+            test <@ fileContent |> Seq.contains "# No change, your repository is up to date."  @>
 
     module ``readFile should`` =
         [<Fact>]
