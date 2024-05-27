@@ -44,9 +44,9 @@ module ScanFile =
     open Microsoft.FSharp.Reflection
 
     let rec private printRule (rule, diff) =
-        $"{SyncRules.getValue rule.SyncRule} {ScanDiff.serialize diff} {RelativePath.serialize rule.Path}"
+        $"{ScanDiff.activeLine diff}{SyncRules.getValue rule.SyncRule} {ScanDiff.serialize diff} {RelativePath.serialize rule.Path}"
 
-    let private buildFileContent rules =
+    let private buildFileContent (rules: ScanResult list) =
         let fileLines = [
             "# Repository scan complete!"
             "# Use '#' to comment a line"
@@ -97,3 +97,17 @@ module TrackFile =
         let contentLines = contentPaths |> List.map RelativePath.serialize
         File.WriteAllLines (filePath, contentLines)
         Ok ()
+
+    let load (repositoryPath: RepositoryPath) =
+        let filePath = Dsl.getTrackFileFilePath repositoryPath
+        if not (File.Exists filePath)
+        then Ok []
+        else
+            File.ReadAllLines filePath
+            |> Seq.fold (fun paths line ->
+                paths
+                |> Result.bind (fun paths ->
+                    RelativePath.deserialize line
+                    |> Result.map (fun path -> paths@[path])
+                )
+            ) (Ok [])

@@ -200,3 +200,34 @@ module TrackFile =
                 "file::\"*line2\""
                 "dir::\"*line3\""
             ] @>
+
+    module ``read should`` =
+        [<Fact>]
+        let ``return file content`` () =
+            let uniqueTestDirectory = "test-86cc56ee-cbb5-4aab-8c0d-f61f54744cb3"
+            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
+            TestHelpers.cleanupTests path
+            TestHelpers.createDirectory [|uniqueTestDirectory|]
+            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+
+            let content = [
+                { Type = Source; Value = "line1"; ContentType = File }
+                { Type = Alias; Value = "line2"; ContentType = File }
+                { Type = Alias; Value = "line3"; ContentType = Directory }
+            ]
+            let result = TrackFile.save path content
+            test <@ result = Ok () @>
+
+            let result = TrackFile.load path
+            test <@ result = Ok content @>
+
+        [<Fact>]
+        let ``return empty when file not created`` () =
+            let uniqueTestDirectory = "test-25903348-b5ec-4a26-a257-dbc2cb7dfcf2"
+            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
+            TestHelpers.cleanupTests path
+            TestHelpers.createDirectory [|uniqueTestDirectory|]
+            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+
+            let result = TrackFile.load path
+            test <@ result = Ok [] @>

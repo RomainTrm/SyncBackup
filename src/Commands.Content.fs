@@ -12,6 +12,7 @@ type Infra = {
     OpenScanFileForUserEdition: unit -> Result<unit, string>
     ReadScanFileContent: unit -> Result<Rule list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>
+    LoadTrackFile: unit -> Result<RelativePath list, string>
     SaveRules: Rule list -> Result<unit, string>
 }
 
@@ -28,10 +29,11 @@ let private updateRules oldRules =
 let scanRepositoryContent (infra: Infra) () =
     result {
         let! config = infra.LoadConfig ()
+        let! trackedElements = infra.LoadTrackFile ()
         let! repositoryContent =
             config.Aliases
             |> infra.ScanRepositoryContent
-            |> Scan.buildScanResult config.Rules []
+            |> Scan.buildScanResult config.Rules trackedElements
 
         do! infra.SaveScanFileContent repositoryContent
         do! infra.OpenScanFileForUserEdition ()

@@ -16,6 +16,7 @@ let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
 let contentCommandInfra currentDirectory : SyncBackup.Commands.Content.Infra = {
     ScanRepositoryContent = SyncBackup.Infra.Content.Scan.run currentDirectory
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
+    LoadTrackFile = fun () -> SyncBackup.Infra.Content.TrackFile.load currentDirectory
     SaveScanFileContent = SyncBackup.Infra.Content.ScanFile.writeFile currentDirectory
     OpenScanFileForUserEdition = fun () ->
         SyncBackup.Infra.Dsl.getScanFileFilePath currentDirectory

@@ -11,6 +11,7 @@ open SyncBackup.Tests.Properties.CustomGenerators
 module ``scanRepositoryContent should`` =
     let defaultInfra = {
         LoadConfig = fun _ -> failwith "not implemented"
+        LoadTrackFile = fun _ -> failwith "not implemented"
         ScanRepositoryContent = fun _ -> failwith "not implemented"
         SaveScanFileContent = fun _ -> failwith "not implemented"
         OpenScanFileForUserEdition = fun _ -> failwith "not implemented"
@@ -31,6 +32,7 @@ module ``scanRepositoryContent should`` =
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
+            LoadTrackFile = fun () -> Ok []
             ScanRepositoryContent = fun a ->
                 test <@ a = aliases @>
                 content
@@ -64,6 +66,7 @@ module ``scanRepositoryContent should`` =
                             { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }
                         ]
                 }
+                LoadTrackFile = fun () -> Ok []
                 ScanRepositoryContent = fun _ -> [
                     { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
                     { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
@@ -88,6 +91,7 @@ module ``scanRepositoryContent should`` =
         let infra = {
             defaultInfra with
                 LoadConfig = fun () -> Ok { defaultConfig with Aliases = aliases }
+                LoadTrackFile = fun () -> Ok []
                 ScanRepositoryContent = fun a ->
                     test <@ a = aliases @>
                     []

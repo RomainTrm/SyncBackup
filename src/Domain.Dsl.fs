@@ -101,3 +101,8 @@ module ScanDiff =
         | AddedToRepository -> "(added)"
         | RemovedFromRepository -> "(removed)"
         | RuleReminder -> "(nochange)"
+
+    let activeLine = function
+        | AddedToRepository -> ""
+        | RemovedFromRepository -> ""
+        | RuleReminder -> "# "
