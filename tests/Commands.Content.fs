@@ -41,8 +41,8 @@ module ``scanRepositoryContent should`` =
             OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadScanFileContent = fun () -> Ok contentEdited
             SaveTrackFile = fun c ->
-                let expected = contentEdited |> List.map (fst>>_.Path)
-                test <@ c = expected @>
+                let expected = contentEdited |> List.filter (fun scan -> (snd scan) = Dsl.AddedToRepository) |> List.map (fst>>_.Path)
+                test <@ Set c = Set expected @>
                 calls.Add "save track file" |> Ok
             SaveRules = fun rules ->
                 let expected = contentEdited |> List.filter (fun scanResult -> (fst scanResult).SyncRule <> Dsl.NoRule) |> List.map fst
@@ -99,3 +99,35 @@ module ``scanRepositoryContent should`` =
 
         let result = scanRepositoryContent infra ()
         test <@ result = Error "Repository is empty." @>
+
+    [<Fact>]
+    let ``remove deleted elements from track and not discard unmodified elements`` () =
+        let savedTrackedElements = System.Collections.Generic.List<_> ()
+        let scanResult = System.Collections.Generic.List<_> ()
+        let infra = {
+            LoadConfig = fun () -> Ok defaultConfig
+            LoadTrackFile = fun () -> Ok [
+                { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+            ]
+            ScanRepositoryContent = fun _ -> [
+                { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+                { Type = Dsl.Source; Value = "path4"; ContentType = Dsl.Directory }
+            ]
+            SaveScanFileContent = scanResult.AddRange >> Ok
+            OpenScanFileForUserEdition = Ok
+            ReadScanFileContent = fun () -> scanResult |> Seq.toList |> Ok
+            SaveTrackFile = savedTrackedElements.AddRange >> Ok
+            SaveRules = fun _ -> Ok ()
+        }
+
+        let _ = scanRepositoryContent infra ()
+
+        let expected : Dsl.RelativePath list = [
+            { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
+            { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+            { Type = Dsl.Source; Value = "path4"; ContentType = Dsl.Directory }
+        ]
+        test <@ savedTrackedElements |> Seq.toList = expected @>

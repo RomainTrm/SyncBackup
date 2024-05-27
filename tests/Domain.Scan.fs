@@ -56,3 +56,19 @@ module ``buildScanResult should`` =
             { SyncRule = NoRule; Path = path }, AddedToRepository
         ]
         result |> isAsExpected expected
+
+module ``defineTrackedElements should`` =
+    [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
+    let ``not remove elements that are not in scan result`` tracked =
+        let result = defineTrackedElements tracked []
+        test <@ Set result = Set tracked @>
+
+    [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
+    let ``add elements that are flag as added`` tracked element =
+        let result = defineTrackedElements tracked [element, AddedToRepository]
+        test <@ Set  result = Set (tracked@[element.Path]) @>
+
+    [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
+    let ``removed elements that are flag as removed`` tracked element =
+        let result = defineTrackedElements (tracked@[element.Path]) [element, RemovedFromRepository]
+        test <@ Set result = Set tracked @>
