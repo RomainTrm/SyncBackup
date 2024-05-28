@@ -52,7 +52,7 @@ module Scan =
             TestHelpers.createDirectory [|testDirectoryPath|]
 
             Config.init testDirectoryPath {
-                IsSourceRepository = true
+                Type = RepositoryType.Source
                 Aliases = []
                 Rules = []
             } |> ignore<Result<unit, string>>

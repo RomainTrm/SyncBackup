@@ -10,8 +10,9 @@ type UnverifiedPath = string
 /// Root path of the repository
 type RepositoryPath = DirectoryPath
 
+type RepositoryType = Source | Backup
 type RepositoryConfig = {
-    IsSourceRepository: bool
+    Type: RepositoryType
     Aliases: Alias list
     Rules: Rule list
 }

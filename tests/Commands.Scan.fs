@@ -20,7 +20,7 @@ module ``scanRepositoryContent should`` =
         SaveRules = fun _ -> failwith "not implemented"
     }
     let defaultConfig : Dsl.RepositoryConfig = {
-        IsSourceRepository = true
+        Type = Dsl.RepositoryType.Source
         Aliases = []
         Rules = []
     }
@@ -62,15 +62,15 @@ module ``scanRepositoryContent should`` =
                 LoadConfig = fun () -> Ok {
                     defaultConfig with
                         Rules = [
-                            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include }
-                            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }
+                            { Path = { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include }
+                            { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude }
                         ]
                 }
                 LoadTrackFile = fun () -> Ok []
                 ScanRepositoryContent = fun _ -> [
-                    { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
-                    { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
-                    { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+                    { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }
+                    { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
+                    { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
                 ]
                 SaveScanFileContent = fun rules ->
                     savedRules.AddRange rules
@@ -80,9 +80,9 @@ module ``scanRepositoryContent should`` =
         let _ = scanRepositoryContent infra ()
 
         let expected: Dsl.ScanResult list = [
-            { Path = { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include; Diff = Dsl.AddedToRepository }
-            { Path = { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude; Diff = Dsl.AddedToRepository }
-            { Path = { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }; SyncRule = Dsl.Include; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; SyncRule = Dsl.Exclude; Diff = Dsl.AddedToRepository }
+            { Path = { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }; SyncRule = Dsl.NoRule; Diff = Dsl.AddedToRepository }
         ]
         test <@ savedRules |> Seq.toList = expected @>
 
@@ -107,14 +107,14 @@ module ``scanRepositoryContent should`` =
         let infra = {
             LoadConfig = fun () -> Ok defaultConfig
             LoadTrackFile = fun () -> Ok [
-                { Type = Dsl.Source; Value = "path1"; ContentType = Dsl.Directory }
-                { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
-                { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
+                { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }
+                { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
+                { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
             ]
             ScanRepositoryContent = fun _ -> [
-                { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
-                { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
-                { Type = Dsl.Source; Value = "path4"; ContentType = Dsl.Directory }
+                { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
+                { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
+                { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
             ]
             SaveScanFileContent = scanResult.AddRange >> Ok
             OpenScanFileForUserEdition = Ok
@@ -126,8 +126,8 @@ module ``scanRepositoryContent should`` =
         let _ = scanRepositoryContent infra ()
 
         let expected : Dsl.RelativePath list = [
-            { Type = Dsl.Source; Value = "path2"; ContentType = Dsl.Directory }
-            { Type = Dsl.Source; Value = "path3"; ContentType = Dsl.Directory }
-            { Type = Dsl.Source; Value = "path4"; ContentType = Dsl.Directory }
+            { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
+            { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
+            { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
         ]
         test <@ savedTrackedElements |> Seq.toList = expected @>

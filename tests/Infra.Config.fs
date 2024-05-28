@@ -19,17 +19,15 @@ let readConfigFile = configFilePath >> File.ReadAllLines
 
 module ``init should`` =
     let defaultConfig : RepositoryConfig = {
-        IsSourceRepository = true
+        Type = RepositoryType.Source
         Aliases = []
         Rules = []
     }
 
-    [<Theory>]
-    [<InlineData(true)>]
-    [<InlineData(false)>]
-    let ``create config file`` isSourceRepository =
+    [<Property(MaxTest = 10)>]
+    let ``create config file`` repositoryType =
         let repositoryPath = generateRepositoryPath ()
-        let expectedConfig = { defaultConfig with IsSourceRepository = isSourceRepository }
+        let expectedConfig = { defaultConfig with Type = repositoryType }
         let result = init repositoryPath expectedConfig
         test <@ result = Ok () @>
         test <@ load repositoryPath = Ok expectedConfig @>

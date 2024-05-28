@@ -15,7 +15,7 @@ let defaultInfra : Infra = {
 }
 
 let defaultConfig : RepositoryConfig = {
-    IsSourceRepository = true
+    Type = RepositoryType.Source
     Aliases = []
     Rules = []
 }
@@ -33,7 +33,7 @@ module ``Init should`` =
 
         test <@ result = Ok () @>
         let expectedConfig: RepositoryConfig = {
-            IsSourceRepository = true
+            Type = RepositoryType.Source
             Aliases = []
             Rules = []
         }
@@ -51,7 +51,7 @@ module ``Init should`` =
 
         test <@ result = Ok () @>
         let expectedConfig: RepositoryConfig = {
-            IsSourceRepository = false
+            Type = RepositoryType.Backup
             Aliases = []
             Rules = []
         }
@@ -202,7 +202,7 @@ module Aliases =
                 defaultInfra with
                     CheckPathExists = fun _ -> Ok ()
                     LoadConfig = fun () ->
-                        Ok { defaultConfig with IsSourceRepository = false }
+                        Ok { defaultConfig with Type = RepositoryType.Backup }
                     UpdateConfig = calls.Add >> Ok
             }
 
