@@ -9,7 +9,7 @@ let private executeCommand<'c when 'c :> IArgParserTemplate> run (command: Parse
     |> Option.map run
 
 type Commands =
-    | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
+    | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<Init.Init>
     | [<CliPrefix(CliPrefix.None)>] Alias of ParseResults<Aliases.Alias>
     | [<CliPrefix(CliPrefix.None)>] Scan of ParseResults<Scan.Scan>
     | [<CliPrefix(CliPrefix.None)>] Rules of ParseResults<Rules.Rule>
@@ -31,7 +31,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
     results.TryGetSubCommand()
     |> Option.bind (function
-        | Init command -> command |> executeCommand (ConfigInit.runCommand configCommandInfra)
+        | Init command -> command |> executeCommand (Init.runCommand configCommandInfra)
         | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
         | Scan _ -> Scan.runCommand contentCommandInfra |> Some
         | Rules command -> command |> executeCommand (Rules.runCommand configCommandInfra configQueryInfra)

@@ -13,7 +13,7 @@ type Infra = {
 }
 
 module Init =
-    let run (infra: Infra) =
+    let source (infra: Infra) =
         let config = {
             IsSourceRepository = true
             Aliases = []

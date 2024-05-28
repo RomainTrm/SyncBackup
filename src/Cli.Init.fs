@@ -1,4 +1,4 @@
-﻿module SyncBackup.Cli.ConfigInit
+﻿module SyncBackup.Cli.Init
 
 open Argu
 
@@ -11,5 +11,5 @@ with
 
 let runCommand commandInfra = function
     | Source ->
-        SyncBackup.Commands.Config.Init.run commandInfra
+        SyncBackup.Commands.Config.Init.source commandInfra
         |> Result.map (fun () -> "Repository initialized")
