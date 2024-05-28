@@ -100,9 +100,13 @@ module SyncRules =
         | NoRule -> $"{getValue NoRule} (default): no specific rule specified for this directory or file. Rules will be inherited, if no rule specified, then it will be included to backup."
         | Exclude -> $"{getValue Exclude}: this directory or file must not be saved into backup, even if parents are included."
         | Include -> $"{getValue Include}: this directory or file must be saved into backup, even if parents are excluded."
-        | AlwaysReplace -> $"{getValue AlwaysReplace}: this directory or file always be replaced, even if it exists in backup."
+        | AlwaysReplace -> $"{getValue AlwaysReplace}: this directory or file is always be replaced, even if it already exists in backup."
         | NotSave -> $"{getValue NotSave}: this directory or file must not be saved into backup, even if present in the source repository."
         | NotDelete -> $"{getValue NotDelete}: this directory or file must not be deleted from backup, even if the source repository does not include it."
+
+    let getRulesAvailable = function
+        | RepositoryType.Source -> [NoRule; Exclude; Include]
+        | RepositoryType.Backup -> [NoRule; AlwaysReplace; NotSave; NotDelete]
 
     let parse = function
         | "norule" -> Ok NoRule

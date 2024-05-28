@@ -36,7 +36,8 @@ module ``scanRepositoryContent should`` =
             ScanRepositoryContent = fun a ->
                 test <@ a = aliases @>
                 content
-            SaveScanFileContent = fun _ ->
+            SaveScanFileContent = fun repositoryType _ ->
+                test <@ repositoryType = defaultConfig.Type @>
                 calls.Add "save temp file" |> Ok
             OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadScanFileContent = fun () -> Ok contentEdited
@@ -72,7 +73,8 @@ module ``scanRepositoryContent should`` =
                     { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
                     { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
                 ]
-                SaveScanFileContent = fun rules ->
+                SaveScanFileContent = fun repositoryType rules ->
+                    test <@ repositoryType = defaultConfig.Type @>
                     savedRules.AddRange rules
                     Error "I don't want to setup the rest of the infra"
         }
@@ -116,7 +118,7 @@ module ``scanRepositoryContent should`` =
                 { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
                 { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
             ]
-            SaveScanFileContent = scanResult.AddRange >> Ok
+            SaveScanFileContent = fun _ -> scanResult.AddRange >> Ok
             OpenScanFileForUserEdition = Ok
             ReadScanFileContent = fun () -> scanResult |> Seq.toList |> Ok
             SaveTrackFile = savedTrackedElements.AddRange >> Ok
