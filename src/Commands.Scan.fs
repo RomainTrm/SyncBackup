@@ -8,7 +8,7 @@ open SyncBackup.Domain.Dsl
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
     ScanRepositoryContent: Alias list -> RelativePath list
-    SaveScanFileContent: ScanResult list -> Result<unit, string>
+    SaveScanFileContent: RepositoryType -> ScanResult list -> Result<unit, string>
     OpenScanFileForUserEdition: unit -> Result<unit, string>
     ReadScanFileContent: unit -> Result<ScanResult list, string>
     SaveTrackFile: RelativePath list -> Result<unit, string>
@@ -35,12 +35,22 @@ let scanRepositoryContent (infra: Infra) () =
             |> infra.ScanRepositoryContent
             |> Scan.buildScanResult config.Rules trackedElements
 
-        do! infra.SaveScanFileContent repositoryContent
+        do! infra.SaveScanFileContent config.Type repositoryContent
         do! infra.OpenScanFileForUserEdition ()
 
         let! editedRules = infra.ReadScanFileContent ()
+        let! rulesToSave =
+            editedRules
+            |> List.map _.Rule
+            |> List.fold (fun rules rule ->
+                result {
+                    do! Rules.validateRule config.Type rule.SyncRule
+                    let! rules = rules
+                    return rules@[rule]
+                }
+            ) (Ok [])
+            |> Result.map (updateRules config.Rules)
         do! infra.SaveTrackFile (Scan.defineTrackedElements trackedElements editedRules)
-        let rulesToSave = editedRules |> List.map _.Rule |> updateRules config.Rules
         do! infra.SaveRules rulesToSave
 
         return ()

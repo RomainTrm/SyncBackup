@@ -41,19 +41,16 @@ module Scan =
         sourceDirectoryContent@aliasesDirectoriesContent
 
 module ScanFile =
-    open Microsoft.FSharp.Reflection
-
     let rec private print scanResult =
         $"{ScanDiff.activeLine scanResult.Diff}{SyncRules.getValue scanResult.SyncRule} {ScanDiff.serialize scanResult.Diff} {RelativePath.serialize scanResult.Path}"
 
-    let private buildFileContent (rules: ScanResult list) =
+    let private buildFileContent repositoryType (rules: ScanResult list) =
         let fileLines = [
             "# Repository scan complete!"
             "# Use '#' to comment a line"
             $"# You can specify rules to every line (directories and files), by default '{SyncRules.getValue NoRule}' is set"
             "# Available rules as follows:"
-            yield! FSharpType.GetUnionCases(typeof<SyncRules>)
-                    |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> SyncRules)
+            yield! SyncRules.getRulesAvailable repositoryType
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
             yield! rules |> List.map print
@@ -62,8 +59,8 @@ module ScanFile =
         ]
         String.Join (Dsl.NewLine, fileLines)
 
-    let writeFile (repositoryPath: RepositoryPath) (rules: ScanResult list) =
-        let fileContent = buildFileContent rules
+    let writeFile (repositoryPath: RepositoryPath) (repositoryType: RepositoryType) (rules: ScanResult list) =
+        let fileContent = buildFileContent repositoryType rules
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
         |> Ok

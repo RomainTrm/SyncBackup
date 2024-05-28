@@ -112,7 +112,7 @@ module ScanFile =
             TestHelpers.createDirectory [|uniqueTestDirectory|]
             TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
 
-            let result = ScanFile.writeFile path content
+            let result = ScanFile.writeFile path RepositoryType.Source content
             test <@ result = Ok () @>
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
@@ -140,7 +140,7 @@ module ScanFile =
             TestHelpers.createDirectory [|uniqueTestDirectory|]
             TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
 
-            let result = ScanFile.writeFile path []
+            let result = ScanFile.writeFile path RepositoryType.Source []
             test <@ result = Ok () @>
 
             let fileContent = Dsl.getScanFileFilePath path |> System.IO.File.ReadAllLines
@@ -155,7 +155,7 @@ module ScanFile =
             TestHelpers.createDirectory [|uniqueTestDirectory|]
             TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
 
-            let result = ScanFile.writeFile path content
+            let result = ScanFile.writeFile path RepositoryType.Source content
             test <@ result = Ok () @>
 
             let result = ScanFile.readFile path

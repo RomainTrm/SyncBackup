@@ -3,7 +3,6 @@
 open System
 open Argu
 open SyncBackup.Domain
-open Microsoft.FSharp.Reflection
 
 let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, string> =
     logger $"Rules conflict for path \"{rule1.Path.Value}\":"
@@ -28,12 +27,15 @@ with
             match this with
             | Add _ ->
                 let availableRules =
-                    FSharpType.GetUnionCases(typeof<Dsl.SyncRules>)
-                    |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> Dsl.SyncRules)
-                    |> Seq.map Dsl.SyncRules.getDescription
-                    |> Seq.map (sprintf "- %s")
-                    |> fun rules -> String.Join(SyncBackup.Infra.Dsl.NewLine, rules)
-                $"Add a new rule to the repository. Available rules:{SyncBackup.Infra.Dsl.NewLine}{availableRules}"
+                    Dsl.SyncRules.getRulesAvailable
+                    >> Seq.map Dsl.SyncRules.getDescription
+                    >> Seq.map (sprintf "\t- %s")
+                    >> fun rules -> String.Join(SyncBackup.Infra.Dsl.NewLine, rules)
+                $"""Add a new rule to the repository.
+Available rules (source repository):
+{availableRules Dsl.RepositoryType.Source}
+Available rules (backup repository):
+{availableRules Dsl.RepositoryType.Backup}"""
             | List -> "Display all rules."
 
 let runCommand commandInfra queryInfra = function

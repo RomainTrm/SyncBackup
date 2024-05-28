@@ -362,3 +362,21 @@ module Rules =
 
             test <@ result = Ok () @>
             test <@ calls |> Seq.toList = [ { defaultConfig with Rules = [] } ] @>
+
+        let ``return error if rule is not available for this repository type - test cases`` () : obj[] list = [
+            [| RepositoryType.Source; SyncRules.NotDelete |]
+            [| RepositoryType.Source; SyncRules.NotSave |]
+            [| RepositoryType.Source; SyncRules.AlwaysReplace |]
+            [| RepositoryType.Backup; SyncRules.Include |]
+            [| RepositoryType.Backup; SyncRules.Exclude |]
+        ]
+
+        [<Theory; MemberData(nameof ``return error if rule is not available for this repository type - test cases``)>]
+        let ``return error if rule is not available for this repository type`` repositoryType syncRule =
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok { defaultConfig with Type = repositoryType }
+            }
+
+            let result = Rules.add infra syncRule "path"
+            test <@ Result.isError result @>

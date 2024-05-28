@@ -54,6 +54,7 @@ module Rules =
     let add (infra: Infra) (rule: SyncRules) (unverifiedPath: UnverifiedPath) =
         result {
             let! config = infra.LoadConfig ()
+            do! validateRule config.Type rule
             let! path = infra.BuildRelativePath config.Aliases unverifiedPath
             let rule = { SyncRule = rule; Path = path }
             match add config.Rules rule with

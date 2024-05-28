@@ -25,7 +25,7 @@ module ``scanRepositoryContent should`` =
         Rules = []
     }
 
-    [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator> |])>]
+    [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator>; typeof<SourceRepositoryRulesOnlyGenerator> |])>]
     let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.ScanResult list) =
         content <> [] ==> lazy
         let contentEdited = contentEdited |> List.distinctBy _.Path
@@ -36,7 +36,8 @@ module ``scanRepositoryContent should`` =
             ScanRepositoryContent = fun a ->
                 test <@ a = aliases @>
                 content
-            SaveScanFileContent = fun _ ->
+            SaveScanFileContent = fun repositoryType _ ->
+                test <@ repositoryType = defaultConfig.Type @>
                 calls.Add "save temp file" |> Ok
             OpenScanFileForUserEdition = fun () -> calls.Add "open editor" |> Ok
             ReadScanFileContent = fun () -> Ok contentEdited
@@ -72,7 +73,8 @@ module ``scanRepositoryContent should`` =
                     { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
                     { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
                 ]
-                SaveScanFileContent = fun rules ->
+                SaveScanFileContent = fun repositoryType rules ->
+                    test <@ repositoryType = defaultConfig.Type @>
                     savedRules.AddRange rules
                     Error "I don't want to setup the rest of the infra"
         }
@@ -116,7 +118,7 @@ module ``scanRepositoryContent should`` =
                 { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
                 { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
             ]
-            SaveScanFileContent = scanResult.AddRange >> Ok
+            SaveScanFileContent = fun _ -> scanResult.AddRange >> Ok
             OpenScanFileForUserEdition = Ok
             ReadScanFileContent = fun () -> scanResult |> Seq.toList |> Ok
             SaveTrackFile = savedTrackedElements.AddRange >> Ok
@@ -131,3 +133,28 @@ module ``scanRepositoryContent should`` =
             { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
         ]
         test <@ savedTrackedElements |> Seq.toList = expected @>
+
+    [<Fact>]
+    let ``return error if user set an invalid rule for the repository`` () =
+        let invalidRule = Dsl.SyncRules.AlwaysReplace
+        let infra = {
+            defaultInfra with
+                LoadConfig = fun () -> Ok {
+                    defaultConfig with
+                        Type = Dsl.RepositoryType.Source
+                }
+                LoadTrackFile = fun () -> Ok []
+                ScanRepositoryContent = fun _ -> [
+                    { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }
+                ]
+                SaveScanFileContent = fun repositoryType _ ->
+                    test <@ repositoryType = defaultConfig.Type @>
+                    Ok ()
+                OpenScanFileForUserEdition = Ok
+                ReadScanFileContent = fun () -> Ok [
+                    { SyncRule = invalidRule; Path = { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }; Diff = Dsl.ScanDiff.AddedToRepository }
+                ]
+        }
+
+        let result = scanRepositoryContent infra ()
+        test <@ result = Error $"The rule \"{Dsl.SyncRules.getValue invalidRule}\" can't be applied to this repository type." @>
