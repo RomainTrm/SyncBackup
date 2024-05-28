@@ -2,6 +2,7 @@
 
 open System
 open FsCheck
+open SyncBackup.Domain
 
 type NonWhiteSpaceStringGenerator () =
     static member String() = {
@@ -20,4 +21,13 @@ type PathStringGenerator () =
                 |> Arb.toGen
                 |> Gen.map _.Get
                 |> Gen.filter (not<<String.IsNullOrWhiteSpace)
+        }
+
+type SourceRepositoryRulesOnlyGenerator () =
+    static member String() = {
+        new Arbitrary<Dsl.SyncRules>() with
+            override x.Generator =
+                Dsl.RepositoryType.Source
+                |> Dsl.SyncRules.getRulesAvailable
+                |> Gen.elements
         }

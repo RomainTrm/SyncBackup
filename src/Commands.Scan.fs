@@ -39,8 +39,18 @@ let scanRepositoryContent (infra: Infra) () =
         do! infra.OpenScanFileForUserEdition ()
 
         let! editedRules = infra.ReadScanFileContent ()
+        let! rulesToSave =
+            editedRules
+            |> List.map _.Rule
+            |> List.fold (fun rules rule ->
+                result {
+                    do! Rules.validateRule config.Type rule.SyncRule
+                    let! rules = rules
+                    return rules@[rule]
+                }
+            ) (Ok [])
+            |> Result.map (updateRules config.Rules)
         do! infra.SaveTrackFile (Scan.defineTrackedElements trackedElements editedRules)
-        let rulesToSave = editedRules |> List.map _.Rule |> updateRules config.Rules
         do! infra.SaveRules rulesToSave
 
         return ()
