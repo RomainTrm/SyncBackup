@@ -21,20 +21,37 @@ let defaultConfig : RepositoryConfig = {
 }
 
 module ``Init should`` =
-
     [<Fact>]
-    let ``ìnit repository`` () =
+    let ``ìnit source repository`` () =
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             defaultInfra with
                 InitConfig = calls.Add >> Ok
         }
 
-        let result = Init.run infra
+        let result = Init.source infra
 
         test <@ result = Ok () @>
         let expectedConfig: RepositoryConfig = {
             IsSourceRepository = true
+            Aliases = []
+            Rules = []
+        }
+        test <@ calls |> Seq.toList = [ expectedConfig ] @>
+
+    [<Fact>]
+    let ``ìnit backup repository`` () =
+        let calls = System.Collections.Generic.List<_> ()
+        let infra = {
+            defaultInfra with
+                InitConfig = calls.Add >> Ok
+        }
+
+        let result = Init.backup infra
+
+        test <@ result = Ok () @>
+        let expectedConfig: RepositoryConfig = {
+            IsSourceRepository = false
             Aliases = []
             Rules = []
         }

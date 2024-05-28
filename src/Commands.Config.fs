@@ -13,9 +13,17 @@ type Infra = {
 }
 
 module Init =
-    let run (infra: Infra) =
+    let source (infra: Infra) =
         let config = {
             IsSourceRepository = true
+            Aliases = []
+            Rules = []
+        }
+        infra.InitConfig config
+
+    let backup (infra: Infra) =
+        let config = {
+            IsSourceRepository = false
             Aliases = []
             Rules = []
         }
