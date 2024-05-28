@@ -39,6 +39,24 @@ module ``Init should`` =
         }
         test <@ calls |> Seq.toList = [ expectedConfig ] @>
 
+    [<Fact>]
+    let ``ìnit backup repository`` () =
+        let calls = System.Collections.Generic.List<_> ()
+        let infra = {
+            defaultInfra with
+                InitConfig = calls.Add >> Ok
+        }
+
+        let result = Init.backup infra
+
+        test <@ result = Ok () @>
+        let expectedConfig: RepositoryConfig = {
+            IsSourceRepository = false
+            Aliases = []
+            Rules = []
+        }
+        test <@ calls |> Seq.toList = [ expectedConfig ] @>
+
 module Aliases =
     let path = "some path"
 

@@ -21,6 +21,14 @@ module Init =
         }
         infra.InitConfig config
 
+    let backup (infra: Infra) =
+        let config = {
+            IsSourceRepository = false
+            Aliases = []
+            Rules = []
+        }
+        infra.InitConfig config
+
 module Alias =
     let private validateAliasName (name: string) =
         let forbiddenChars = "\\/:*?\"<>|" // TODO : use Path.GetInvalidPathChars instead
