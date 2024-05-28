@@ -11,14 +11,14 @@
     <Compile Include="Domain.Scan.fs" />
     <Compile Include="Queries.Config.fs" />
     <Compile Include="Commands.Config.fs" />
-    <Compile Include="Commands.Content.fs" />
+    <Compile Include="Commands.Scan.fs" />
     <Compile Include="Infra.Dsl.fs" />
     <Compile Include="Infra.Core.fs" />
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
     <Compile Include="Infra.Editor.fs" />
     <Compile Include="Cli.Aliases.fs" />
-    <Compile Include="Cli.Content.fs" />
+    <Compile Include="Cli.Scan.fs" />
     <Compile Include="Cli.ConfigInit.fs" />
     <Compile Include="Cli.Rules.fs" />
     <Compile Include="Cli.Factory.fs" />

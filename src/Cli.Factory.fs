@@ -13,7 +13,7 @@ let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
 }
 
-let contentCommandInfra currentDirectory : SyncBackup.Commands.Content.Infra = {
+let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
     ScanRepositoryContent = SyncBackup.Infra.Content.Scan.run currentDirectory
     LoadConfig = fun () -> SyncBackup.Infra.Config.load currentDirectory
     LoadTrackFile = fun () -> SyncBackup.Infra.Content.TrackFile.load currentDirectory

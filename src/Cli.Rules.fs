@@ -30,9 +30,10 @@ with
                 let availableRules =
                     FSharpType.GetUnionCases(typeof<Dsl.SyncRules>)
                     |> Seq.map (fun rule -> FSharpValue.MakeUnion(rule, [||]) :?> Dsl.SyncRules)
-                    |> Seq.map Dsl.SyncRules.getValue
-                    |> fun rules -> String.Join('|', rules)
-                $"Add a new rule to the repository. Available rules: {availableRules}"
+                    |> Seq.map Dsl.SyncRules.getDescription
+                    |> Seq.map (sprintf "- %s")
+                    |> fun rules -> String.Join(SyncBackup.Infra.Dsl.NewLine, rules)
+                $"Add a new rule to the repository. Available rules:{SyncBackup.Infra.Dsl.NewLine}{availableRules}"
             | List -> "Display all rules."
 
 let runCommand commandInfra queryInfra = function

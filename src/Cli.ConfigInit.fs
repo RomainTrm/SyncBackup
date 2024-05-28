@@ -2,9 +2,14 @@
 
 open Argu
 
-type Init = | [<Hidden>] NoOption
-with interface IArgParserTemplate with member this.Usage = ""
+type Init = | Source
+with
+    interface IArgParserTemplate with
+        member this.Usage =
+            match this with
+            | Source -> "Initialize the current directory as a source directory to synchronize with backups."
 
-let runCommand commandInfra =
-    SyncBackup.Commands.Config.Init.run commandInfra
-    |> Result.map (fun () -> "Repository initialized")
+let runCommand commandInfra = function
+    | Source ->
+        SyncBackup.Commands.Config.Init.run commandInfra
+        |> Result.map (fun () -> "Repository initialized")

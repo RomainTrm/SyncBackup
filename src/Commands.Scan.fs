@@ -1,4 +1,4 @@
-﻿module SyncBackup.Commands.Content
+﻿module SyncBackup.Commands.Scan
 
 open Microsoft.FSharp.Core
 open SyncBackup

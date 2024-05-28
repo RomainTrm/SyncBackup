@@ -1,11 +1,11 @@
-﻿module SyncBackup.Tests.Commands.Content
+﻿module SyncBackup.Tests.Commands.Scan
 
 open Xunit
 open FsCheck
 open FsCheck.Xunit
 open Swensen.Unquote
 open SyncBackup.Domain
-open SyncBackup.Commands.Content
+open SyncBackup.Commands.Scan
 open SyncBackup.Tests.Properties.CustomGenerators
 
 module ``scanRepositoryContent should`` =

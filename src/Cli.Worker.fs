@@ -11,15 +11,15 @@ let private executeCommand<'c when 'c :> IArgParserTemplate> run (command: Parse
 type Commands =
     | [<CliPrefix(CliPrefix.None)>] Init of ParseResults<ConfigInit.Init>
     | [<CliPrefix(CliPrefix.None)>] Alias of ParseResults<Aliases.Alias>
-    | [<CliPrefix(CliPrefix.None)>] Content of ParseResults<Content.Content>
+    | [<CliPrefix(CliPrefix.None)>] Scan of ParseResults<Scan.Scan>
     | [<CliPrefix(CliPrefix.None)>] Rules of ParseResults<Rules.Rule>
 with
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Init _ -> "Init the current directory as a source directory to sync with backups."
-            | Alias _ -> "Manage aliases (pointers to directories outside the repository's directory), only available for the source directory."
-            | Content _ -> "Manage content directories and files inside the repository."
+            | Init _ -> "Initialize the current directory as a repository to synchronize."
+            | Alias _ -> "Manage aliases (pointers to directories outside the repository's directory), only available for the source repository."
+            | Scan _ -> "Reference all directories and files in the repository."
             | Rules _ -> "Manage rules for synchronization."
 
 let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv =
@@ -31,9 +31,9 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
     results.TryGetSubCommand()
     |> Option.bind (function
-        | Init _ -> ConfigInit.runCommand configCommandInfra |> Some
+        | Init command -> command |> executeCommand (ConfigInit.runCommand configCommandInfra)
         | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
-        | Content command -> command |> executeCommand (Content.runCommand contentCommandInfra)
+        | Scan _ -> Scan.runCommand contentCommandInfra |> Some
         | Rules command -> command |> executeCommand (Rules.runCommand configCommandInfra configQueryInfra)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
