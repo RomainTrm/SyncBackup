@@ -32,3 +32,12 @@ let private buildRule (existingRules: Map<RelativePath, Rule>) (path: RelativePa
 let buildRules (existingRules: Rule list) (paths: RelativePath list) =
     let existingRules = existingRules |> Seq.map (fun rule -> rule.Path, rule) |> Map
     paths |> List.map (buildRule existingRules)
+
+let validateRule = function
+    | RepositoryType.Source, SyncRules.AlwaysReplace
+    | RepositoryType.Source, SyncRules.NotDelete
+    | RepositoryType.Source, SyncRules.NotSave
+    | RepositoryType.Backup, SyncRules.Include
+    | RepositoryType.Backup, SyncRules.Exclude
+        -> Error "This rule can't be applied to this repository."
+    | _ -> Ok ()
