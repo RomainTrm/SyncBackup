@@ -38,5 +38,13 @@ let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.
         LoadRules = fun () -> SyncBackup.Infra.Config.load backupDirectory |> Result.map _.Rules
         LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load backupDirectory
     }
-    SubmitSyncInstructions = fun instructions -> failwith "not implemented"
+    SubmitSyncInstructions = fun instructions ->
+        instructions // Temp code to test it live
+        |> List.map (function
+            | SyncBackup.Domain.Sync.Add path -> $"- Add: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
+            | SyncBackup.Domain.Sync.Replace path -> $"- Replace: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
+            | SyncBackup.Domain.Sync.Delete path -> $"- Delete: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
+        )
+        |> List.iter (printfn "%s")
+        |> Ok
 }

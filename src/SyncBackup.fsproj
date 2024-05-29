@@ -19,10 +19,11 @@
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
     <Compile Include="Infra.Editor.fs" />
-    <Compile Include="Cli.Aliases.fs" />
-    <Compile Include="Cli.Scan.fs" />
     <Compile Include="Cli.Init.fs" />
+    <Compile Include="Cli.Aliases.fs" />
     <Compile Include="Cli.Rules.fs" />
+    <Compile Include="Cli.Scan.fs" />
+    <Compile Include="Cli.Sync.fs" />
     <Compile Include="Cli.Factory.fs" />
     <Compile Include="Cli.Worker.fs" />
     <Compile Include="Program.fs" />
