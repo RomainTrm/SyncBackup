@@ -11,6 +11,21 @@ type private SourceRule =
     | Include
     | Exclude
 
+type private BackupRule =
+    | Save
+    | Replace
+    | NotSave
+    | NotDelete
+
+let rec private spreadRules computeRule lastRule acc = function
+    | [] -> acc
+    | rule: Rule::rules ->
+        let subPathRules, others = rules |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Path rule.Path)
+        let appliedRule = computeRule lastRule rule.SyncRule
+        let childRules = spreadRules computeRule appliedRule [] subPathRules
+        let otherRules = spreadRules computeRule lastRule [] others
+        acc@[rule.Path, appliedRule]@childRules@otherRules
+
 let private spreadSourceRules (rules: Rule list) =
     let computeRule (lastRule: SourceRule) = function
         | Dsl.SyncRules.NoRule -> lastRule
@@ -18,24 +33,9 @@ let private spreadSourceRules (rules: Rule list) =
         | Dsl.SyncRules.Exclude -> Exclude
         |  _ -> failwith "not supposed to happen"
 
-    let rec spreadRules lastRule acc = function
-        | [] -> acc
-        | rule: Rule::rules ->
-            let subPathRules, others = rules |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Path rule.Path)
-            let appliedRule = computeRule lastRule rule.SyncRule
-            let childRules = spreadRules appliedRule [] subPathRules
-            let otherRules = spreadRules lastRule [] others
-            acc@[rule.Path, appliedRule]@childRules@otherRules
-
     rules
     |> List.sortBy _.Path.Value
-    |> spreadRules Include []
-
-type private BackupRule =
-    | Save
-    | Replace
-    | NotSave
-    | NotDelete
+    |> spreadRules computeRule Include []
 
 let private spreadBackupRules (rules: Rule list) =
     let computeRule (lastRule: BackupRule) = function
@@ -45,18 +45,9 @@ let private spreadBackupRules (rules: Rule list) =
         | Dsl.SyncRules.NotDelete -> NotDelete
         |  _ -> failwith "not supposed to happen"
 
-    let rec spreadRules lastRule acc = function
-        | [] -> acc
-        | rule: Rule::rules ->
-            let subPathRules, others = rules |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Path rule.Path)
-            let appliedRule = computeRule lastRule rule.SyncRule
-            let childRules = spreadRules appliedRule [] subPathRules
-            let otherRules = spreadRules lastRule [] others
-            acc@[rule.Path, appliedRule]@childRules@otherRules
-
     rules
     |> List.sortBy _.Path.Value
-    |> spreadRules Save []
+    |> spreadRules computeRule Save []
 
 let private fullOuterJoin (sourceRules: (RelativePath * SourceRule) list) (backupRules: (RelativePath * BackupRule) list)  =
     let sourceRulesMap = sourceRules |> List.map (fun x -> fst x, snd x) |> Map
