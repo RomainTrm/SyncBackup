@@ -25,10 +25,11 @@ and Rule = {
     SyncRule: SyncRules
 }
 and RelativePath = {
-    Value: string
+    Value: RelativePathValue
     Type: PathType
     ContentType: ContentType
 }
+and RelativePathValue = string
 and PathType = Source | Alias
 and ContentType = Directory | File
 and SyncRules =

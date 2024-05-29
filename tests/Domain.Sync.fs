@@ -6,16 +6,16 @@ open Swensen.Unquote
 open SyncBackup.Domain.Sync
 
 module ``synchronize should`` =
-    let d1 = { Type = Alias; Value = "d1"; ContentType = Directory }
-    let d2 = { Type = Alias; Value = "d2"; ContentType = Directory }
-    let d3 = { Type = Alias; Value = "d3"; ContentType = Directory }
-    let d2f1 = { Type = Alias; Value = "d2/f1"; ContentType = File }
-    let d2f2 = { Type = Alias; Value = "d2/f2"; ContentType = File }
-    let d2f3 = { Type = Alias; Value = "d2/f3"; ContentType = File }
-    let d2f4 = { Type = Alias; Value = "d2/f4"; ContentType = File }
-    let d3f1 = { Type = Alias; Value = "d3/f1"; ContentType = File }
-    let d3f2 = { Type = Alias; Value = "d3/f2"; ContentType = File }
-    let d3f3 = { Type = Alias; Value = "d3/f3"; ContentType = File }
+    let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
+    let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
+    let d3 = { Type = Source; Value = "d3"; ContentType = Directory }
+    let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
+    let d2f2 = { Type = Source; Value = "d2/f2"; ContentType = File }
+    let d2f3 = { Type = Source; Value = "d2/f3"; ContentType = File }
+    let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
+    let d3f1 = { Type = Source; Value = "d3/f1"; ContentType = File }
+    let d3f2 = { Type = Source; Value = "d3/f2"; ContentType = File }
+    let d3f3 = { Type = Source; Value = "d3/f3"; ContentType = File }
 
     [<Fact>]
     let ``compute synchronize instructions when empty backup`` () =
@@ -98,5 +98,26 @@ module ``synchronize should`` =
             Delete d2f4
             Delete d3f1
             Delete d3f2
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute synchronize instructions when source repository contains aliases`` () =
+        let sourceRules: Rule list = [
+            { Path = { d2 with Type = Alias }; SyncRule = SyncRules.NoRule }
+            { Path = { d2f1 with Type = Alias }; SyncRule = SyncRules.NoRule }
+            { Path = { d2f2 with Type = Alias }; SyncRule = SyncRules.NoRule }
+            { Path = { d2f3 with Type = Alias }; SyncRule = SyncRules.NoRule }
+        ]
+
+        let result = synchronize sourceRules [
+            { Path = d2; SyncRule = SyncRules.NoRule }
+            { Path = d2f1; SyncRule = SyncRules.NotDelete }
+            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
+        ]
+        let expected = [
+            Replace { d2f2 with Type = Alias }
+            Replace { d2f3 with Type = Alias }
         ]
         test <@ result = Ok expected @>

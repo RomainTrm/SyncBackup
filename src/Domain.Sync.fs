@@ -28,7 +28,7 @@ let private spreadRules (computeRule: 'a -> SyncRules -> Result<'a, string>) las
                 let! appliedRule = computeRule lastRule rule.SyncRule
                 let! childRules = spreadRules' computeRule appliedRule [] subPathRules
                 let! otherRules = spreadRules' computeRule lastRule [] others
-                return acc@[rule.Path, appliedRule]@childRules@otherRules
+                return acc@[rule.Path.Value, (rule.Path, appliedRule)]@childRules@otherRules
             }
 
     rules
@@ -55,13 +55,21 @@ let private spreadBackupRules (rules: Rule list) =
 
     rules |> spreadRules computeRule Save
 
-let private fullOuterJoin (sourceRules: Map<RelativePath, SourceRule>) (backupRules: Map<RelativePath, BackupRule>)  =
+let private fullOuterJoin (sourceRules: Map<RelativePathValue, RelativePath * SourceRule>) (backupRules: Map<RelativePathValue, RelativePath * BackupRule>)  =
     [
-        sourceRules |> Seq.map (fun x -> x.Key, Some x.Value, backupRules |> Map.tryFind x.Key)
-        backupRules |> Seq.map (fun x -> x.Key, sourceRules |> Map.tryFind x.Key, Some x.Value)
+        sourceRules |> Seq.map (fun x ->
+            fst x.Value,
+            Some (snd x.Value),
+            backupRules |> Map.tryFind x.Key |> Option.map snd
+        )
+        backupRules |> Seq.map (fun x ->
+            fst x.Value,
+            sourceRules |> Map.tryFind x.Key |> Option.map snd,
+            Some (snd x.Value)
+        )
     ]
     |> Seq.concat
-    |> Seq.distinct
+    |> Seq.distinctBy (fun (path, _, _) -> path.Value)
     |> Seq.sortBy (fun (path, _, _) -> path.Value)
     |> Seq.toList
 
