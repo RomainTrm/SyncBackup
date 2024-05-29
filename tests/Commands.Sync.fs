@@ -7,6 +7,54 @@ open SyncBackup.Domain.Sync
 open SyncBackup.Commands.Sync
 
 module ``sync should`` =
+    [<Fact>]
+    let ``return error if designated source repository is a backup repository`` () =
+
+        let result = sync {
+            LoadSource = {
+                LoadElements = fun () -> Ok []
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Backup
+                    Aliases = []
+                    Rules = []
+                }
+            }
+            LoadBackup = {
+                LoadElements = fun () -> Ok []
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Backup
+                    Aliases = []
+                    Rules = []
+                }
+            }
+            SubmitSyncInstructions = ignore>>Ok
+        }
+        test <@ Result.isError result @>
+
+    [<Fact>]
+    let ``return error if designated backup repository is a source repository`` () =
+        let result = sync {
+            LoadSource = {
+                LoadElements = fun () -> Ok []
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Source
+                    Aliases = []
+                    Rules = []
+                }
+            }
+            LoadBackup = {
+                LoadElements = fun () -> Ok []
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Source
+                    Aliases = []
+                    Rules = []
+                }
+            }
+            SubmitSyncInstructions = ignore>>Ok
+        }
+
+        test <@ Result.isError result @>
+
     let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
     let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
     let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
@@ -20,15 +68,23 @@ module ``sync should`` =
         let infra = {
             LoadSource = {
                 LoadElements = fun () -> Ok [d1; d2; d2f1; d2f2; d2f3]
-                LoadRules = fun () -> Ok [{ Path = d1; SyncRule = Exclude }]
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Source
+                    Aliases = []
+                    Rules = [{ Path = d1; SyncRule = Exclude }]
+                }
             }
             LoadBackup = {
                 LoadElements = fun () -> Ok [d2; d2f3; d2f4]
-                LoadRules = fun () -> Ok [
-                    { Path = d2f2; SyncRule = NotSave }
-                    { Path = d2f3; SyncRule = AlwaysReplace }
-                    { Path = d2f4; SyncRule = NotDelete }
-                ]
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Backup
+                    Aliases = []
+                    Rules = [
+                        { Path = d2f2; SyncRule = NotSave }
+                        { Path = d2f3; SyncRule = AlwaysReplace }
+                        { Path = d2f4; SyncRule = NotDelete }
+                    ]
+                }
             }
             SubmitSyncInstructions = instructions.AddRange >> Ok
         }

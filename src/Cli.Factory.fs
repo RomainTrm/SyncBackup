@@ -31,11 +31,11 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
 
 let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {
     LoadSource = {
-        LoadRules = fun () -> SyncBackup.Infra.Config.load sourceDirectory |> Result.map _.Rules
+        LoadConfig = fun () -> SyncBackup.Infra.Config.load sourceDirectory
         LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load sourceDirectory
     }
     LoadBackup = {
-        LoadRules = fun () -> SyncBackup.Infra.Config.load backupDirectory |> Result.map _.Rules
+        LoadConfig = fun () -> SyncBackup.Infra.Config.load backupDirectory
         LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load backupDirectory
     }
     SubmitSyncInstructions = fun instructions ->
