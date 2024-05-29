@@ -77,11 +77,19 @@ let synchronize (sourceRules: Rule list) (backupRules: Rule list) =
 
     spreadRules
     |> List.collect (function
+        | _, None, None -> []
         | path, Some Include, None -> [Add path]
         | _, Some Include, Some Save -> []
         | path, Some Include, Some Replace -> [SyncInstruction.Replace path]
         | _, Some Include, Some NotSave -> []
+        | _, Some Include, Some NotDelete -> []
         | _, Some Exclude, None -> []
+        | path, Some Exclude, Some Save -> [Delete path]
+        | path, Some Exclude, Some Replace -> [Delete path]
+        | path, Some Exclude, Some NotSave -> [Delete path]
+        | _, Some Exclude, Some NotDelete -> []
         | _, None, Some NotDelete -> []
-        | path, None, _ -> [Delete path]
+        | path, None, Some Save -> [Delete path]
+        | path, None, Some NotSave -> [Delete path]
+        | path, None, Some Replace -> [Delete path]
     )
