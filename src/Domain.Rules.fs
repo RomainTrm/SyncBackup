@@ -29,7 +29,7 @@ let private buildRule (existingRules: Map<RelativePath, Rule>) (path: RelativePa
     |> Map.tryFind path
     |> Option.defaultValue { Path = path; SyncRule = NoRule }
 
-let buildRules (existingRules: Rule list) (paths: RelativePath list) =
+let buildScanRules (existingRules: Rule list) (paths: RelativePath list) =
     let existingRules = existingRules |> Seq.map (fun rule -> rule.Path, rule) |> Map
     paths |> List.map (buildRule existingRules)
 
