@@ -28,3 +28,23 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
         |> Result.map (fun config -> { config with Rules = rules })
         |> Result.bind (SyncBackup.Infra.Config.update currentDirectory)
 }
+
+let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {
+    LoadSource = {
+        LoadConfig = fun () -> SyncBackup.Infra.Config.load sourceDirectory
+        LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load sourceDirectory
+    }
+    LoadBackup = {
+        LoadConfig = fun () -> SyncBackup.Infra.Config.load backupDirectory
+        LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load backupDirectory
+    }
+    SubmitSyncInstructions = fun instructions ->
+        instructions // Temp code to test it live
+        |> List.map (function
+            | SyncBackup.Domain.Sync.Add path -> $"- Add: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
+            | SyncBackup.Domain.Sync.Replace path -> $"- Replace: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
+            | SyncBackup.Domain.Sync.Delete path -> $"- Delete: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
+        )
+        |> List.iter (printfn "%s")
+        |> Ok
+}

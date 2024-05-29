@@ -36,7 +36,11 @@ module ``buildScanResult should`` =
     let ``return only delta between scan and tracked elements`` (paths: RelativePath list) =
         let paths = List.distinct paths
         List.length paths > 3 ==> lazy
-        let added::removed::common = paths
+        let added, removed, common =
+            match paths with
+            | added::removed::common -> added, removed, common
+            | _ -> failwith "unexpected pattern"
+
         let result = buildScanResult [] (removed::common) (added::common)
         let expected = [
             { SyncRule = NoRule; Path = removed; Diff = RemovedFromRepository }
