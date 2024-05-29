@@ -28,3 +28,15 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
         |> Result.map (fun config -> { config with Rules = rules })
         |> Result.bind (SyncBackup.Infra.Config.update currentDirectory)
 }
+
+let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {
+    LoadSource = {
+        LoadRules = fun () -> SyncBackup.Infra.Config.load sourceDirectory |> Result.map _.Rules
+        LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load sourceDirectory
+    }
+    LoadBackup = {
+        LoadRules = fun () -> SyncBackup.Infra.Config.load backupDirectory |> Result.map _.Rules
+        LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load backupDirectory
+    }
+    SubmitSyncInstructions = fun instructions -> failwith "not implemented"
+}

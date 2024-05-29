@@ -12,13 +12,13 @@ let buildScanResult (existingRules: Rule list) (trackedElements: RelativePath li
         let added =
             Set.difference scannedElements trackedElements
             |> Set.toList
-            |> Rules.buildScanRules existingRules
+            |> Rules.buildRulesForScanning existingRules
             |> List.map (ScanResult.build AddedToRepository)
 
         let removed =
             Set.difference trackedElements scannedElements
             |> Set.toList
-            |> Rules.buildScanRules existingRules
+            |> Rules.buildRulesForScanning existingRules
             |> List.map (ScanResult.build RemovedFromRepository)
 
         let delta = added@removed

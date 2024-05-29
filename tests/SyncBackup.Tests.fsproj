@@ -12,6 +12,7 @@
     <Compile Include="Queries.Config.fs" />
     <Compile Include="Commands.Config.fs" />
     <Compile Include="Commands.Scan.fs" />
+    <Compile Include="Commands.Sync.fs" />
     <Compile Include="Infra.TestHelpers.fs" />
     <Compile Include="Infra.Core.fs" />
     <Compile Include="Infra.Config.fs" />
