@@ -16,7 +16,7 @@ type Infra = {
     SaveRules: Rule list -> Result<unit, string>
 }
 
-let private updateRules oldRules =
+let private updateRules' oldRules =
     List.fold (fun rules rule ->
         match Rules.add rules rule with
         | Rules.Added rules -> rules
@@ -25,6 +25,16 @@ let private updateRules oldRules =
             // users chose to override value while editing the file, so we can safely override old rule
             Rules.replace rules rule
     ) oldRules
+
+let private updateRules repositoryType oldRules =
+    List.fold (fun rules (rule: ScanResult) ->
+        result {
+            let! rules = rules
+            do! Rules.validateRule repositoryType rule.Rule.SyncRule
+            return rules@[rule.Rule]
+        }
+    ) (Ok [])
+    >> Result.map (updateRules' oldRules)
 
 let scanRepositoryContent (infra: Infra) () =
     result {
@@ -39,17 +49,7 @@ let scanRepositoryContent (infra: Infra) () =
         do! infra.OpenScanFileForUserEdition ()
 
         let! editedRules = infra.ReadScanFileContent ()
-        let! rulesToSave =
-            editedRules
-            |> List.map _.Rule
-            |> List.fold (fun rules rule ->
-                result {
-                    do! Rules.validateRule config.Type rule.SyncRule
-                    let! rules = rules
-                    return rules@[rule]
-                }
-            ) (Ok [])
-            |> Result.map (updateRules config.Rules)
+        let! rulesToSave = updateRules config.Type config.Rules editedRules
         do! infra.SaveTrackFile (Scan.defineTrackedElements trackedElements editedRules)
         do! infra.SaveRules rulesToSave
 
