@@ -39,7 +39,7 @@ module ``synchronize should`` =
             Add d2f2
             Add d3f2
         ]
-        test <@ result = expected @>
+        test <@ result = Ok expected @>
 
     [<Fact>]
     let ``compute synchronize instructions when not empty backup`` () =
@@ -67,7 +67,7 @@ module ``synchronize should`` =
             Replace d2f1
             Replace d2f2
         ]
-        test <@ result = expected @>
+        test <@ result = Ok expected @>
 
     [<Fact>]
     let ``compute synchronize instructions when not empty backup (conflicting rules)`` () =
@@ -99,4 +99,4 @@ module ``synchronize should`` =
             Delete d3f1
             Delete d3f2
         ]
-        test <@ result = expected @>
+        test <@ result = Ok expected @>

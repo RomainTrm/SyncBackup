@@ -1,5 +1,7 @@
 ﻿module SyncBackup.Domain.Sync
 
+open Microsoft.FSharp.Core
+open SyncBackup
 open SyncBackup.Domain.Dsl
 
 type SyncInstruction =
@@ -17,44 +19,46 @@ type private BackupRule =
     | NotSave
     | NotDelete
 
-let rec private spreadRules computeRule lastRule acc = function
-    | [] -> acc
-    | rule: Rule::rules ->
-        let subPathRules, others = rules |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Path rule.Path)
-        let appliedRule = computeRule lastRule rule.SyncRule
-        let childRules = spreadRules computeRule appliedRule [] subPathRules
-        let otherRules = spreadRules computeRule lastRule [] others
-        acc@[rule.Path, appliedRule]@childRules@otherRules
+let private spreadRules (computeRule: 'a -> SyncRules -> Result<'a, string>) lastRule (rules: Rule list) =
+    let rec spreadRules' (computeRule: 'a -> SyncRules -> Result<'a, string>) lastRule acc = function
+        | [] -> Ok acc
+        | rule: Rule::rules ->
+            result {
+                let subPathRules, others = rules |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Path rule.Path)
+                let! appliedRule = computeRule lastRule rule.SyncRule
+                let! childRules = spreadRules' computeRule appliedRule [] subPathRules
+                let! otherRules = spreadRules' computeRule lastRule [] others
+                return acc@[rule.Path, appliedRule]@childRules@otherRules
+            }
+
+    rules
+    |> List.sortBy _.Path.Value
+    |> spreadRules' computeRule lastRule []
+    |> Result.map Map
 
 let private spreadSourceRules (rules: Rule list) =
     let computeRule (lastRule: SourceRule) = function
-        | Dsl.SyncRules.NoRule -> lastRule
-        | Dsl.SyncRules.Include -> Include
-        | Dsl.SyncRules.Exclude -> Exclude
-        |  _ -> failwith "not supposed to happen"
+        | Dsl.SyncRules.NoRule -> Ok lastRule
+        | Dsl.SyncRules.Include -> Ok Include
+        | Dsl.SyncRules.Exclude -> Ok Exclude
+        | rule -> Error $"Rule \"{SyncRules.getValue rule}\" is not supposed to be setup in source repository."
 
-    rules
-    |> List.sortBy _.Path.Value
-    |> spreadRules computeRule Include []
+    rules |> spreadRules computeRule Include
 
 let private spreadBackupRules (rules: Rule list) =
     let computeRule (lastRule: BackupRule) = function
-        | Dsl.SyncRules.NoRule -> lastRule
-        | Dsl.SyncRules.AlwaysReplace -> Replace
-        | Dsl.SyncRules.NotSave -> NotSave
-        | Dsl.SyncRules.NotDelete -> NotDelete
-        |  _ -> failwith "not supposed to happen"
+        | Dsl.SyncRules.NoRule -> Ok lastRule
+        | Dsl.SyncRules.AlwaysReplace -> Ok Replace
+        | Dsl.SyncRules.NotSave -> Ok NotSave
+        | Dsl.SyncRules.NotDelete -> Ok NotDelete
+        | rule -> Error $"Rule \"{SyncRules.getValue rule}\" is not supposed to be setup in backup repository."
 
-    rules
-    |> List.sortBy _.Path.Value
-    |> spreadRules computeRule Save []
+    rules |> spreadRules computeRule Save
 
-let private fullOuterJoin (sourceRules: (RelativePath * SourceRule) list) (backupRules: (RelativePath * BackupRule) list)  =
-    let sourceRulesMap = sourceRules |> List.map (fun x -> fst x, snd x) |> Map
-    let backupRulesMap = backupRules |> List.map (fun x -> fst x, snd x) |> Map
+let private fullOuterJoin (sourceRules: Map<RelativePath, SourceRule>) (backupRules: Map<RelativePath, BackupRule>)  =
     [
-        sourceRulesMap |> Seq.map (fun x -> x.Key, Some x.Value, backupRulesMap |> Map.tryFind x.Key)
-        backupRulesMap |> Seq.map (fun x -> x.Key, sourceRulesMap |> Map.tryFind x.Key, Some x.Value)
+        sourceRules |> Seq.map (fun x -> x.Key, Some x.Value, backupRules |> Map.tryFind x.Key)
+        backupRules |> Seq.map (fun x -> x.Key, sourceRules |> Map.tryFind x.Key, Some x.Value)
     ]
     |> Seq.concat
     |> Seq.distinct
@@ -62,25 +66,25 @@ let private fullOuterJoin (sourceRules: (RelativePath * SourceRule) list) (backu
     |> Seq.toList
 
 let synchronize (sourceRules: Rule list) (backupRules: Rule list) =
-    let sourceRules = spreadSourceRules sourceRules
-    let backupRules = spreadBackupRules backupRules
-    let spreadRules = fullOuterJoin sourceRules backupRules
-
-    spreadRules
-    |> List.collect (function
-        | _, None, None -> []
-        | path, Some Include, None -> [Add path]
-        | _, Some Include, Some Save -> []
-        | path, Some Include, Some Replace -> [SyncInstruction.Replace path]
-        | _, Some Include, Some NotSave -> []
-        | _, Some Include, Some NotDelete -> []
-        | _, Some Exclude, None -> []
-        | path, Some Exclude, Some Save -> [Delete path]
-        | path, Some Exclude, Some Replace -> [Delete path]
-        | path, Some Exclude, Some NotSave -> [Delete path]
-        | _, Some Exclude, Some NotDelete -> []
-        | _, None, Some NotDelete -> []
-        | path, None, Some Save -> [Delete path]
-        | path, None, Some NotSave -> [Delete path]
-        | path, None, Some Replace -> [Delete path]
-    )
+    result {
+        let! sourceRules = spreadSourceRules sourceRules
+        let! backupRules = spreadBackupRules backupRules
+        let spreadRules = fullOuterJoin sourceRules backupRules
+        return spreadRules |> List.collect (function
+            | _, None, None -> []
+            | path, Some Include, None -> [Add path]
+            | _, Some Include, Some Save -> []
+            | path, Some Include, Some Replace -> [SyncInstruction.Replace path]
+            | _, Some Include, Some NotSave -> []
+            | _, Some Include, Some NotDelete -> []
+            | _, Some Exclude, None -> []
+            | path, Some Exclude, Some Save -> [Delete path]
+            | path, Some Exclude, Some Replace -> [Delete path]
+            | path, Some Exclude, Some NotSave -> [Delete path]
+            | _, Some Exclude, Some NotDelete -> []
+            | _, None, Some NotDelete -> []
+            | path, None, Some Save -> [Delete path]
+            | path, None, Some NotSave -> [Delete path]
+            | path, None, Some Replace -> [Delete path]
+        )
+    }
