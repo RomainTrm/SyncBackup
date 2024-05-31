@@ -2,7 +2,7 @@
 
 open System
 open System.IO
-open SyncBackup.Domain.Dsl
+open SyncBackup.Infra
 
 let currentDirectory = Environment.CurrentDirectory
 let testDirectoryPath uniqueTestDirectory = Path.Combine(currentDirectory, uniqueTestDirectory)
@@ -20,3 +20,10 @@ let createFile ([<ParamArray>] args: string[]) =
     let path = Path.Combine args
     if (not<<File.Exists) path
     then File.WriteAllText (path, "")
+
+let setupConfigDirectoryTest uniqueTestDirectory =
+    let path = testDirectoryPath uniqueTestDirectory
+    cleanupTests path
+    createDirectory [|uniqueTestDirectory|]
+    createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+    path
