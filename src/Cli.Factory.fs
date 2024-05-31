@@ -42,6 +42,7 @@ let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.
     OpenSyncInstructionsForUserEdition = fun () ->
         SyncBackup.Infra.Dsl.getSyncInstructionsFilePath sourceDirectory
         |> SyncBackup.Infra.Editor.VsCode.runEditor
+    AreInstructionsAccepted = fun () -> SyncBackup.Infra.Sync.InstructionsFile.areInstructionsAccepted sourceDirectory
     SubmitSyncInstructions = fun instructions ->
         instructions // Temp code to test it live
         |> List.map SyncBackup.Domain.Sync.SyncInstruction.serialize

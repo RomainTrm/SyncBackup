@@ -10,6 +10,7 @@ type Infra = {
     LoadBackup: LoadInfra
     SaveSyncInstructionsFile: SyncInstruction list -> Result<unit, string>
     OpenSyncInstructionsForUserEdition: unit -> Result<unit, string>
+    AreInstructionsAccepted: unit -> Result<bool, string>
     SubmitSyncInstructions: SyncInstruction list -> Result<unit, string>
 }
 and LoadInfra = {
@@ -41,5 +42,8 @@ let sync (infra: Infra) =
         let! instructions = synchronize sourceRules backupRules
         do! infra.SaveSyncInstructionsFile instructions
         do! infra.OpenSyncInstructionsForUserEdition ()
-        do! infra.SubmitSyncInstructions instructions
+
+        match! infra.AreInstructionsAccepted () with
+        | true -> do! infra.SubmitSyncInstructions instructions
+        | false -> return ()
     }
