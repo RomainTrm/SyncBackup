@@ -39,3 +39,7 @@ module InstructionsFile =
             |> Option.map not
             |> Option.defaultValue false
             |> Ok
+
+module Process =
+    let run (sourceDirectory: RepositoryPath) (backupDirectory: RepositoryPath) (logger: string -> unit) (instructions: SyncInstruction list) =
+        Ok ()

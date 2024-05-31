@@ -108,7 +108,7 @@ module ``sync should`` =
         }
 
         let result = sync infra
-        test <@ result = Ok () @>
+        test <@ result = Ok "Synchronization completed!" @>
 
         let expected = [
             Add d2f1
@@ -149,5 +149,5 @@ module ``sync should`` =
         }
 
         let result = sync infra
-        test <@ result = Ok () @>
+        test <@ result = Ok "Synchronization aborted!" @>
         test <@ instructionsSubmitted |> Seq.isEmpty @>

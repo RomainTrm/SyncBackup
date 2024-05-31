@@ -14,4 +14,3 @@ let runCommand commandInfraFactory = function
     | BackupPath path ->
         commandInfraFactory path
         |> SyncBackup.Commands.Sync.sync
-        |> Result.map (fun () -> "Sync completed.")

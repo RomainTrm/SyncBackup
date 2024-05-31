@@ -44,6 +44,8 @@ let sync (infra: Infra) =
         do! infra.OpenSyncInstructionsForUserEdition ()
 
         match! infra.AreInstructionsAccepted () with
-        | true -> do! infra.SubmitSyncInstructions instructions
-        | false -> return ()
+        | true ->
+            do! infra.SubmitSyncInstructions instructions
+            return "Synchronization completed!"
+        | false -> return "Synchronization aborted!"
     }

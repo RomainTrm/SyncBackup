@@ -29,7 +29,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
     let configCommandInfra = Factory.configCommandInfra logger currentDirectory
     let configQueryInfra = Factory.configQueryInfra currentDirectory
     let contentCommandInfra = Factory.contentCommandInfra currentDirectory
-    let syncCommandInfraFactory = Factory.syncCommandInfra currentDirectory
+    let syncCommandInfraFactory = Factory.syncCommandInfra logger currentDirectory
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
     results.TryGetSubCommand()
