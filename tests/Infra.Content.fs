@@ -107,10 +107,7 @@ module ScanFile =
         [<Fact>]
         let ``save scan result`` () =
             let uniqueTestDirectory = "test-7c1e51c9-0eb0-4019-9268-faf20eddb0cb"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let result = ScanFile.writeFile path RepositoryType.Source content
             test <@ result = Ok () @>
@@ -135,10 +132,7 @@ module ScanFile =
         [<Fact>]
         let ``empty scan result should display "up to date"`` () =
             let uniqueTestDirectory = "test-7b1de11a-20c3-4e08-b67c-871a4bc10cb5"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let result = ScanFile.writeFile path RepositoryType.Source []
             test <@ result = Ok () @>
@@ -150,10 +144,7 @@ module ScanFile =
         [<Fact>]
         let ``should read file content`` () =
             let uniqueTestDirectory = "test-a864d347-0e6a-4e6c-aa70-877c9ce3adc6"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let result = ScanFile.writeFile path RepositoryType.Source content
             test <@ result = Ok () @>
@@ -178,10 +169,7 @@ module ScanFile =
         [<InlineData("norule")>]
         let ``should return error if invalid file content format`` (line: string) =
             let uniqueTestDirectory = "test-b694318b-35db-4f20-a42e-b2123d189773"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let filePath = Dsl.getScanFileFilePath path
             System.IO.File.WriteAllText (filePath, line)
@@ -194,10 +182,7 @@ module TrackFile =
         [<Fact>]
         let ``register tracked elements`` () =
             let uniqueTestDirectory = "test-7ac330ef-d9bb-41f7-bfdd-1bbec664c05a"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
                 { Type = Source; Value = "line1"; ContentType = File }
@@ -218,10 +203,7 @@ module TrackFile =
         [<Fact>]
         let ``return file content`` () =
             let uniqueTestDirectory = "test-86cc56ee-cbb5-4aab-8c0d-f61f54744cb3"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
                 { Type = Source; Value = "line1"; ContentType = File }
@@ -237,10 +219,7 @@ module TrackFile =
         [<Fact>]
         let ``return empty when file not created`` () =
             let uniqueTestDirectory = "test-25903348-b5ec-4a26-a257-dbc2cb7dfcf2"
-            let path = TestHelpers.testDirectoryPath uniqueTestDirectory
-            TestHelpers.cleanupTests path
-            TestHelpers.createDirectory [|uniqueTestDirectory|]
-            TestHelpers.createDirectory [|uniqueTestDirectory; Dsl.ConfigDirectory|]
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let result = TrackFile.load path
             test <@ result = Ok [] @>

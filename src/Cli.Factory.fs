@@ -38,13 +38,14 @@ let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.
         LoadConfig = fun () -> SyncBackup.Infra.Config.load backupDirectory
         LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load backupDirectory
     }
+    SaveSyncInstructionsFile = SyncBackup.Infra.Sync.InstructionsFile.save sourceDirectory backupDirectory
+    OpenSyncInstructionsForUserEdition = fun () ->
+        SyncBackup.Infra.Dsl.getSyncInstructionsFilePath sourceDirectory
+        |> SyncBackup.Infra.Editor.VsCode.runEditor
+    AreInstructionsAccepted = fun () -> SyncBackup.Infra.Sync.InstructionsFile.areInstructionsAccepted sourceDirectory
     SubmitSyncInstructions = fun instructions ->
         instructions // Temp code to test it live
-        |> List.map (function
-            | SyncBackup.Domain.Sync.Add path -> $"- Add: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
-            | SyncBackup.Domain.Sync.Replace path -> $"- Replace: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
-            | SyncBackup.Domain.Sync.Delete path -> $"- Delete: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
-        )
+        |> List.map SyncBackup.Domain.Sync.SyncInstruction.serialize
         |> List.iter (printfn "%s")
         |> Ok
 }

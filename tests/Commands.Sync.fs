@@ -7,50 +7,64 @@ open SyncBackup.Domain.Sync
 open SyncBackup.Commands.Sync
 
 module ``sync should`` =
+    let defaultInfra = {
+        LoadSource = {
+            LoadConfig = fun _ -> failwith "not implemented"
+            LoadElements = fun _ -> failwith "not implemented"
+        }
+        LoadBackup = {
+            LoadConfig = fun _ -> failwith "not implemented"
+            LoadElements = fun _ -> failwith "not implemented"
+        }
+        SaveSyncInstructionsFile = fun _ -> failwith "not implemented"
+        OpenSyncInstructionsForUserEdition = fun _ -> failwith "not implemented"
+        AreInstructionsAccepted = fun _ -> failwith "not implemented"
+        SubmitSyncInstructions = fun _ -> failwith "not implemented"
+    }
+
     [<Fact>]
     let ``return error if designated source repository is a backup repository`` () =
-
         let result = sync {
-            LoadSource = {
-                LoadElements = fun () -> Ok []
-                LoadConfig = fun () -> Ok {
-                    Type = RepositoryType.Backup
-                    Aliases = []
-                    Rules = []
+            defaultInfra with
+                LoadSource = {
+                    LoadElements = fun () -> Ok []
+                    LoadConfig = fun () -> Ok {
+                        Type = RepositoryType.Backup
+                        Aliases = []
+                        Rules = []
+                    }
                 }
-            }
-            LoadBackup = {
-                LoadElements = fun () -> Ok []
-                LoadConfig = fun () -> Ok {
-                    Type = RepositoryType.Backup
-                    Aliases = []
-                    Rules = []
+                LoadBackup = {
+                    LoadElements = fun () -> Ok []
+                    LoadConfig = fun () -> Ok {
+                        Type = RepositoryType.Backup
+                        Aliases = []
+                        Rules = []
+                    }
                 }
-            }
-            SubmitSyncInstructions = ignore>>Ok
         }
         test <@ Result.isError result @>
 
     [<Fact>]
     let ``return error if designated backup repository is a source repository`` () =
         let result = sync {
-            LoadSource = {
-                LoadElements = fun () -> Ok []
-                LoadConfig = fun () -> Ok {
-                    Type = RepositoryType.Source
-                    Aliases = []
-                    Rules = []
+            defaultInfra with
+                LoadSource = {
+                    LoadElements = fun () -> Ok []
+                    LoadConfig = fun () -> Ok {
+                        Type = RepositoryType.Source
+                        Aliases = []
+                        Rules = []
+                    }
                 }
-            }
-            LoadBackup = {
-                LoadElements = fun () -> Ok []
-                LoadConfig = fun () -> Ok {
-                    Type = RepositoryType.Source
-                    Aliases = []
-                    Rules = []
+                LoadBackup = {
+                    LoadElements = fun () -> Ok []
+                    LoadConfig = fun () -> Ok {
+                        Type = RepositoryType.Source
+                        Aliases = []
+                        Rules = []
+                    }
                 }
-            }
-            SubmitSyncInstructions = ignore>>Ok
         }
 
         test <@ Result.isError result @>
@@ -63,8 +77,9 @@ module ``sync should`` =
     let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
 
     [<Fact>]
-    let ``load data then submit instructions`` () =
-        let instructions = System.Collections.Generic.List<_> ()
+    let ``load data then submit instructions when accepted`` () =
+        let instructionsSaved = System.Collections.Generic.List<_> ()
+        let instructionsSubmitted = System.Collections.Generic.List<_> ()
         let infra = {
             LoadSource = {
                 LoadElements = fun () -> Ok [d1; d2; d2f1; d2f2; d2f3]
@@ -86,7 +101,10 @@ module ``sync should`` =
                     ]
                 }
             }
-            SubmitSyncInstructions = instructions.AddRange >> Ok
+            SaveSyncInstructionsFile = instructionsSaved.AddRange >> Ok
+            OpenSyncInstructionsForUserEdition = fun () -> Ok ()
+            AreInstructionsAccepted = fun () -> Ok true
+            SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
         }
 
         let result = sync infra
@@ -97,4 +115,39 @@ module ``sync should`` =
             Replace d2f3
         ]
 
-        test <@ instructions |> Seq.toList = expected @>
+        test <@ instructionsSaved |> Seq.toList = expected @>
+        test <@ instructionsSubmitted |> Seq.toList = expected @>
+
+    [<Fact>]
+    let ``load data then not submit instructions when refused`` () =
+        let instructionsSubmitted = System.Collections.Generic.List<_> ()
+        let infra = {
+            LoadSource = {
+                LoadElements = fun () -> Ok [d1; d2; d2f1; d2f2; d2f3]
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Source
+                    Aliases = []
+                    Rules = [{ Path = d1; SyncRule = Exclude }]
+                }
+            }
+            LoadBackup = {
+                LoadElements = fun () -> Ok [d2; d2f3; d2f4]
+                LoadConfig = fun () -> Ok {
+                    Type = RepositoryType.Backup
+                    Aliases = []
+                    Rules = [
+                        { Path = d2f2; SyncRule = NotSave }
+                        { Path = d2f3; SyncRule = AlwaysReplace }
+                        { Path = d2f4; SyncRule = NotDelete }
+                    ]
+                }
+            }
+            SaveSyncInstructionsFile = ignore >> Ok
+            OpenSyncInstructionsForUserEdition = fun () -> Ok ()
+            AreInstructionsAccepted = fun () -> Ok false
+            SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
+        }
+
+        let result = sync infra
+        test <@ result = Ok () @>
+        test <@ instructionsSubmitted |> Seq.isEmpty @>

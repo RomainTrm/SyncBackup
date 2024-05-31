@@ -17,6 +17,7 @@
     <Compile Include="Infra.Core.fs" />
     <Compile Include="Infra.Config.fs" />
     <Compile Include="Infra.Content.fs" />
+    <Compile Include="Infra.Sync.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\src\SyncBackup.fsproj" />
