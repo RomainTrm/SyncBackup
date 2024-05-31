@@ -41,3 +41,39 @@ module InstructionsFile =
                 "- Delete: file::\"path3\""
             |]
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
+
+    module ``areInstructionsAccepted should`` =
+        [<Fact>]
+        let ``return error if file is missing`` () =
+            let uniqueTestDirectory = "test-eb63cf53-3de0-4402-b4a3-5fd0c727f879"
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
+
+            let result = InstructionsFile.areInstructionsAccepted path
+            test <@ Result.isError result @>
+
+        [<Fact>]
+        let ``return false if accept is commented`` () =
+            let uniqueTestDirectory = "test-9e2d72b5-629d-4761-ab36-12ed1a241f83"
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
+
+            let _ = InstructionsFile.save path "whatever" []
+
+            let result = InstructionsFile.areInstructionsAccepted path
+            test <@ result = Ok false @>
+
+        [<Theory>]
+        [<InlineData("  Accept")>]
+        [<InlineData("Accept")>]
+        [<InlineData("    Accept  ")>]
+        let ``return true if accept is uncommented`` accept =
+            let uniqueTestDirectory = "test-cf485f28-f85f-453d-83b7-f46514edfccd"
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
+
+            let _ = InstructionsFile.save path "whatever" []
+            let filePath = Dsl.getSyncInstructionsFilePath path
+            let fileContent = System.IO.File.ReadAllText filePath
+            let acceptedFileContent = fileContent.Replace("# Accept", accept)
+            System.IO.File.WriteAllText (filePath, acceptedFileContent)
+
+            let result = InstructionsFile.areInstructionsAccepted path
+            test <@ result = Ok true @>
