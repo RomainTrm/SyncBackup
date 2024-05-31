@@ -104,7 +104,7 @@ module ``sync should`` =
             SaveSyncInstructionsFile = instructionsSaved.AddRange >> Ok
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok true
-            SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
+            SubmitSyncInstructions = fun _ -> instructionsSubmitted.AddRange >> Ok
         }
 
         let result = sync infra
@@ -145,7 +145,7 @@ module ``sync should`` =
             SaveSyncInstructionsFile = ignore >> Ok
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok false
-            SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
+            SubmitSyncInstructions = fun _ -> instructionsSubmitted.AddRange >> Ok
         }
 
         let result = sync infra
