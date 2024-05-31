@@ -40,11 +40,7 @@ let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.
     }
     SubmitSyncInstructions = fun instructions ->
         instructions // Temp code to test it live
-        |> List.map (function
-            | SyncBackup.Domain.Sync.Add path -> $"- Add: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
-            | SyncBackup.Domain.Sync.Replace path -> $"- Replace: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
-            | SyncBackup.Domain.Sync.Delete path -> $"- Delete: {SyncBackup.Domain.Dsl.RelativePath.serialize path}"
-        )
+        |> List.map SyncBackup.Domain.Sync.SyncInstruction.serialize
         |> List.iter (printfn "%s")
         |> Ok
 }

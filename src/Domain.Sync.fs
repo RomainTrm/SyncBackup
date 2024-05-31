@@ -9,6 +9,12 @@ type SyncInstruction =
     | Replace of RelativePath
     | Delete of RelativePath
 
+module SyncInstruction =
+    let serialize = function
+        | Add path -> $"- Add: {RelativePath.serialize path}"
+        | Replace path -> $"- Replace: {RelativePath.serialize path}"
+        | Delete path -> $"- Delete: {RelativePath.serialize path}"
+
 type private SourceRule =
     | Include
     | Exclude
