@@ -8,6 +8,8 @@ open SyncBackup.Domain.Sync
 type Infra = {
     LoadSource: LoadInfra
     LoadBackup: LoadInfra
+    SaveSyncInstructionsFile: SyncInstruction list -> Result<unit, string>
+    OpenSyncInstructionsForUserEdition: unit -> Result<unit, string>
     SubmitSyncInstructions: SyncInstruction list -> Result<unit, string>
 }
 and LoadInfra = {
@@ -37,5 +39,7 @@ let sync (infra: Infra) =
             |> Result.map (Rules.buildRulesForSyncing backupConfig.Rules)
 
         let! instructions = synchronize sourceRules backupRules
+        do! infra.SaveSyncInstructionsFile instructions
+        do! infra.OpenSyncInstructionsForUserEdition ()
         do! infra.SubmitSyncInstructions instructions
     }
