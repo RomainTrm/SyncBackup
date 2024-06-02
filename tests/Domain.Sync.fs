@@ -32,6 +32,7 @@ module ``synchronize should`` =
         ]
 
         let result = synchronize sourceRules []
+        
         let expected = [
             Add d1
             Add d2
@@ -62,6 +63,7 @@ module ``synchronize should`` =
             { Path = d3f2; SyncRule = SyncRules.NotDelete }
             { Path = d3f3; SyncRule = SyncRules.NotDelete }
         ]
+
         let expected = [
             Delete d1
             Replace d2f1
@@ -92,6 +94,7 @@ module ``synchronize should`` =
             { Path = d3f1; SyncRule = SyncRules.NotSave }
             { Path = d3f2; SyncRule = SyncRules.AlwaysReplace }
         ]
+
         let expected = [
             Delete d2f1
             Delete d2f2
@@ -116,8 +119,36 @@ module ``synchronize should`` =
             { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
         ]
+
         let expected = [
             Replace { d2f2 with Type = Alias }
             Replace { d2f3 with Type = Alias }
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute synchronize instructions should only replace files`` () =
+        let sourceRules: Rule list = [
+            { Path = d1; SyncRule = SyncRules.NoRule }
+            { Path = d2; SyncRule = SyncRules.NoRule }
+            { Path = d3; SyncRule = SyncRules.NoRule }
+            { Path = d2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2f2; SyncRule = SyncRules.NoRule }
+            { Path = d2f3; SyncRule = SyncRules.NoRule }
+        ]
+
+        let result = synchronize sourceRules [
+            { Path = d1; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f1; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
+        ]
+
+        let expected = [
+            Replace d2f1
+            Replace d2f2
+            Replace d2f3
         ]
         test <@ result = Ok expected @>
