@@ -79,27 +79,43 @@ let private fullOuterJoin (sourceRules: Map<RelativePathValue, RelativePath * So
     |> Seq.sortBy (fun (path, _, _) -> path.Value)
     |> Seq.toList
 
+let private computeInstructions = function
+    | _, None, None -> []
+    | path, Some Include, None -> [Add path]
+    | _, Some Include, Some Save -> []
+    | { ContentType = File } as path, Some Include, Some Replace -> [SyncInstruction.Replace path]
+    | { ContentType = Directory }, Some Include, Some Replace -> []
+    | _, Some Include, Some NotSave -> []
+    | _, Some Include, Some NotDelete -> []
+    | _, Some Exclude, None -> []
+    | path, Some Exclude, Some Save -> [Delete path]
+    | path, Some Exclude, Some Replace -> [Delete path]
+    | path, Some Exclude, Some NotSave -> [Delete path]
+    | _, Some Exclude, Some NotDelete -> []
+    | _, None, Some NotDelete -> []
+    | path, None, Some Save -> [Delete path]
+    | path, None, Some NotSave -> [Delete path]
+    | path, None, Some Replace -> [Delete path]
+
+let private (|Instruction|) = function
+    | Add path
+    | SyncInstruction.Replace path
+    | Delete path -> Some path
+
+let private orderInstructions left right =
+    match left, right with
+    | Delete left, Delete right when left |> RelativePath.contains right -> 1
+    | Delete left, Delete right when right |> RelativePath.contains left -> -1
+    | Add left, Add right when left |> RelativePath.contains right -> -1
+    | Add left, Add right when right |> RelativePath.contains left -> 1
+    | Instruction left, Instruction right -> compare left right
+
 let synchronize (sourceRules: Rule list) (backupRules: Rule list) =
     result {
         let! sourceRules = spreadSourceRules sourceRules
         let! backupRules = spreadBackupRules backupRules
-        let spreadRules = fullOuterJoin sourceRules backupRules
-        return spreadRules |> List.collect (function
-            | _, None, None -> []
-            | path, Some Include, None -> [Add path]
-            | _, Some Include, Some Save -> []
-            | { ContentType = File } as path, Some Include, Some Replace -> [SyncInstruction.Replace path]
-            | { ContentType = Directory }, Some Include, Some Replace -> []
-            | _, Some Include, Some NotSave -> []
-            | _, Some Include, Some NotDelete -> []
-            | _, Some Exclude, None -> []
-            | path, Some Exclude, Some Save -> [Delete path]
-            | path, Some Exclude, Some Replace -> [Delete path]
-            | path, Some Exclude, Some NotSave -> [Delete path]
-            | _, Some Exclude, Some NotDelete -> []
-            | _, None, Some NotDelete -> []
-            | path, None, Some Save -> [Delete path]
-            | path, None, Some NotSave -> [Delete path]
-            | path, None, Some Replace -> [Delete path]
-        )
+        return
+            fullOuterJoin sourceRules backupRules
+            |> List.collect computeInstructions
+            |> List.sortWith orderInstructions
     }

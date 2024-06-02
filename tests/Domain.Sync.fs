@@ -1,5 +1,6 @@
 ﻿module SyncBackup.Tests.Domain.Sync
 
+open System
 open SyncBackup.Domain.Dsl
 open Xunit
 open Swensen.Unquote
@@ -32,7 +33,7 @@ module ``synchronize should`` =
         ]
 
         let result = synchronize sourceRules []
-        
+
         let expected = [
             Add d1
             Add d2
@@ -152,3 +153,72 @@ module ``synchronize should`` =
             Replace d2f3
         ]
         test <@ result = Ok expected @>
+
+    let d1s1 = { Type = Source; Value = "d1/s1"; ContentType = Directory }
+    let d1s2 = { Type = Source; Value = "d1/s2"; ContentType = Directory }
+    let d1s1f1 = { Type = Source; Value = "d1/s1/f1"; ContentType = File }
+    let d1s1f2 = { Type = Source; Value = "d1/s1/f2"; ContentType = File }
+    let d1s2f1 = { Type = Source; Value = "d1/s2/f1"; ContentType = File }
+
+    let rnd = Random();
+    let randomizeOrder _ _ = rnd.Next ()
+
+    [<Fact>]
+    let ``compute add order`` () =
+        let sourceRules = List.sortWith randomizeOrder [
+            { Path = d1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1f1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1f2; SyncRule = SyncRules.NoRule }
+            { Path = d1s2; SyncRule = SyncRules.NoRule }
+            { Path = d1s2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2; SyncRule = SyncRules.NoRule }
+            { Path = d2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2f2; SyncRule = SyncRules.NoRule }
+        ]
+
+        let result = synchronize sourceRules []
+
+        let expected = [
+            Add d1
+            Add d1s1
+            Add d1s1f1
+            Add d1s1f2
+            Add d1s2
+            Add d1s2f1
+            Add d2
+            Add d2f1
+            Add d2f2
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute delete order`` () =
+        let backupRules = List.sortWith randomizeOrder [
+            { Path = d1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1f1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1f2; SyncRule = SyncRules.NoRule }
+            { Path = d1s2; SyncRule = SyncRules.NoRule }
+            { Path = d1s2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2; SyncRule = SyncRules.NoRule }
+            { Path = d2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2f2; SyncRule = SyncRules.NoRule }
+        ]
+
+        let result = synchronize [] backupRules
+
+        let expected = [
+            Delete d1s1f1
+            Delete d1s1f2
+            Delete d1s1
+            Delete d1s2f1
+            Delete d1s2
+            Delete d1
+            Delete d2f1
+            Delete d2f2
+            Delete d2
+        ]
+        test <@ result = Ok expected @>
+
+    // TODO : not delete director if child still exists
