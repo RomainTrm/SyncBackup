@@ -228,3 +228,25 @@ module Process =
             |> ignore
 
             test <@ File.Exists (Path.Combine (backupPath, "alias", "file")) = false @>
+
+    [<Fact>]
+    let ``should log errors without stopping sync`` () =
+        let uniqueTestDirectory = "test-54ee0f2e-24e1-4f9d-9af8-1fe2d3b224d1"
+        let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+        TestHelpers.createFile [|sourcePath; "file"|]
+
+        let logs = System.Collections.Generic.List<_> ()
+        [
+            Add { Value = "missing file first"; Type = Source; ContentType = File }
+            Add { Value = "file"; Type = Source; ContentType = File }
+        ]
+        |> Process.run sourcePath backupPath logs.Add []
+        |> ignore
+
+        test <@ File.Exists (Path.Combine (backupPath, "file")) = true @>
+        let expectedLogs = [
+            "Adding file::\"missing file first\""
+            $"""Could not find file '{Path.Combine(sourcePath, "missing file first")}'."""
+            "Adding file::\"file\""
+        ]
+        test <@ logs |> Seq.toList = expectedLogs @>

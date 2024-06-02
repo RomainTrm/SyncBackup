@@ -54,31 +54,34 @@ module Process =
 
     let run (sourceDirectory: RepositoryPath) (backupDirectory: RepositoryPath) (logger: string -> unit) (aliases: Alias list) (instructions: SyncInstruction list) =
         instructions
-        |> List.iter (function
-            | Add ({ ContentType = ContentType.File } as path) ->
-                logger $"Adding {RelativePath.serialize path}"
-                let source = buildSourceFullPath sourceDirectory aliases path
-                let backup = buildBackupFullPath backupDirectory path
-                File.Copy (source, backup)
-            | Add ({ ContentType = ContentType.Directory } as path) ->
-                let backup = buildBackupFullPath backupDirectory path
-                Directory.CreateDirectory backup |> ignore<DirectoryInfo>
-                logger $"Adding {RelativePath.serialize path}"
+        |> List.iter (fun instruction ->
+            try
+                match instruction with
+                | Add ({ ContentType = ContentType.File } as path) ->
+                    logger $"Adding {RelativePath.serialize path}"
+                    let source = buildSourceFullPath sourceDirectory aliases path
+                    let backup = buildBackupFullPath backupDirectory path
+                    File.Copy (source, backup)
+                | Add ({ ContentType = ContentType.Directory } as path) ->
+                    let backup = buildBackupFullPath backupDirectory path
+                    Directory.CreateDirectory backup |> ignore<DirectoryInfo>
+                    logger $"Adding {RelativePath.serialize path}"
 
-            | Replace ({ ContentType = ContentType.File } as path) ->
-                logger $"Replacing {RelativePath.serialize path}"
-                let source = buildSourceFullPath sourceDirectory aliases path
-                let backup = buildBackupFullPath backupDirectory path
-                File.Copy (source, backup, true)
-            | Replace { ContentType = ContentType.Directory } -> ()
+                | Replace ({ ContentType = ContentType.File } as path) ->
+                    logger $"Replacing {RelativePath.serialize path}"
+                    let source = buildSourceFullPath sourceDirectory aliases path
+                    let backup = buildBackupFullPath backupDirectory path
+                    File.Copy (source, backup, true)
+                | Replace { ContentType = ContentType.Directory } -> ()
 
-            | Delete ({ ContentType = ContentType.File } as path) ->
-                logger $"Deleting {RelativePath.serialize path}"
-                let backup = buildBackupFullPath backupDirectory path
-                File.Delete backup
-            | Delete ({ ContentType = ContentType.Directory } as path) ->
-                let backup = buildBackupFullPath backupDirectory path
-                Directory.Delete backup
-                logger $"Deleting {RelativePath.serialize path}"
+                | Delete ({ ContentType = ContentType.File } as path) ->
+                    logger $"Deleting {RelativePath.serialize path}"
+                    let backup = buildBackupFullPath backupDirectory path
+                    File.Delete backup
+                | Delete ({ ContentType = ContentType.Directory } as path) ->
+                    let backup = buildBackupFullPath backupDirectory path
+                    Directory.Delete backup
+                    logger $"Deleting {RelativePath.serialize path}"
+            with e -> logger e.Message
         )
         Ok ()
