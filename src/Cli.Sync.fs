@@ -12,5 +12,6 @@ with
 
 let runCommand commandInfraFactory = function
     | BackupPath path ->
-        commandInfraFactory path
+        SyncBackup.Domain.Dsl.DirectoryPath.build path
+        |> commandInfraFactory
         |> SyncBackup.Commands.Sync.sync

@@ -2,7 +2,7 @@
 
 type DirectoryPath = string
 module DirectoryPath =
-    let build (value: DirectoryPath) = value.TrimEnd [| '\\'; '\"' |]
+    let build (value: DirectoryPath) = value.Replace('/', '\\').TrimEnd [| '\\'; '\"' |]
 
 type FilePath = string
 /// Some path provided by the user, code doesn't known if it points to an element in the source or in an alias, neither if it's a directory or a file
