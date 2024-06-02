@@ -7,7 +7,7 @@ let configCommandInfra logger currentDirectory : SyncBackup.Commands.Config.Infr
     BuildRelativePath = SyncBackup.Infra.Core.buildRelativePath currentDirectory
     UpdateConfig = SyncBackup.Infra.Config.update currentDirectory
     SolveRuleConflict = Rules.solveConflict logger
-    SolveContentType = fun () -> failwith "not implemented"
+    SolveContentType = fun () -> Rules.solveContentType logger
 }
 
 let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
