@@ -84,7 +84,7 @@ module RelativePath =
 
     let contains child parent =
         match child, parent with
-        | _ when child = parent -> true
+        | _ when child = parent -> false
         | { Type = childType }, { Type = parentType } when childType <> parentType -> false
         | { Value = childPath }, { Value = parentPath } -> childPath.StartsWith parentPath
 
