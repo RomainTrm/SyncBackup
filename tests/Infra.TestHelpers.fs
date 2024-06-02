@@ -16,10 +16,12 @@ let createDirectory (args: string[]) =
     if (not<<Directory.Exists) path
     then Directory.CreateDirectory path |> ignore<DirectoryInfo>
 
-let createFile ([<ParamArray>] args: string[]) =
+let createFile' ([<ParamArray>] args: string[]) fileContent =
     let path = Path.Combine args
     if (not<<File.Exists) path
-    then File.WriteAllText (path, "")
+    then File.WriteAllText (path, fileContent)
+
+let createFile ([<ParamArray>] args: string[]) = createFile' args ""
 
 let setupConfigDirectoryTest uniqueTestDirectory =
     let path = testDirectoryPath uniqueTestDirectory

@@ -11,7 +11,7 @@ type Infra = {
     SaveSyncInstructionsFile: SyncInstruction list -> Result<unit, string>
     OpenSyncInstructionsForUserEdition: unit -> Result<unit, string>
     AreInstructionsAccepted: unit -> Result<bool, string>
-    SubmitSyncInstructions: SyncInstruction list -> Result<unit, string>
+    SubmitSyncInstructions: Alias list -> SyncInstruction list -> Result<unit, string>
 }
 and LoadInfra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
@@ -44,6 +44,8 @@ let sync (infra: Infra) =
         do! infra.OpenSyncInstructionsForUserEdition ()
 
         match! infra.AreInstructionsAccepted () with
-        | true -> do! infra.SubmitSyncInstructions instructions
-        | false -> return ()
+        | true ->
+            do! infra.SubmitSyncInstructions sourceConfig.Aliases instructions
+            return "Synchronization completed!"
+        | false -> return "Synchronization aborted!"
     }

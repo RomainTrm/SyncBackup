@@ -1,5 +1,6 @@
 ﻿module SyncBackup.Tests.Infra.Sync
 
+open System.IO
 open SyncBackup.Domain.Dsl
 open Xunit
 open Swensen.Unquote
@@ -77,3 +78,175 @@ module InstructionsFile =
 
             let result = InstructionsFile.areInstructionsAccepted path
             test <@ result = Ok true @>
+
+module Process =
+    let setupSyncDirectoryTest uniqueTestDirectory =
+        let path = TestHelpers.testDirectoryPath uniqueTestDirectory
+        TestHelpers.cleanupTests path
+        TestHelpers.createDirectory [|uniqueTestDirectory; "source"|]
+        TestHelpers.createDirectory [|uniqueTestDirectory; "backup"|]
+        (Path.Combine (path, "source")), (Path.Combine (path, "backup"))
+
+    module ``run Add should`` =
+        [<Fact>]
+        let ``add new file`` () =
+            let uniqueTestDirectory = "test-9d3d28c6-4cbc-4371-9678-6ac9665717be"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createFile [|sourcePath; "file"|]
+
+            test <@ File.Exists (Path.Combine (backupPath, "file")) = false @>
+
+            [
+                Add { Value = "file"; Type = Source; ContentType = File }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) []
+            |> ignore
+
+            test <@ File.Exists (Path.Combine (backupPath, "file")) = true @>
+
+        [<Fact>]
+        let ``add new directory`` () =
+            let uniqueTestDirectory = "test-5cd28061-7c58-4bf5-807f-917689ef3e4d"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createDirectory [|sourcePath; "directory"|]
+
+            test <@ Directory.Exists (Path.Combine (backupPath, "directory")) = false @>
+
+            [
+                Add { Value = "directory"; Type = Source; ContentType = Directory }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) []
+            |> ignore
+
+            test <@ Directory.Exists (Path.Combine (backupPath, "directory")) = true @>
+
+        [<Fact>]
+        let ``add new file from alias source`` () =
+            let uniqueTestDirectory = "test-b6ad5ea2-ff08-4e97-b43f-72f15a0f6be5"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createDirectory [|backupPath; "alias"|]
+            TestHelpers.createFile [|sourcePath; "file"|]
+
+            test <@ File.Exists (Path.Combine (backupPath, "alias", "file")) = false @>
+
+            [
+                Add { Value = "alias\\file"; Type = Alias; ContentType = File }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) [
+                { Name = "alias"; Path = sourcePath }
+            ]
+            |> ignore
+
+            test <@ File.Exists (Path.Combine (backupPath, "alias", "file")) = true @>
+
+    module ``run Replace should`` =
+        [<Fact>]
+        let ``replace existing file`` () =
+            let uniqueTestDirectory = "test-22998e7a-8766-44c0-8acc-f914bea8c33c"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createFile' [|sourcePath; "file"|] "sourceContent"
+            TestHelpers.createFile' [|backupPath; "file"|] "backupContent"
+
+            test <@ File.ReadAllText (Path.Combine (backupPath, "file")) = "backupContent" @>
+
+            [
+                Replace { Value = "file"; Type = Source; ContentType = File }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) []
+            |> ignore
+
+            test <@ File.ReadAllText (Path.Combine (backupPath, "file")) = "sourceContent" @>
+
+        [<Fact>]
+        let ``replace existing file from alias source`` () =
+            let uniqueTestDirectory = "test-4dda5a57-d398-4c7e-8fcb-7fb498b088d8"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createFile' [|sourcePath; "file"|] "sourceContent"
+            TestHelpers.createDirectory [|backupPath; "alias"|]
+            TestHelpers.createFile' [|backupPath; "alias"; "file"|] "backupContent"
+
+            test <@ File.ReadAllText (Path.Combine (backupPath, "alias", "file")) = "backupContent" @>
+
+            [
+                Replace { Value = "alias\\file"; Type = Alias; ContentType = File }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) [
+                { Name = "alias"; Path = sourcePath }
+            ]
+            |> ignore
+
+            test <@ File.ReadAllText (Path.Combine (backupPath, "alias", "file")) = "sourceContent" @>
+
+    module ``run Delete should`` =
+        [<Fact>]
+        let ``delete file`` () =
+            let uniqueTestDirectory = "test-f6c38750-9699-4dc5-80f7-118a5e987ab0"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createFile [|backupPath; "file"|]
+
+            test <@ File.Exists (Path.Combine (backupPath, "file")) = true @>
+
+            [
+                Delete { Value = "file"; Type = Source; ContentType = File }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) []
+            |> ignore
+
+            test <@ File.Exists (Path.Combine (backupPath, "file")) = false @>
+
+        [<Fact>]
+        let ``delete directory`` () =
+            let uniqueTestDirectory = "test-97cccdf0-48a6-452a-810f-883098a30e72"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createDirectory [|backupPath; "directory"|]
+
+            test <@ Directory.Exists (Path.Combine (backupPath, "directory")) = true @>
+
+            [
+                Delete { Value = "directory"; Type = Source; ContentType = Directory }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) []
+            |> ignore
+
+            test <@ Directory.Exists (Path.Combine (backupPath, "directory")) = false @>
+
+        [<Fact>]
+        let ``delete file from alias source`` () =
+            let uniqueTestDirectory = "test-d15f2f2a-873a-4149-a80b-a1b1a4e476a7"
+            let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+            TestHelpers.createDirectory [|backupPath; "alias"|]
+            TestHelpers.createFile [|backupPath; "alias"; "file"|]
+
+            test <@ File.Exists (Path.Combine (backupPath, "alias", "file")) = true @>
+
+            [
+                Delete { Value = "alias\\file"; Type = Alias; ContentType = File }
+            ]
+            |> Process.run sourcePath backupPath (fun _ -> ()) [
+                { Name = "alias"; Path = sourcePath }
+            ]
+            |> ignore
+
+            test <@ File.Exists (Path.Combine (backupPath, "alias", "file")) = false @>
+
+    [<Fact>]
+    let ``should log errors without stopping sync`` () =
+        let uniqueTestDirectory = "test-54ee0f2e-24e1-4f9d-9af8-1fe2d3b224d1"
+        let sourcePath, backupPath = setupSyncDirectoryTest uniqueTestDirectory
+        TestHelpers.createFile [|sourcePath; "file"|]
+
+        let logs = System.Collections.Generic.List<_> ()
+        [
+            Add { Value = "missing file first"; Type = Source; ContentType = File }
+            Add { Value = "file"; Type = Source; ContentType = File }
+        ]
+        |> Process.run sourcePath backupPath logs.Add []
+        |> ignore
+
+        test <@ File.Exists (Path.Combine (backupPath, "file")) = true @>
+        let expectedLogs = [
+            "Adding file::\"missing file first\""
+            $"""Could not find file '{Path.Combine(sourcePath, "missing file first")}'."""
+            "Adding file::\"file\""
+        ]
+        test <@ logs |> Seq.toList = expectedLogs @>

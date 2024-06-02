@@ -104,11 +104,11 @@ module ``sync should`` =
             SaveSyncInstructionsFile = instructionsSaved.AddRange >> Ok
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok true
-            SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
+            SubmitSyncInstructions = fun _ -> instructionsSubmitted.AddRange >> Ok
         }
 
         let result = sync infra
-        test <@ result = Ok () @>
+        test <@ result = Ok "Synchronization completed!" @>
 
         let expected = [
             Add d2f1
@@ -145,9 +145,9 @@ module ``sync should`` =
             SaveSyncInstructionsFile = ignore >> Ok
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok false
-            SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
+            SubmitSyncInstructions = fun _ -> instructionsSubmitted.AddRange >> Ok
         }
 
         let result = sync infra
-        test <@ result = Ok () @>
+        test <@ result = Ok "Synchronization aborted!" @>
         test <@ instructionsSubmitted |> Seq.isEmpty @>

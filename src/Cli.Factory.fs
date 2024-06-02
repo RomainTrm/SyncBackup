@@ -29,7 +29,7 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
         |> Result.bind (SyncBackup.Infra.Config.update currentDirectory)
 }
 
-let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {
+let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {
     LoadSource = {
         LoadConfig = fun () -> SyncBackup.Infra.Config.load sourceDirectory
         LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load sourceDirectory
@@ -43,9 +43,5 @@ let syncCommandInfra sourceDirectory backupDirectory : SyncBackup.Commands.Sync.
         SyncBackup.Infra.Dsl.getSyncInstructionsFilePath sourceDirectory
         |> SyncBackup.Infra.Editor.VsCode.runEditor
     AreInstructionsAccepted = fun () -> SyncBackup.Infra.Sync.InstructionsFile.areInstructionsAccepted sourceDirectory
-    SubmitSyncInstructions = fun instructions ->
-        instructions // Temp code to test it live
-        |> List.map SyncBackup.Domain.Sync.SyncInstruction.serialize
-        |> List.iter (printfn "%s")
-        |> Ok
+    SubmitSyncInstructions = SyncBackup.Infra.Sync.Process.run sourceDirectory backupDirectory logger
 }
