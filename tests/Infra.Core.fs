@@ -54,3 +54,11 @@ module ``buildRelativePath should`` =
         let repositoryRoot = Path.Combine(testDirectory, "source")
         let result = buildRelativePath repositoryRoot [alias] unverifiedPath
         test <@ result = Ok relativePath @>
+
+    [<Fact>]
+    let ``correct directory separator`` () =
+        setupContent ()
+        let alias: Alias = { Name = "alias"; Path = Path.Combine(testDirectory, "alias") }
+        let repositoryRoot = Path.Combine(testDirectory, "source")
+        let result = buildRelativePath repositoryRoot [alias] "alias/file"
+        test <@ result = Ok { Value = "alias\\file"; Type = Alias; ContentType = ContentType.File } @>

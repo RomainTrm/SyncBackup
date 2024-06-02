@@ -9,6 +9,7 @@ let checkPathExists (path: DirectoryPath) =
     else Error "The specified directory path doesn't exist"
 
 let buildRelativePath (repositoryPath: RepositoryPath) (aliases: Alias list) (unverifiedPath: UnverifiedPath) =
+    let unverifiedPath = unverifiedPath.Replace('/', Path.DirectorySeparatorChar)
     let pathParts = unverifiedPath.Split(Path.DirectorySeparatorChar)
     let fullPath, pathType =
         aliases
@@ -16,8 +17,6 @@ let buildRelativePath (repositoryPath: RepositoryPath) (aliases: Alias list) (un
         |> function
             | Some alias -> Path.Combine(alias.Path, System.String.Join(Path.DirectorySeparatorChar, Array.skip 1 pathParts)), Alias
             | None -> Path.Combine(repositoryPath, unverifiedPath), Source
-
-    // TODO BUG: check separator for unverifiedPath, example: on windows / is accepted but needs \ to apply correctly a rule
 
     if Directory.Exists fullPath
     then Ok { Value = unverifiedPath; Type = pathType; ContentType = ContentType.Directory }
