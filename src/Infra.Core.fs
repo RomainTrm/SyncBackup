@@ -17,6 +17,8 @@ let buildRelativePath (repositoryPath: RepositoryPath) (aliases: Alias list) (un
             | Some alias -> Path.Combine(alias.Path, System.String.Join(Path.DirectorySeparatorChar, Array.skip 1 pathParts)), Alias
             | None -> Path.Combine(repositoryPath, unverifiedPath), Source
 
+    // TODO BUG: check separator for unverifiedPath, example: on windows / is accepted but needs \ to apply correctly a rule
+
     if Directory.Exists fullPath
     then Ok { Value = unverifiedPath; Type = pathType; ContentType = ContentType.Directory }
     elif File.Exists fullPath
