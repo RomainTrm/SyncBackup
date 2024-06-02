@@ -51,10 +51,10 @@ module ``RelativePath contains should`` =
         test <@ not result @>
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
-    let ``return true when compare to itself`` path =
+    let ``return false when compare to itself`` path =
         isValidPath path ==> lazy
         let result = RelativePath.contains path path
-        test <@ result @>
+        test <@ result = false @>
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
     let ``return false if not same type`` path =

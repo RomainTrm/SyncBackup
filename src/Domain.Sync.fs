@@ -25,6 +25,12 @@ type private BackupRule =
     | NotSave
     | NotDelete
 
+type private InnerSyncInstruction =
+    | InnerAdd of RelativePath
+    | InnerReplace of RelativePath
+    | InnerDelete of RelativePath
+    | InnerKeep of RelativePath
+
 let private spreadRules (computeRule: 'a -> SyncRules -> Result<'a, string>) lastRule (rules: Rule list) =
     let rec spreadRules' (computeRule: 'a -> SyncRules -> Result<'a, string>) lastRule acc = function
         | [] -> Ok acc
@@ -79,26 +85,72 @@ let private fullOuterJoin (sourceRules: Map<RelativePathValue, RelativePath * So
     |> Seq.sortBy (fun (path, _, _) -> path.Value)
     |> Seq.toList
 
+let private computeInstructions = function
+    | _, None, None -> []
+    | path, Some Include, None -> [InnerAdd path]
+    | _, Some Include, Some Save -> []
+    | { ContentType = File } as path, Some Include, Some Replace -> [InnerReplace path]
+    | { ContentType = Directory }, Some Include, Some Replace -> []
+    | _, Some Include, Some NotSave -> []
+    | _, Some Include, Some NotDelete -> []
+    | _, Some Exclude, None -> []
+    | path, Some Exclude, Some Save -> [InnerDelete path]
+    | path, Some Exclude, Some Replace -> [InnerDelete path]
+    | path, Some Exclude, Some NotSave -> [InnerDelete path]
+    | _, Some Exclude, Some NotDelete -> []
+    | path, None, Some NotDelete -> [InnerKeep path]
+    | path, None, Some Save -> [InnerDelete path]
+    | path, None, Some NotSave -> [InnerDelete path]
+    | path, None, Some Replace -> [InnerDelete path]
+
+let private (|Instruction|) = function
+    | InnerAdd path
+    | InnerReplace path
+    | InnerKeep path
+    | InnerDelete path -> path
+
+let private orderInstructions left right =
+    match left, right with
+    | InnerDelete left, InnerDelete right when left |> RelativePath.contains right -> 1
+    | InnerDelete left, InnerDelete right when right |> RelativePath.contains left -> -1
+    | InnerAdd left, InnerAdd right when left |> RelativePath.contains right -> -1
+    | InnerAdd left, InnerAdd right when right |> RelativePath.contains left -> 1
+    | Instruction left, Instruction right -> compare left right
+
+let private shouldKeepChildren instructions rootPath =
+    instructions
+    |> Seq.filter (function
+        | Instruction path -> rootPath |> RelativePath.contains path
+    )
+    |> Seq.exists (fun instruction ->
+        match instruction with
+        | InnerKeep _
+        | InnerAdd _
+        | InnerReplace _ -> true
+        | InnerDelete _ -> false
+    )
+    |> not
+
+let private removeDeletesWhenKeepingChildren instructions =
+    instructions
+    |> List.filter (function
+        | InnerDelete path -> shouldKeepChildren instructions path
+        | _ -> true
+    )
+
 let synchronize (sourceRules: Rule list) (backupRules: Rule list) =
     result {
         let! sourceRules = spreadSourceRules sourceRules
         let! backupRules = spreadBackupRules backupRules
-        let spreadRules = fullOuterJoin sourceRules backupRules
-        return spreadRules |> List.collect (function
-            | _, None, None -> []
-            | path, Some Include, None -> [Add path]
-            | _, Some Include, Some Save -> []
-            | path, Some Include, Some Replace -> [SyncInstruction.Replace path]
-            | _, Some Include, Some NotSave -> []
-            | _, Some Include, Some NotDelete -> []
-            | _, Some Exclude, None -> []
-            | path, Some Exclude, Some Save -> [Delete path]
-            | path, Some Exclude, Some Replace -> [Delete path]
-            | path, Some Exclude, Some NotSave -> [Delete path]
-            | _, Some Exclude, Some NotDelete -> []
-            | _, None, Some NotDelete -> []
-            | path, None, Some Save -> [Delete path]
-            | path, None, Some NotSave -> [Delete path]
-            | path, None, Some Replace -> [Delete path]
-        )
+        return
+            fullOuterJoin sourceRules backupRules
+            |> List.collect computeInstructions
+            |> List.sortWith orderInstructions
+            |> removeDeletesWhenKeepingChildren
+            |> List.collect (function
+                | InnerKeep _ -> []
+                | InnerAdd path -> [Add path]
+                | InnerReplace path -> [SyncInstruction.Replace path]
+                | InnerDelete path -> [Delete path]
+            )
     }

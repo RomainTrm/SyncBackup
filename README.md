@@ -15,3 +15,7 @@ Note: following description is a draft, it has not been tested and will probably
   - aliases for directories
   - ...
 - On syncing, user designate source and target "sync file", then the tool displays changes to the target, user can edit rules before accepting
+
+### WARNING
+
+Beware the current state of implementation isn't ready for use yet.
