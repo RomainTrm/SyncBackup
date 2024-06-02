@@ -221,4 +221,25 @@ module ``synchronize should`` =
         ]
         test <@ result = Ok expected @>
 
-    // TODO : not delete director if child still exists
+    [<Fact>]
+    let ``not delete directory if keeping children`` () =
+        let backupRules = [
+            { Path = d1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1f1; SyncRule = SyncRules.NoRule }
+            { Path = d1s1f2; SyncRule = SyncRules.NotDelete }
+            { Path = d1s2; SyncRule = SyncRules.NoRule }
+            { Path = d1s2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2; SyncRule = SyncRules.NotDelete }
+            { Path = d2f1; SyncRule = SyncRules.NoRule }
+            { Path = d2f2; SyncRule = SyncRules.NoRule }
+        ]
+
+        let result = synchronize [] backupRules
+
+        let expected = [
+            Delete d1s1f1
+            Delete d1s2f1
+            Delete d1s2
+        ]
+        test <@ result = Ok expected @>
