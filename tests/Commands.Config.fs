@@ -12,6 +12,7 @@ let defaultInfra : Infra = {
     BuildRelativePath = fun _ _ -> failwith "not implemented"
     UpdateConfig = fun _ -> failwith "not implemented"
     SolveRuleConflict = fun _ _ -> failwith "not implemented"
+    SolveContentType = fun _ -> failwith "not implemented"
 }
 
 let defaultConfig : RepositoryConfig = {
@@ -380,3 +381,28 @@ module Rules =
 
             let result = Rules.add infra syncRule "path"
             test <@ Result.isError result @>
+
+        let ``ask for content type on 'ignore' rule - test cases`` () : obj[] list = [
+            [| ContentType.Directory |]
+            [| ContentType.File |]
+        ]
+
+        [<Theory; MemberData(nameof ``ask for content type on 'ignore' rule - test cases``)>]
+        let ``ask for content type on 'ignore' rule`` (contentType: ContentType) =
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok { defaultConfig with Type = RepositoryType.Backup }
+                    SolveContentType = fun () -> Ok contentType
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.add infra SyncRules.NotSave "path"
+
+            test <@ result = Ok () @>
+            let expectedConfig = {
+                defaultConfig with
+                    Type = RepositoryType.Backup
+                    Rules = [ { Path = { Type = Source; Value = "path"; ContentType = contentType }; SyncRule = SyncRules.NotSave } ]
+            }
+            test <@ calls |> Seq.toList = [ expectedConfig ] @>

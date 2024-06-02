@@ -10,6 +10,7 @@ type Infra = {
     BuildRelativePath: Alias list -> UnverifiedPath -> Result<RelativePath, string>
     UpdateConfig: RepositoryConfig -> Result<unit, string>
     SolveRuleConflict: Rule -> Rule -> Result<Rule, string>
+    SolveContentType: unit -> Result<ContentType, string>
 }
 
 module Init =
@@ -55,7 +56,16 @@ module Rules =
         result {
             let! config = infra.LoadConfig ()
             do! validateRule config.Type rule
-            let! path = infra.BuildRelativePath config.Aliases unverifiedPath
+            let! path =
+                match rule with
+                | SyncRules.NotSave ->
+                    infra.SolveContentType ()
+                    |> Result.map (fun contentType ->
+                        let pathType = Source // NotSave rule is only for backup repositories, so it's a Source
+                        { Value = unverifiedPath; Type = pathType; ContentType = contentType }
+                    )
+                | _ -> infra.BuildRelativePath config.Aliases unverifiedPath
+
             let rule = { SyncRule = rule; Path = path }
             match add config.Rules rule with
             | Added rules -> return! infra.UpdateConfig { config with Rules = rules }

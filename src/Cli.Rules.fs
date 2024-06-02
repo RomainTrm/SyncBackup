@@ -2,12 +2,13 @@
 
 open System
 open Argu
+open Microsoft.FSharp.Core
 open SyncBackup.Domain
 
 let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, string> =
     logger $"Rules conflict for path \"{rule1.Path.Value}\":"
-    logger $"1 {Dsl.SyncRules.getValue rule1.SyncRule}"
-    logger $"2 {Dsl.SyncRules.getValue rule2.SyncRule}"
+    logger $"1: {Dsl.SyncRules.getValue rule1.SyncRule}"
+    logger $"2: {Dsl.SyncRules.getValue rule2.SyncRule}"
 
     let rec solveConflict' () =
         logger "Choose rule to keep (1/2/q):"
@@ -17,6 +18,20 @@ let solveConflict logger (rule1: Dsl.Rule) (rule2: Dsl.Rule) : Result<Dsl.Rule, 
         | "q" -> Error "Add rule aborted"
         | _ -> solveConflict' ()
     solveConflict' ()
+
+let solveContentType logger : Result<Dsl.ContentType, string> =
+    logger "Is the target a file or a directory?"
+    logger "f: file"
+    logger "d: directory"
+
+    let rec solveContentType' () =
+        logger "Choose type (f/d/q):"
+        match Console.ReadLine () with
+        | "f" -> Ok Dsl.File
+        | "d" -> Ok Dsl.Directory
+        | "q" -> Error "Add rule aborted"
+        | _ -> solveContentType' ()
+    solveContentType' ()
 
 type Rule =
     | Add of Rule: string * Path: string
