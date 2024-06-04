@@ -39,6 +39,7 @@ module ``synchronize should`` =
             Add d2
             Add d2f1
             Add d2f2
+            Add d3
             Add d3f2
         ]
         test <@ result = Ok expected @>
