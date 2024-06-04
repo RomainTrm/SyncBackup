@@ -31,77 +31,146 @@ type private InnerSyncInstruction =
     | InnerDelete of RelativePath
     | InnerKeep of RelativePath
 
-let private spreadRules (computeRule: 'a -> SyncRules -> Result<'a, string>) lastRule (rules: Rule list) =
-    let rec spreadRules' (computeRule: 'a -> SyncRules -> Result<'a, string>) lastRule acc = function
-        | [] -> Ok acc
-        | rule: Rule::rules ->
-            result {
-                let subPathRules, others = rules |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Path rule.Path)
-                let! appliedRule = computeRule lastRule rule.SyncRule
-                let! childRules = spreadRules' computeRule appliedRule [] subPathRules
-                let! otherRules = spreadRules' computeRule lastRule [] others
-                return acc@[rule.Path.Value, (rule.Path, appliedRule)]@childRules@otherRules
-            }
+type private Item<'a> =
+    | SourceItemOnly of 'a
+    | BackupItemOnly of 'a
+    | BothItem of 'a
+with
+    member this.Item =
+        match this with
+        | SourceItemOnly item -> item
+        | BackupItemOnly item -> item
+        | BothItem item -> item
 
-    rules
-    |> List.sortBy _.Path.Value
-    |> spreadRules' computeRule lastRule []
-    |> Result.map Map
+    member this.map f =
+        match this with
+        | SourceItemOnly item -> SourceItemOnly (f item)
+        | BackupItemOnly item -> BackupItemOnly (f item)
+        | BothItem item -> BothItem (f item)
 
-let private spreadSourceRules (rules: Rule list) =
-    let computeRule (lastRule: SourceRule) = function
+type private OriginRule = {
+    Path: RelativePath
+    SourceRule: SyncRules
+    BackupRule: SyncRules
+}
+
+type private SpreadRule = {
+    Path: RelativePath
+    SourceRule: SourceRule
+    BackupRule: BackupRule
+}
+
+let private buildTree
+    (sourceItems: RelativePath list)
+    (sourceRules: Rule list)
+    (backupItems: RelativePath list)
+    (backupRules: Rule list) =
+    let paths =
+        sourceItems@(sourceRules |> List.map _.Path)@backupItems@(backupRules |> List.map _.Path)
+        |> List.distinctBy _.Value
+
+    let sourceItems = sourceItems |> List.map (fun x -> x.Value, x) |> Map
+    let sourceRules = sourceRules |> List.map (fun x -> x.Path.Value, x.SyncRule) |> Map
+    let backupItems = backupItems |> List.map (fun x -> x.Value, x) |> Map
+    let backupRules = backupRules |> List.map (fun x -> x.Path.Value, x.SyncRule) |> Map
+
+    paths
+    |> List.collect (fun path ->
+        let sourceItem = sourceItems |> Map.containsKey path.Value
+        let sourceRule = sourceRules |> Map.tryFind path.Value
+        let backupItem = backupItems |> Map.containsKey path.Value
+        let backupRule = backupRules |> Map.tryFind path.Value
+
+        match sourceItem, sourceRule, backupItem, backupRule with
+        | false, _, false, _ -> ([]: Item<OriginRule> list)
+        | true, None, false, None -> [SourceItemOnly { Path = path; SourceRule = NoRule; BackupRule = NoRule }]
+        | true, Some sourceRule, false, None -> [SourceItemOnly { Path = path; SourceRule = sourceRule; BackupRule = NoRule }]
+        | true, None, false, Some backupRule -> [SourceItemOnly { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
+        | true, Some sourceRule, false, Some backupRule -> [SourceItemOnly { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
+        | false, None, true, None -> [BackupItemOnly { Path = path; SourceRule = NoRule; BackupRule = NoRule }]
+        | false, Some sourceRule, true, None -> [BackupItemOnly { Path = path; SourceRule = sourceRule; BackupRule = NoRule }]
+        | false, None, true, Some backupRule -> [BackupItemOnly { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
+        | false, Some sourceRule, true, Some backupRule -> [BackupItemOnly { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
+        | true, None, true, None -> [BothItem { Path = path; SourceRule = NoRule; BackupRule = NoRule }]
+        | true, Some sourceRule, true, None -> [BothItem { Path = path; SourceRule = sourceRule; BackupRule = NoRule }]
+        | true, None, true, Some backupRule -> [BothItem { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
+        | true, Some sourceRule, true, Some backupRule -> [BothItem { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
+    )
+    |> List.sortBy _.Item.Path.Value
+
+let private spreadRules =
+    let computeSourceRule (lastRule: SourceRule) = function
         | Dsl.SyncRules.NoRule -> Ok lastRule
         | Dsl.SyncRules.Include -> Ok Include
         | Dsl.SyncRules.Exclude -> Ok Exclude
         | rule -> Error $"Rule \"{SyncRules.getValue rule}\" is not supposed to be setup in source repository."
 
-    rules |> spreadRules computeRule Include
-
-let private spreadBackupRules (rules: Rule list) =
-    let computeRule (lastRule: BackupRule) = function
+    let computeBackupRule (lastRule: BackupRule) = function
         | Dsl.SyncRules.NoRule -> Ok lastRule
         | Dsl.SyncRules.AlwaysReplace -> Ok Replace
         | Dsl.SyncRules.NotSave -> Ok NotSave
         | Dsl.SyncRules.NotDelete -> Ok NotDelete
         | rule -> Error $"Rule \"{SyncRules.getValue rule}\" is not supposed to be setup in backup repository."
 
-    rules |> spreadRules computeRule Save
+    let computeRule (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) (item: OriginRule) : Result<SourceRule * BackupRule, string> =
+        result {
+            let! sourceRule = computeSourceRule lastSourceRule item.SourceRule
+            let! backupRule = computeBackupRule lastBackupRule item.BackupRule
+            return sourceRule, backupRule
+        }
 
-let private fullOuterJoin (sourceRules: Map<RelativePathValue, RelativePath * SourceRule>) (backupRules: Map<RelativePathValue, RelativePath * BackupRule>)  =
-    [
-        sourceRules |> Seq.map (fun x ->
-            fst x.Value,
-            Some (snd x.Value),
-            backupRules |> Map.tryFind x.Key |> Option.map snd
-        )
-        backupRules |> Seq.map (fun x ->
-            fst x.Value,
-            sourceRules |> Map.tryFind x.Key |> Option.map snd,
-            Some (snd x.Value)
-        )
-    ]
-    |> Seq.concat
-    |> Seq.distinctBy (fun (path, _, _) -> path.Value)
-    |> Seq.sortBy (fun (path, _, _) -> path.Value)
-    |> Seq.toList
+    let correctRule (childrenRules: Item<SpreadRule> list) (sourceRule: SourceRule) (backupRule: BackupRule) =
+        if childrenRules = []
+        then Ok (sourceRule, backupRule)
+        else
+            match sourceRule, backupRule with
+            | Include, Save -> Ok (sourceRule, backupRule)
+            | Include, Replace -> Ok (sourceRule, backupRule)
+            | Include, NotSave -> Ok (sourceRule, backupRule)
+            | Include, NotDelete -> Ok (sourceRule, backupRule)
+            | Exclude, Save when childrenRules |> Seq.exists (fun child -> child.Item.SourceRule = Include) -> Ok (Include, backupRule)
+            | Exclude, Replace -> Ok (sourceRule, backupRule)
+            | Exclude, NotSave -> Ok (sourceRule, backupRule)
+            | Exclude, NotDelete -> Ok (sourceRule, backupRule)
+            | _ -> Ok (sourceRule, backupRule)
+
+    let rec spreadRules' (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) (acc: Item<SpreadRule> list) = function
+        | [] -> Ok acc
+        | item::items ->
+            result {
+                let item: Item<OriginRule> = item
+                let subPathRules, others = items |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Item.Path item.Item.Path)
+                let! appliedSourceRule, appliedBackupRule = computeRule lastSourceRule lastBackupRule item.Item
+                let! childrenWithSpreadRules = spreadRules' appliedSourceRule appliedBackupRule [] subPathRules
+                let! appliedSourceRule, appliedBackupRule = correctRule childrenWithSpreadRules appliedSourceRule appliedBackupRule
+                let itemsWithSpreadRules = item.map (fun origin -> { Path = origin.Path; SourceRule = appliedSourceRule; BackupRule = appliedBackupRule })
+                let! otherItems = spreadRules' lastSourceRule lastBackupRule [] others
+                return acc@[itemsWithSpreadRules]@childrenWithSpreadRules@otherItems
+            }
+
+    spreadRules' Include Save []
 
 let private computeInstructions = function
-    | _, None, None -> []
-    | path, Some Include, None -> [InnerAdd path]
-    | _, Some Include, Some Save -> []
-    | { ContentType = File } as path, Some Include, Some Replace -> [InnerReplace path]
-    | { ContentType = Directory }, Some Include, Some Replace -> []
-    | _, Some Include, Some NotSave -> []
-    | _, Some Include, Some NotDelete -> []
-    | _, Some Exclude, None -> []
-    | path, Some Exclude, Some Save -> [InnerDelete path]
-    | path, Some Exclude, Some Replace -> [InnerDelete path]
-    | path, Some Exclude, Some NotSave -> [InnerDelete path]
-    | _, Some Exclude, Some NotDelete -> []
-    | path, None, Some NotDelete -> [InnerKeep path]
-    | path, None, Some Save -> [InnerDelete path]
-    | path, None, Some NotSave -> [InnerDelete path]
-    | path, None, Some Replace -> [InnerDelete path]
+    | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = Save } -> [InnerAdd path]
+    | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = Replace } -> [InnerAdd path]
+    | SourceItemOnly { Path = _; SourceRule = Include; BackupRule = NotSave } -> []
+    | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = NotDelete } -> [InnerAdd path]
+    | SourceItemOnly { Path = _; SourceRule = Exclude; BackupRule = _ } -> []
+
+    | BackupItemOnly { Path = path; SourceRule = _; BackupRule = Save } -> [InnerDelete path]
+    | BackupItemOnly { Path = path; SourceRule = _; BackupRule = Replace } -> [InnerDelete path]
+    | BackupItemOnly { Path = path; SourceRule = _; BackupRule = NotSave } -> [InnerDelete path]
+    | BackupItemOnly { Path = path; SourceRule = _; BackupRule = NotDelete } -> [InnerKeep path]
+
+    | BothItem { Path = path; SourceRule = Include; BackupRule = Save } -> [InnerKeep path]
+    | BothItem { Path = { ContentType = File } as path; SourceRule = Include; BackupRule = Replace } -> [InnerReplace path]
+    | BothItem { Path = { ContentType = Directory } as path; SourceRule = Include; BackupRule = Replace } -> [InnerKeep path]
+    | BothItem { Path = path; SourceRule = Include; BackupRule = NotSave } -> [InnerDelete path]
+    | BothItem { Path = path; SourceRule = Include; BackupRule = NotDelete } -> [InnerKeep path]
+    | BothItem { Path = path; SourceRule = Exclude; BackupRule = Save } -> [InnerDelete path]
+    | BothItem { Path = path; SourceRule = Exclude; BackupRule = Replace } -> [InnerDelete path]
+    | BothItem { Path = path; SourceRule = Exclude; BackupRule = NotSave } -> [InnerDelete path]
+    | BothItem { Path = path; SourceRule = Exclude; BackupRule = NotDelete } -> [InnerKeep path]
 
 let private (|Instruction|) = function
     | InnerAdd path
@@ -138,19 +207,21 @@ let private removeDeletesWhenKeepingChildren instructions =
         | _ -> true
     )
 
-let synchronize (sourceRules: Rule list) (backupRules: Rule list) =
-    result {
-        let! sourceRules = spreadSourceRules sourceRules
-        let! backupRules = spreadBackupRules backupRules
-        return
-            fullOuterJoin sourceRules backupRules
-            |> List.collect computeInstructions
-            |> List.sortWith orderInstructions
-            |> removeDeletesWhenKeepingChildren
-            |> List.collect (function
-                | InnerKeep _ -> []
-                | InnerAdd path -> [Add path]
-                | InnerReplace path -> [SyncInstruction.Replace path]
-                | InnerDelete path -> [Delete path]
-            )
-    }
+let synchronize
+    (sourceItems: RelativePath list)
+    (sourceRules: Rule list)
+    (backupItems: RelativePath list)
+    (backupRules: Rule list) =
+    buildTree sourceItems sourceRules backupItems backupRules
+    |> spreadRules
+    |> Result.map (
+        List.collect computeInstructions
+        >> List.sortWith orderInstructions
+        >> removeDeletesWhenKeepingChildren
+        >> List.collect (function
+            | InnerKeep _ -> []
+            | InnerAdd path -> [Add path]
+            | InnerReplace path -> [SyncInstruction.Replace path]
+            | InnerDelete path -> [Delete path]
+        )
+    )

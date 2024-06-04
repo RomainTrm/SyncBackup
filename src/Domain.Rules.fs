@@ -33,11 +33,6 @@ let buildRulesForScanning (existingRules: Rule list) (paths: RelativePath list) 
     let existingRules = existingRules |> Seq.map (fun rule -> rule.Path, rule) |> Map
     paths |> List.map (buildRule existingRules)
 
-let buildRulesForSyncing (existingRules: Rule list) (paths: RelativePath list) =
-    let existingRulesMap = existingRules |> Seq.map (fun rule -> rule.Path, rule) |> Map
-    let elementRules = paths |> List.map (buildRule existingRulesMap)
-    elementRules@existingRules |> List.distinct
-
 let validateRule repositoryType rule =
     match repositoryType, rule with
     | RepositoryType.Source, SyncRules.AlwaysReplace

@@ -20,19 +20,28 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``compute synchronize instructions when empty backup`` () =
+        let sourceItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+            d3f1
+            d3f2
+            d3f3
+        ]
+
         let sourceRules: Rule list = [
-            { Path = d1; SyncRule = SyncRules.NoRule }
             { Path = d2; SyncRule = SyncRules.Include }
             { Path = d3; SyncRule = SyncRules.Exclude }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
             { Path = d2f2; SyncRule = SyncRules.Include }
             { Path = d2f3; SyncRule = SyncRules.Exclude }
-            { Path = d3f1; SyncRule = SyncRules.NoRule }
             { Path = d3f2; SyncRule = SyncRules.Include }
             { Path = d3f3; SyncRule = SyncRules.Exclude }
         ]
 
-        let result = synchronize sourceRules []
+        let result = synchronize sourceItems sourceRules [] []
 
         let expected = [
             Add d1
@@ -46,18 +55,27 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``compute synchronize instructions when not empty backup`` () =
-        let sourceRules: Rule list = [
-            { Path = d2; SyncRule = SyncRules.NoRule }
-            { Path = d3; SyncRule = SyncRules.NoRule }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2f2; SyncRule = SyncRules.NoRule }
-            { Path = d2f3; SyncRule = SyncRules.NoRule }
+        let sourceItems = [
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
         ]
 
-        let result = synchronize sourceRules [
-            { Path = d1; SyncRule = SyncRules.NoRule }
-            { Path = d2; SyncRule = SyncRules.NoRule }
-            { Path = d3; SyncRule = SyncRules.NoRule }
+        let backupItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+            d3f1
+            d3f2
+            d3f3
+        ]
+
+        let backupRules = [
             { Path = d2f1; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2f3; SyncRule = SyncRules.NotSave }
@@ -66,36 +84,59 @@ module ``synchronize should`` =
             { Path = d3f3; SyncRule = SyncRules.NotDelete }
         ]
 
+        let result = synchronize sourceItems [] backupItems backupRules
+
         let expected = [
             Delete d1
             Replace d2f1
             Replace d2f2
+            Delete d2f3
         ]
         test <@ result = Ok expected @>
 
     [<Fact>]
     let ``compute synchronize instructions when not empty backup (conflicting rules)`` () =
+        let sourceItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+            d2f4
+        ]
+
         let sourceRules: Rule list = [
             { Path = d1; SyncRule = SyncRules.Include }
             { Path = d2; SyncRule = SyncRules.Include }
-            { Path = d3; SyncRule = SyncRules.NoRule }
             { Path = d2f1; SyncRule = SyncRules.Exclude }
             { Path = d2f2; SyncRule = SyncRules.Exclude }
             { Path = d2f3; SyncRule = SyncRules.Exclude }
             { Path = d2f4; SyncRule = SyncRules.Exclude }
         ]
 
-        let result = synchronize sourceRules [
+        let backupItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+            d2f4
+            d3f1
+            d3f2
+        ]
+
+        let backupRules = [
             { Path = d1; SyncRule = SyncRules.NotDelete }
-            { Path = d2; SyncRule = SyncRules.NoRule }
-            { Path = d3; SyncRule = SyncRules.NoRule }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
             { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2f3; SyncRule = SyncRules.NotDelete }
             { Path = d2f4; SyncRule = SyncRules.NotSave }
             { Path = d3f1; SyncRule = SyncRules.NotSave }
             { Path = d3f2; SyncRule = SyncRules.AlwaysReplace }
         ]
+
+        let result = synchronize sourceItems sourceRules backupItems backupRules
 
         let expected = [
             Delete d2f1
@@ -108,19 +149,27 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``compute synchronize instructions when source repository contains aliases`` () =
-        let sourceRules: Rule list = [
-            { Path = { d2 with Type = Alias }; SyncRule = SyncRules.NoRule }
-            { Path = { d2f1 with Type = Alias }; SyncRule = SyncRules.NoRule }
-            { Path = { d2f2 with Type = Alias }; SyncRule = SyncRules.NoRule }
-            { Path = { d2f3 with Type = Alias }; SyncRule = SyncRules.NoRule }
+        let sourceItems = [
+            { d2 with Type = Alias }
+            { d2f1 with Type = Alias }
+            { d2f2 with Type = Alias }
+            { d2f3 with Type = Alias }
         ]
 
-        let result = synchronize sourceRules [
-            { Path = d2; SyncRule = SyncRules.NoRule }
+        let backupItems = [
+            d2
+            d2f1
+            d2f2
+            d2f3
+        ]
+
+        let backupRules = [
             { Path = d2f1; SyncRule = SyncRules.NotDelete }
             { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
         ]
+
+        let result = synchronize sourceItems [] backupItems backupRules
 
         let expected = [
             Replace { d2f2 with Type = Alias }
@@ -130,16 +179,25 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``compute synchronize instructions should only replace files`` () =
-        let sourceRules: Rule list = [
-            { Path = d1; SyncRule = SyncRules.NoRule }
-            { Path = d2; SyncRule = SyncRules.NoRule }
-            { Path = d3; SyncRule = SyncRules.NoRule }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2f2; SyncRule = SyncRules.NoRule }
-            { Path = d2f3; SyncRule = SyncRules.NoRule }
+        let sourceItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
         ]
 
-        let result = synchronize sourceRules [
+        let backupItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+        ]
+
+        let backupRules = [
             { Path = d1; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2; SyncRule = SyncRules.AlwaysReplace }
             { Path = d3; SyncRule = SyncRules.AlwaysReplace }
@@ -147,6 +205,8 @@ module ``synchronize should`` =
             { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
             { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
         ]
+
+        let result = synchronize sourceItems [] backupItems backupRules
 
         let expected = [
             Replace d2f1
@@ -166,19 +226,19 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``compute add order`` () =
-        let sourceRules = List.sortWith randomizeOrder [
-            { Path = d1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1f1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1f2; SyncRule = SyncRules.NoRule }
-            { Path = d1s2; SyncRule = SyncRules.NoRule }
-            { Path = d1s2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2; SyncRule = SyncRules.NoRule }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2f2; SyncRule = SyncRules.NoRule }
+        let sourceItems = List.sortWith randomizeOrder [
+            d1
+            d1s1
+            d1s1f1
+            d1s1f2
+            d1s2
+            d1s2f1
+            d2
+            d2f1
+            d2f2
         ]
 
-        let result = synchronize sourceRules []
+        let result = synchronize sourceItems [] [] []
 
         let expected = [
             Add d1
@@ -195,19 +255,19 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``compute delete order`` () =
-        let backupRules = List.sortWith randomizeOrder [
-            { Path = d1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1f1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1f2; SyncRule = SyncRules.NoRule }
-            { Path = d1s2; SyncRule = SyncRules.NoRule }
-            { Path = d1s2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2; SyncRule = SyncRules.NoRule }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2f2; SyncRule = SyncRules.NoRule }
+        let backupItems = List.sortWith randomizeOrder [
+            d1
+            d1s1
+            d1s1f1
+            d1s1f2
+            d1s2
+            d1s2f1
+            d2
+            d2f1
+            d2f2
         ]
 
-        let result = synchronize [] backupRules
+        let result = synchronize [] [] backupItems []
 
         let expected = [
             Delete d1s1f1
@@ -224,19 +284,24 @@ module ``synchronize should`` =
 
     [<Fact>]
     let ``not delete directory if keeping children`` () =
-        let backupRules = [
-            { Path = d1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1f1; SyncRule = SyncRules.NoRule }
-            { Path = d1s1f2; SyncRule = SyncRules.NotDelete }
-            { Path = d1s2; SyncRule = SyncRules.NoRule }
-            { Path = d1s2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2; SyncRule = SyncRules.NotDelete }
-            { Path = d2f1; SyncRule = SyncRules.NoRule }
-            { Path = d2f2; SyncRule = SyncRules.NoRule }
+        let backupItems = [
+            d1
+            d1s1
+            d1s1f1
+            d1s1f2
+            d1s2
+            d1s2f1
+            d2
+            d2f1
+            d2f2
         ]
 
-        let result = synchronize [] backupRules
+        let backupRules = [
+            { Path = d1s1f2; SyncRule = SyncRules.NotDelete }
+            { Path = d2; SyncRule = SyncRules.NotDelete }
+        ]
+
+        let result = synchronize [] [] backupItems backupRules
 
         let expected = [
             Delete d1s1f1
@@ -244,3 +309,30 @@ module ``synchronize should`` =
             Delete d1s2
         ]
         test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``apply 'ignore' rule to children`` () =
+        let sourceItems = [
+            d1
+            d2
+            d2f1
+            d2f2
+            d3
+            d3f1
+            d3f2
+        ]
+
+        let sourceRules = [
+            { Path = d3f1; SyncRule = SyncRules.Exclude }
+            { Path = d3f2; SyncRule = SyncRules.Include }
+        ]
+
+        let backupRules = List.sortWith randomizeOrder [
+            { Path = d1; SyncRule = SyncRules.NotSave }
+            { Path = d2; SyncRule = SyncRules.NotSave }
+            { Path = d3; SyncRule = SyncRules.NotSave }
+        ]
+
+        let result = synchronize sourceItems sourceRules [] backupRules
+
+        test <@ result = Ok [] @>
