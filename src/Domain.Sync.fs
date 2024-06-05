@@ -124,14 +124,8 @@ let private spreadRules =
         then Ok (sourceRule, backupRule)
         else
             match sourceRule, backupRule with
-            | Include, Save -> Ok (sourceRule, backupRule)
-            | Include, Replace -> Ok (sourceRule, backupRule)
-            | Include, NotSave -> Ok (sourceRule, backupRule)
-            | Include, NotDelete -> Ok (sourceRule, backupRule)
-            | Exclude, Save when childrenRules |> Seq.exists (fun child -> child.Item.SourceRule = Include) -> Ok (Include, backupRule)
-            | Exclude, Replace -> Ok (sourceRule, backupRule)
-            | Exclude, NotSave -> Ok (sourceRule, backupRule)
-            | Exclude, NotDelete -> Ok (sourceRule, backupRule)
+            | _, _ when childrenRules |> Seq.exists (fun child -> child.Item.BackupRule = NotDelete) -> Ok (sourceRule, NotDelete)
+            | Exclude, _ when childrenRules |> Seq.exists (fun child -> child.Item.SourceRule = Include) -> Ok (Include, backupRule)
             | _ -> Ok (sourceRule, backupRule)
 
     let rec spreadRules' (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) (acc: Item<SpreadRule> list) = function
@@ -186,27 +180,6 @@ let private orderInstructions left right =
     | InnerAdd left, InnerAdd right when right |> RelativePath.contains left -> 1
     | Instruction left, Instruction right -> compare left right
 
-let private shouldKeepChildren instructions rootPath =
-    instructions
-    |> Seq.filter (function
-        | Instruction path -> rootPath |> RelativePath.contains path
-    )
-    |> Seq.exists (fun instruction ->
-        match instruction with
-        | InnerKeep _
-        | InnerAdd _
-        | InnerReplace _ -> true
-        | InnerDelete _ -> false
-    )
-    |> not
-
-let private removeDeletesWhenKeepingChildren instructions =
-    instructions
-    |> List.filter (function
-        | InnerDelete path -> shouldKeepChildren instructions path
-        | _ -> true
-    )
-
 let synchronize
     (sourceItems: RelativePath list)
     (sourceRules: Rule list)
@@ -217,7 +190,6 @@ let synchronize
     |> Result.map (
         List.collect computeInstructions
         >> List.sortWith orderInstructions
-        >> removeDeletesWhenKeepingChildren
         >> List.collect (function
             | InnerKeep _ -> []
             | InnerAdd path -> [Add path]
