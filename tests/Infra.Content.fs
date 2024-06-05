@@ -73,6 +73,7 @@ module Scan =
             ]
 
             let expected : RelativePath list = [
+                { Type = Alias; Value = "MyAlias"; ContentType = Directory }
                 { Type = Alias; Value = "MyAlias\\file"; ContentType = File }
                 { Type = Alias; Value = "MyAlias\\1. emptyDir"; ContentType = Directory }
                 { Type = Alias; Value = "MyAlias\\2. oneLevelDir"; ContentType = Directory }

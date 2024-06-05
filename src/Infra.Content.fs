@@ -42,14 +42,18 @@ module Scan =
 
     let run (repositoryPath: RepositoryPath) (aliases: Alias list) =
         let sourceDirectoryContent = scan' repositoryPath (sourceRelativePath repositoryPath)
-        let aliasesDirectoriesContent = List.collect (fun (alias: Alias) -> scan' alias.Path (aliasRelativePath alias)) aliases
+        let aliasesDirectoriesContent =
+            List.collect (fun (alias: Alias) ->
+                let aliasContent = scan' alias.Path (aliasRelativePath alias)
+                { Value = alias.Name; Type = Alias; ContentType = Directory }::aliasContent
+            ) aliases
         sourceDirectoryContent@aliasesDirectoriesContent
 
 module ScanFile =
     let rec private print scanResult =
         $"{ScanDiff.activeLine scanResult.Diff}{SyncRules.getValue scanResult.SyncRule} {ScanDiff.serialize scanResult.Diff} {RelativePath.serialize scanResult.Path}"
 
-    let private buildFileContent repositoryType (rules: ScanResult list) =
+    let private buildFileContent repositoryType (scanResults: ScanResult list) =
         let fileLines = [
             "# Repository scan complete!"
             "# Use '#' to comment a line"
@@ -58,14 +62,14 @@ module ScanFile =
             yield! SyncRules.getRulesAvailable repositoryType
                     |> Seq.map (SyncRules.getDescription >> sprintf "# - %s")
             ""
-            yield! rules |> List.map print
-            if rules = []
+            yield! scanResults |> List.map print
+            if scanResults = []
             then "# No change, your repository is up to date."
         ]
         String.Join (Dsl.NewLine, fileLines)
 
-    let writeFile (repositoryPath: RepositoryPath) (repositoryType: RepositoryType) (rules: ScanResult list) =
-        let fileContent = buildFileContent repositoryType rules
+    let writeFile (repositoryPath: RepositoryPath) (repositoryType: RepositoryType) (scanResults: ScanResult list) =
+        let fileContent = buildFileContent repositoryType scanResults
         let filePath = Dsl.getScanFileFilePath repositoryPath
         File.WriteAllText(filePath, fileContent)
         |> Ok
