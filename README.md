@@ -6,6 +6,8 @@ Homemade tools to synchronize my backups with some custom rules.
 It's a CLI tool influenced by my daily Git CLI usage.  
 It provides a set of rules to handle delta between repositories, you may want to save different subsets of your data depending on your backup support (Cloud, hard-drive).
 
+**WARNING** : the current state of the software is not production ready, do not attempt to synchronize your backups, you may lose data.
+
 ## Technical requirements
 
 - .Net runtime 8.0 or greater is installed
