@@ -121,25 +121,26 @@ let private spreadRules =
 
     let correctRule (childrenRules: Item<SpreadRule> list) (sourceRule: SourceRule) (backupRule: BackupRule) =
         match sourceRule, backupRule with
-        | _, _ when childrenRules |> Seq.exists (fun child -> child.Item.BackupRule = NotDelete) -> sourceRule, NotDelete
         | Exclude, _ when childrenRules |> Seq.exists (fun child -> child.Item.SourceRule = Include) -> Include, backupRule
+        | _, NotSave when childrenRules |> Seq.exists (fun child -> child.Item.BackupRule <> NotSave) -> sourceRule, NotDelete
+        | _, Save when childrenRules |> Seq.exists (fun child -> child.Item.BackupRule = NotDelete) -> sourceRule, NotDelete
         | _ -> sourceRule, backupRule
 
-    let rec spreadRules' (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) (acc: Item<SpreadRule> list) = function
-        | [] -> Ok acc
+    let rec spreadRules' (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) = function
+        | [] -> Ok []
         | item::items ->
             result {
                 let item: Item<OriginRule> = item
                 let subPathRules, others = items |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Item.Path item.Item.Path)
                 let! appliedSourceRule, appliedBackupRule = computeRule lastSourceRule lastBackupRule item.Item
-                let! childrenWithSpreadRules = spreadRules' appliedSourceRule appliedBackupRule [] subPathRules
+                let! childrenWithSpreadRules = spreadRules' appliedSourceRule appliedBackupRule subPathRules
                 let appliedSourceRule, appliedBackupRule = correctRule childrenWithSpreadRules appliedSourceRule appliedBackupRule
                 let itemsWithSpreadRules = item.map (fun origin -> { Path = origin.Path; SourceRule = appliedSourceRule; BackupRule = appliedBackupRule })
-                let! otherItems = spreadRules' lastSourceRule lastBackupRule [] others
-                return acc@[itemsWithSpreadRules]@childrenWithSpreadRules@otherItems
+                let! otherItems = spreadRules' lastSourceRule lastBackupRule others
+                return [itemsWithSpreadRules]@childrenWithSpreadRules@otherItems
             }
 
-    spreadRules' Include Save []
+    spreadRules' Include Save
 
 let private computeInstructions = function
     | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = Save } -> [InnerAdd path]

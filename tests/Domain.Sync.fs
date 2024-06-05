@@ -360,3 +360,28 @@ module ``synchronize should`` =
         let result = synchronize sourceItems sourceRules [] backupRules
 
         test <@ result = Ok [] @>
+
+    [<Fact>]
+    let ``not delete root directory when excluded but another rule for a file inside override it`` () =
+        let sourceItems = [
+            d3
+            d3f1
+            d3f2
+            d3f3
+        ]
+
+        let backupItems = [
+            d3
+            d3f1
+        ]
+
+        let backupRules = List.sortWith randomizeOrder [
+            { Path = d3; SyncRule = SyncRules.NotSave }
+            { Path = d3f1; SyncRule = SyncRules.AlwaysReplace }
+        ]
+
+        let result = synchronize sourceItems [] backupItems backupRules
+
+        test <@ result = Ok [
+            Replace d3f1
+        ] @>
