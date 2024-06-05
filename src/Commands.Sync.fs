@@ -1,7 +1,6 @@
 ﻿module SyncBackup.Commands.Sync
 
 open SyncBackup
-open SyncBackup.Domain
 open SyncBackup.Domain.Dsl
 open SyncBackup.Domain.Sync
 
@@ -31,15 +30,10 @@ let sync (infra: Infra) =
             then Ok ()
             else Error "Invalid repository type."
 
-        let! sourceRules =
-            infra.LoadSource.LoadElements ()
-            |> Result.map (Rules.buildRulesForSyncing sourceConfig.Rules)
+        let! sourceElements = infra.LoadSource.LoadElements ()
+        let! backupElements = infra.LoadBackup.LoadElements ()
 
-        let! backupRules =
-            infra.LoadBackup.LoadElements ()
-            |> Result.map (Rules.buildRulesForSyncing backupConfig.Rules)
-
-        let! instructions = synchronize sourceRules backupRules
+        let! instructions = synchronize sourceElements sourceConfig.Rules backupElements backupConfig.Rules
         do! infra.SaveSyncInstructionsFile instructions
         do! infra.OpenSyncInstructionsForUserEdition ()
 
