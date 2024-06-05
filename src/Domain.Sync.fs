@@ -120,13 +120,10 @@ let private spreadRules =
         }
 
     let correctRule (childrenRules: Item<SpreadRule> list) (sourceRule: SourceRule) (backupRule: BackupRule) =
-        if childrenRules = []
-        then Ok (sourceRule, backupRule)
-        else
-            match sourceRule, backupRule with
-            | _, _ when childrenRules |> Seq.exists (fun child -> child.Item.BackupRule = NotDelete) -> Ok (sourceRule, NotDelete)
-            | Exclude, _ when childrenRules |> Seq.exists (fun child -> child.Item.SourceRule = Include) -> Ok (Include, backupRule)
-            | _ -> Ok (sourceRule, backupRule)
+        match sourceRule, backupRule with
+        | _, _ when childrenRules |> Seq.exists (fun child -> child.Item.BackupRule = NotDelete) -> sourceRule, NotDelete
+        | Exclude, _ when childrenRules |> Seq.exists (fun child -> child.Item.SourceRule = Include) -> Include, backupRule
+        | _ -> sourceRule, backupRule
 
     let rec spreadRules' (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) (acc: Item<SpreadRule> list) = function
         | [] -> Ok acc
@@ -136,7 +133,7 @@ let private spreadRules =
                 let subPathRules, others = items |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Item.Path item.Item.Path)
                 let! appliedSourceRule, appliedBackupRule = computeRule lastSourceRule lastBackupRule item.Item
                 let! childrenWithSpreadRules = spreadRules' appliedSourceRule appliedBackupRule [] subPathRules
-                let! appliedSourceRule, appliedBackupRule = correctRule childrenWithSpreadRules appliedSourceRule appliedBackupRule
+                let appliedSourceRule, appliedBackupRule = correctRule childrenWithSpreadRules appliedSourceRule appliedBackupRule
                 let itemsWithSpreadRules = item.map (fun origin -> { Path = origin.Path; SourceRule = appliedSourceRule; BackupRule = appliedBackupRule })
                 let! otherItems = spreadRules' lastSourceRule lastBackupRule [] others
                 return acc@[itemsWithSpreadRules]@childrenWithSpreadRules@otherItems

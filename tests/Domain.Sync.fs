@@ -311,6 +311,30 @@ module ``synchronize should`` =
         test <@ result = Ok expected @>
 
     [<Fact>]
+    let ``not delete element event if excluded`` () =
+        let sourceItems = [
+            d2
+            d2f1
+        ]
+
+        let sourceRules = [
+            { Path = d2f1; SyncRule = SyncRules.Exclude }
+        ]
+
+        let backupItems = [
+            d2
+            d2f1
+        ]
+
+        let backupRules = [
+            { Path = d2f1; SyncRule = SyncRules.NotDelete }
+        ]
+
+        let result = synchronize sourceItems sourceRules backupItems backupRules
+
+        test <@ result = Ok [] @>
+
+    [<Fact>]
     let ``apply 'ignore' rule to children`` () =
         let sourceItems = [
             d1
