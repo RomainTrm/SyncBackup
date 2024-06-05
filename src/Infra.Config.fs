@@ -6,7 +6,7 @@ open SyncBackup.Domain.Dsl
 module private FileSerializer =
     open Newtonsoft.Json
 
-    let serialize (config: RepositoryConfig) = JsonConvert.SerializeObject config
+    let serialize (config: RepositoryConfig) = JsonConvert.SerializeObject(config, Formatting.Indented)
     let deserialize = JsonConvert.DeserializeObject<RepositoryConfig>
 
 module private Init =

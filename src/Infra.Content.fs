@@ -30,7 +30,12 @@ module Scan =
             |> Seq.filter excludeConfigFolder
             |> Seq.fold (fun acc directoryPath ->
                 let path = buildRelativePath directoryPath ContentType.Directory
-                acc@[path]@(scan' directoryPath buildRelativePath)
+                let children =
+                    try
+                        scan' directoryPath buildRelativePath
+                    with // Windows may detect a directory but fail to access it because it's not there
+                    | :? UnauthorizedAccessException -> []
+                acc@[path]@children
             ) []
 
         files@directories
