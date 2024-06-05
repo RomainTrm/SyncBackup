@@ -1,9 +1,8 @@
 ﻿# TODO
 
 - (optional) Add a ``rules --edit`` command : Reload tracked elements and edit them like after a scan
-- Actual code is mostly "source repository" specific, it should be more isolated
+- warnings before running sync command (scans should be up to date)
 
-# In progress
+# INSTALL
 
-- Sync logic : seems ok, should no process or refuse
-- issue: cannot add a NotSave rule -> checking the path exists
+Add exe directory to PATH

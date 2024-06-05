@@ -50,7 +50,8 @@ with
 Available rules (source repository):
 {availableRules Dsl.RepositoryType.Source}
 Available rules (backup repository):
-{availableRules Dsl.RepositoryType.Backup}"""
+{availableRules Dsl.RepositoryType.Backup}
+Path: relative path into the repository."""
             | List -> "Display all rules."
 
 let runCommand commandInfra queryInfra = function

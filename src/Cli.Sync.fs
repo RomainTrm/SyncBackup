@@ -2,7 +2,7 @@
 
 open Argu
 
-type Sync =
+type Process =
     | BackupPath of string
 with
     interface IArgParserTemplate with

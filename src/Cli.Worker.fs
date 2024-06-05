@@ -13,7 +13,7 @@ type Commands =
     | [<CliPrefix(CliPrefix.None)>] Alias of ParseResults<Aliases.Alias>
     | [<CliPrefix(CliPrefix.None)>] Rules of ParseResults<Rules.Rule>
     | [<CliPrefix(CliPrefix.None)>] Scan of ParseResults<Scan.Scan>
-    | [<CliPrefix(CliPrefix.None)>] Sync of ParseResults<Sync.Sync>
+    | [<CliPrefix(CliPrefix.None)>] Process of ParseResults<Sync.Process>
 with
     interface IArgParserTemplate with
         member this.Usage =
@@ -22,7 +22,7 @@ with
             | Alias _ -> "Manage aliases (pointers to directories outside the repository's directory), only available for the source repository."
             | Rules _ -> "Manage rules for synchronization."
             | Scan _ -> "Reference all directories and files in the repository."
-            | Sync _ -> "Run synchronization process between two repositories."
+            | Process _ -> "Run synchronization process between two repositories."
 
 let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv =
     let currentDirectory = Environment.CurrentDirectory
@@ -38,7 +38,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
         | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
         | Rules command -> command |> executeCommand (Rules.runCommand configCommandInfra configQueryInfra)
         | Scan _ -> Scan.runCommand contentCommandInfra |> Some
-        | Sync command -> command |> executeCommand (Sync.runCommand syncCommandInfraFactory)
+        | Process command -> command |> executeCommand (Sync.runCommand syncCommandInfraFactory)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function

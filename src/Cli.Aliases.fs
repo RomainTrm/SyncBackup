@@ -10,7 +10,9 @@ with
     interface IArgParserTemplate with
         member this.Usage =
             match this with
-            | Add _ -> "Add a new alias to the repository."
+            | Add _ -> @"Add a new alias to the repository.
+- Name: name of the alias, it will be the name of the directory in the backup repository
+- Path: path to the directory to backup"
             | List -> "Display all aliases."
 
 let runCommand commandInfra queryInfra = function
