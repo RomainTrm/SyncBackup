@@ -38,7 +38,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
         | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
         | Rules command -> command |> executeCommand (Rules.runCommand configCommandInfra configQueryInfra)
         | Scan _ -> Scan.runCommand contentCommandInfra |> Some
-        | Process command -> command |> executeCommand (Sync.runCommand syncCommandInfraFactory)
+        | Process command -> command |> executeCommand (Sync.runCommand syncCommandInfraFactory logger)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function
