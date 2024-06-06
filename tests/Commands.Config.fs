@@ -13,6 +13,10 @@ let defaultInfra : Infra = {
     UpdateConfig = fun _ -> failwith "not implemented"
     SolveRuleConflict = fun _ _ -> failwith "not implemented"
     SolveContentType = fun _ -> failwith "not implemented"
+    LoadTrackFile = fun _ -> failwith "not implemented"
+    OpenRulesFile = fun _ -> failwith "not implemented"
+    ReadRulesFile = fun _ -> failwith "not implemented"
+    SaveRulesFile = fun _ _ -> failwith "not implemented"
 }
 
 let defaultConfig : RepositoryConfig = {
@@ -409,3 +413,57 @@ module Rules =
                     Rules = [ { Path = { Type = Source; Value = "path"; ContentType = contentType }; SyncRule = SyncRules.NotSave } ]
             }
             test <@ calls |> Seq.toList = [ expectedConfig ] @>
+
+    module ``Edit should`` =
+        let d1 = { Value = "d1"; Type = Source; ContentType = Directory }
+        let d2 = { Value = "d2"; Type = Source; ContentType = Directory }
+        let d1s1 = { Value = "d1/s1"; Type = Source; ContentType = Directory }
+        let d1s2 = { Value = "d1/s2"; Type = Source; ContentType = Directory }
+
+        [<Fact>]
+        let ``load tracked elements and existing rules, then save to file for user edition`` () =
+            let saveRulesCalls = System.Collections.Generic.List<_> ()
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok {
+                        defaultConfig with
+                            Rules = [
+                                { Path = d2; SyncRule = Exclude }
+                            ]
+                        }
+                    LoadTrackFile = fun () -> Ok [
+                        d1
+                        d2
+                        d1s1
+                        d1s2
+                    ]
+                    SaveRulesFile = fun repoType rules ->
+                        saveRulesCalls.Add(repoType, rules)
+                        Ok ()
+                    OpenRulesFile = Ok
+                    ReadRulesFile = fun () -> Ok [
+                        { Path = d1; SyncRule = NoRule }
+                        { Path = d1s1; SyncRule = Exclude }
+                        { Path = d1s2; SyncRule = NoRule }
+                        { Path = d2; SyncRule = Exclude }
+                    ]
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.editRules infra ()
+            test <@ result = Ok () @>
+
+            let expectedSaveRulesFile = RepositoryType.Source, [
+                { Path = d1; SyncRule = NoRule }
+                { Path = d1s1; SyncRule = NoRule }
+                { Path = d1s2; SyncRule = NoRule }
+                { Path = d2; SyncRule = Exclude }
+            ]
+            test <@ saveRulesCalls |> Seq.toList = [expectedSaveRulesFile] @>
+
+            let expectedSavedRules = [
+                { Path = d2; SyncRule = Exclude }
+                { Path = d1s1; SyncRule = Exclude }
+            ]
+            test <@ calls |> Seq.toList = [{ defaultConfig with Rules = expectedSavedRules }] @>

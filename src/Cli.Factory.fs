@@ -8,6 +8,10 @@ let configCommandInfra logger currentDirectory : SyncBackup.Commands.Config.Infr
     UpdateConfig = SyncBackup.Infra.Config.update currentDirectory
     SolveRuleConflict = Rules.solveConflict logger
     SolveContentType = fun () -> Rules.solveContentType logger
+    LoadTrackFile = fun () -> SyncBackup.Infra.Content.TrackFile.load currentDirectory
+    OpenRulesFile = fun _ -> failwith "not implemented"
+    ReadRulesFile = fun _ -> failwith "not implemented"
+    SaveRulesFile = fun _ -> failwith "not implemented"
 }
 
 let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
