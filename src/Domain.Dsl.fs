@@ -1,5 +1,7 @@
 ﻿module SyncBackup.Domain.Dsl
 
+let [<Literal>] RepositoryConfigVersion = "1.0"
+
 type DirectoryPath = string
 module DirectoryPath =
     let build (value: DirectoryPath) = value.Replace('/', '\\').TrimEnd [| '\\'; '\"' |]
@@ -12,6 +14,7 @@ type RepositoryPath = DirectoryPath
 
 type RepositoryType = Source | Backup
 type RepositoryConfig = {
+    Version: string
     Type: RepositoryType
     Aliases: Alias list
     Rules: Rule list

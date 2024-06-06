@@ -21,6 +21,7 @@ let defaultInfra = {
 }
 
 let defaultConfig : Dsl.RepositoryConfig = {
+    Version = Dsl.RepositoryConfigVersion
     Type = Dsl.RepositoryType.Source
     Aliases = []
     Rules = []

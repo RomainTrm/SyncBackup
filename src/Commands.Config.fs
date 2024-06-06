@@ -16,6 +16,7 @@ type Infra = {
 module Init =
     let source (infra: Infra) =
         let config = {
+            Version = RepositoryConfigVersion
             Type = RepositoryType.Source
             Aliases = []
             Rules = []
@@ -24,6 +25,7 @@ module Init =
 
     let backup (infra: Infra) =
         let config = {
+            Version = RepositoryConfigVersion
             Type = RepositoryType.Backup
             Aliases = []
             Rules = []

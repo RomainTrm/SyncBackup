@@ -19,6 +19,7 @@ let readConfigFile = configFilePath >> File.ReadAllLines
 
 module ``init should`` =
     let defaultConfig : RepositoryConfig = {
+        Version = RepositoryConfigVersion
         Type = RepositoryType.Source
         Aliases = []
         Rules = []

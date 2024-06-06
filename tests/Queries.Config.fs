@@ -8,6 +8,7 @@ open Swensen.Unquote
 module Alias =
     module ``list should`` =
         let repositoryConfig : RepositoryConfig = {
+            Version = RepositoryConfigVersion
             Type = RepositoryType.Source
             Aliases = []
             Rules = []
@@ -72,6 +73,7 @@ module Alias =
 module Rules =
     module ``list should`` =
         let repositoryConfig : RepositoryConfig = {
+            Version = RepositoryConfigVersion
             Type = RepositoryType.Source
             Aliases = []
             Rules = []

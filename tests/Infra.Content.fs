@@ -52,6 +52,7 @@ module Scan =
             TestHelpers.createDirectory [|testDirectoryPath|]
 
             Config.init testDirectoryPath {
+                Version = RepositoryConfigVersion
                 Type = RepositoryType.Source
                 Aliases = []
                 Rules = []

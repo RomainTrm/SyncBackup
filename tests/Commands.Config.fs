@@ -16,6 +16,7 @@ let defaultInfra : Infra = {
 }
 
 let defaultConfig : RepositoryConfig = {
+    Version = RepositoryConfigVersion
     Type = RepositoryType.Source
     Aliases = []
     Rules = []
@@ -34,6 +35,7 @@ module ``Init should`` =
 
         test <@ result = Ok () @>
         let expectedConfig: RepositoryConfig = {
+            Version = RepositoryConfigVersion
             Type = RepositoryType.Source
             Aliases = []
             Rules = []
@@ -52,6 +54,7 @@ module ``Init should`` =
 
         test <@ result = Ok () @>
         let expectedConfig: RepositoryConfig = {
+            Version = RepositoryConfigVersion
             Type = RepositoryType.Backup
             Aliases = []
             Rules = []
