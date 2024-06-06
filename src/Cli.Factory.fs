@@ -9,7 +9,9 @@ let configCommandInfra logger currentDirectory : SyncBackup.Commands.Config.Infr
     SolveRuleConflict = Rules.solveConflict logger
     SolveContentType = fun () -> Rules.solveContentType logger
     LoadTrackFile = fun () -> SyncBackup.Infra.Content.TrackFile.load currentDirectory
-    OpenRulesFile = fun _ -> failwith "not implemented"
+    OpenRulesFile = fun () ->
+        SyncBackup.Infra.Dsl.getRulesEditionFilePath currentDirectory
+        |> SyncBackup.Infra.Editor.VsCode.runEditor
     ReadRulesFile = fun _ -> failwith "not implemented"
     SaveRulesFile = fun _ -> failwith "not implemented"
 }
