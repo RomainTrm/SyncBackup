@@ -14,7 +14,7 @@ with
 
 let private confirmProcess logger =
     logger "Warning: before processing synchronization, make sure your repository scans are up to date."
-    logger "To run a scan, run: 'sync scan' on the repository."
+    logger "To run a scan, run: 'sync scan --run' on the repository."
 
     let rec confirmProcess' () =
         logger "Run synchronization? (y/n):"

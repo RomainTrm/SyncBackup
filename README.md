@@ -43,13 +43,13 @@ OPTIONS:
 
 - Initialize repository: ``sync init --source``
 - (optional) Add aliases to add content placed outside the current directory: ``sync alias --add [name] [path]``
-- Scan repository content: ``sync scan``, it will display changes since the last scan, you can specify rules 
+- Scan repository content: ``sync scan --run``, it will display changes since the last scan, you can specify rules 
 - (optional) Add some rules: ``sync rules --add [Path] [Rule]``
 
 ### Setup Backup repository
 
 - Initialize repository ``sync init --backup``
-- Scan repository content: ``sync scan``, it will display changes since the last scan, you can specify rules
+- Scan repository content: ``sync scan --run``, it will display changes since the last scan, you can specify rules
 - (optional) Add some rules: ``sync rules --add [Path] [Rule]``
 
 ### Run synchronization

@@ -14,6 +14,7 @@ type Infra = {
     SaveTrackFile: RelativePath list -> Result<unit, string>
     LoadTrackFile: unit -> Result<RelativePath list, string>
     SaveRules: Rule list -> Result<unit, string>
+    ResetScan: unit -> Result<unit, string>
 }
 
 let private updateRules' oldRules =
@@ -55,3 +56,5 @@ let scanRepositoryContent (infra: Infra) () =
 
         return ()
     }
+
+let reset (infra: Infra) = infra.LoadConfig >> Result.bind (ignore<RepositoryConfig> >> infra.ResetScan)

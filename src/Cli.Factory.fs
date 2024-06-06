@@ -28,6 +28,7 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
         SyncBackup.Infra.Config.load currentDirectory
         |> Result.map (fun config -> { config with Rules = rules })
         |> Result.bind (SyncBackup.Infra.Config.update currentDirectory)
+    ResetScan = fun () -> SyncBackup.Infra.Content.TrackFile.reset currentDirectory
 }
 
 let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {

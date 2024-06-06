@@ -224,3 +224,30 @@ module TrackFile =
 
             let result = TrackFile.load path
             test <@ result = Ok [] @>
+
+    module ``reset should`` =
+        [<Fact>]
+        let ``remove track file`` () =
+            let uniqueTestDirectory = "test-ba4ad201-70f8-47e7-877e-11d356805994"
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
+
+            let content = [
+                { Type = Source; Value = "line1"; ContentType = File }
+                { Type = Alias; Value = "line2"; ContentType = File }
+                { Type = Alias; Value = "line3"; ContentType = Directory }
+            ]
+            let result = TrackFile.save path content
+            let result = TrackFile.reset path
+
+            test <@ result = Ok () @>
+            test <@ System.IO.File.Exists (Dsl.getTrackFileFilePath path) = false @>
+
+        [<Fact>]
+        let ``do nothing when no track file`` () =
+            let uniqueTestDirectory = "test-83ba60c7-45da-456d-a1de-a9d868f251af"
+            let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
+
+            let result = TrackFile.reset path
+
+            test <@ result = Ok () @>
+            test <@ System.IO.File.Exists (Dsl.getTrackFileFilePath path) = false @>

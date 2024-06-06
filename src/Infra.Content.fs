@@ -120,3 +120,9 @@ module TrackFile =
                     |> Result.map (fun path -> paths@[path])
                 )
             ) (Ok [])
+
+    let reset (repositoryPath: RepositoryPath) =
+        let filePath = Dsl.getTrackFileFilePath repositoryPath
+        if (File.Exists filePath)
+        then File.Delete filePath
+        Ok ()
