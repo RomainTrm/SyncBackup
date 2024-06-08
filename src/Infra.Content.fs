@@ -117,9 +117,10 @@ module TrackFile =
                 paths
                 |> Result.bind (fun paths ->
                     RelativePath.deserialize line
-                    |> Result.map (fun path -> paths@[path])
+                    |> Result.map (fun path -> path::paths)
                 )
             ) (Ok [])
+            |> Result.map List.rev
 
     let reset (repositoryPath: RepositoryPath) =
         let filePath = Dsl.getTrackFileFilePath repositoryPath
