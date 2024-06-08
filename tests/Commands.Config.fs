@@ -467,3 +467,36 @@ module Rules =
                 { Path = d1s1; SyncRule = Exclude }
             ]
             test <@ calls |> Seq.toList = [{ defaultConfig with Rules = expectedSavedRules }] @>
+
+        [<Fact>]
+        let ``return error if user set an invalid rule for the repository`` () =
+            let invalidRule = SyncRules.AlwaysReplace
+            let calls = System.Collections.Generic.List<_> ()
+            let infra = {
+                defaultInfra with
+                    LoadConfig = fun () -> Ok {
+                        defaultConfig with
+                            Rules = [
+                                { Path = d2; SyncRule = Exclude }
+                            ]
+                        }
+                    LoadTrackFile = fun () -> Ok [
+                        d1
+                        d2
+                        d1s1
+                        d1s2
+                    ]
+                    SaveRulesFile = fun _ _ -> Ok ()
+                    OpenRulesFile = Ok
+                    ReadRulesFile = fun () -> Ok [
+                        { Path = d1; SyncRule = NoRule }
+                        { Path = d1s1; SyncRule = Exclude }
+                        { Path = d1s2; SyncRule = invalidRule }
+                        { Path = d2; SyncRule = Exclude }
+                    ]
+                    UpdateConfig = calls.Add >> Ok
+            }
+
+            let result = Rules.editRules infra ()
+            test <@ result = Error $"The rule \"{SyncRules.getValue invalidRule}\" can't be applied to this repository type." @>
+            test <@ calls |> Seq.isEmpty @>

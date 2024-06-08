@@ -85,6 +85,16 @@ module Rules =
             | RuleAlreadyThere -> return ()
         }
 
+    let private updateRules repositoryType oldRules =
+        List.fold (fun rules (rule: Rule) ->
+            result {
+                let! rules = rules
+                do! validateRule repositoryType rule.SyncRule
+                return rules@[rule]
+            }
+        ) (Ok [])
+        >> Result.map (updateRulesAfterEdition oldRules)
+
     let editRules (infra: Infra) () =
         result {
             let! config = infra.LoadConfig ()
@@ -95,7 +105,7 @@ module Rules =
             do! infra.OpenRulesFile ()
 
             let! editedRules = infra.ReadRulesFile ()
-            let rulesToSave = updateRulesAfterEdition config.Rules editedRules
+            let! rulesToSave = updateRules config.Type config.Rules editedRules
             do! infra.UpdateConfig { config with Rules = rulesToSave }
 
             return ()
