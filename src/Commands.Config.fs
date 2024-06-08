@@ -90,9 +90,10 @@ module Rules =
             result {
                 let! rules = rules
                 do! validateRule repositoryType rule.SyncRule
-                return rules@[rule]
+                return rule::rules
             }
         ) (Ok [])
+        >> Result.map List.rev
         >> Result.map (updateRulesAfterEdition oldRules)
 
     let editRules (infra: Infra) =
