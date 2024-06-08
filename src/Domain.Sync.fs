@@ -79,7 +79,7 @@ let private buildTree
                 then { treeItem with Children = buildTree' treeItem.Children item }
                 else treeItem
             )
-        else tree@[{ Element = item; Children = [] }]
+        else { Element = item; Children = [] }::tree
 
     let paths =
         sourceItems@(sourceRules |> List.map _.Path)@backupItems@(backupRules |> List.map _.Path)
