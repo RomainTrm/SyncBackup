@@ -11,6 +11,10 @@ type Infra = {
     UpdateConfig: RepositoryConfig -> Result<unit, string>
     SolveRuleConflict: Rule -> Rule -> Result<Rule, string>
     SolveContentType: unit -> Result<ContentType, string>
+    LoadTrackFile: unit -> Result<RelativePath list, string>
+    SaveRulesFile: RepositoryType -> Rule list -> Result<unit, string>
+    OpenRulesFile: unit -> Result<unit, string>
+    ReadRulesFile: unit -> Result<Rule list, string>
 }
 
 module Init =
@@ -79,4 +83,30 @@ module Rules =
                         infra.UpdateConfig { config with Rules = rules }
                     )
             | RuleAlreadyThere -> return ()
+        }
+
+    let private updateRules repositoryType oldRules =
+        List.fold (fun rules (rule: Rule) ->
+            result {
+                let! rules = rules
+                do! validateRule repositoryType rule.SyncRule
+                return rules@[rule]
+            }
+        ) (Ok [])
+        >> Result.map (updateRulesAfterEdition oldRules)
+
+    let editRules (infra: Infra) =
+        result {
+            let! config = infra.LoadConfig ()
+            let! trackedElements = infra.LoadTrackFile ()
+            let! repositoryContent = buildTreeWithRules config.Rules trackedElements
+
+            do! infra.SaveRulesFile config.Type repositoryContent
+            do! infra.OpenRulesFile ()
+
+            let! editedRules = infra.ReadRulesFile ()
+            let! rulesToSave = updateRules config.Type config.Rules editedRules
+            do! infra.UpdateConfig { config with Rules = rulesToSave }
+
+            return ()
         }

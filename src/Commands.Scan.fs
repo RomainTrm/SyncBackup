@@ -17,16 +17,6 @@ type Infra = {
     ResetScan: unit -> Result<unit, string>
 }
 
-let private updateRules' oldRules =
-    List.fold (fun rules rule ->
-        match Rules.add rules rule with
-        | Rules.Added rules -> rules
-        | Rules.RuleAlreadyThere -> rules
-        | Rules.Conflict _ ->
-            // users chose to override value while editing the file, so we can safely override old rule
-            Rules.replace rules rule
-    ) oldRules
-
 let private updateRules repositoryType oldRules =
     List.fold (fun rules (rule: ScanResult) ->
         result {
@@ -35,7 +25,7 @@ let private updateRules repositoryType oldRules =
             return rules@[rule.Rule]
         }
     ) (Ok [])
-    >> Result.map (updateRules' oldRules)
+    >> Result.map (Rules.updateRulesAfterEdition oldRules)
 
 let scanRepositoryContent (infra: Infra) () =
     result {

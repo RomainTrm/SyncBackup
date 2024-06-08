@@ -36,6 +36,7 @@ let solveContentType logger : Result<Dsl.ContentType, string> =
 type Rule =
     | Add of Rule: string * Path: string
     | List
+    | Edit
 with
     interface IArgParserTemplate with
         member this.Usage =
@@ -53,6 +54,7 @@ Available rules (backup repository):
 {availableRules Dsl.RepositoryType.Backup}
 Path: relative path into the repository."""
             | List -> "Display all rules."
+            | Edit -> "Open a file with all tracked elements and associated rules for editions."
 
 let runCommand commandInfra queryInfra = function
     | Add (name, path) ->
@@ -64,3 +66,7 @@ let runCommand commandInfra queryInfra = function
     | List ->
         SyncBackup.Queries.Config.Rules.list queryInfra
         |> Result.map (fun rules -> String.Join(SyncBackup.Infra.Dsl.NewLine, rules))
+
+    | Edit ->
+        SyncBackup.Commands.Config.Rules.editRules commandInfra
+        |> Result.map (fun () -> "Rules saved")
