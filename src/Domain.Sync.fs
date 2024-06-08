@@ -48,6 +48,11 @@ with
         | BackupItemOnly item -> BackupItemOnly (f item)
         | BothItem item -> BothItem (f item)
 
+type private Tree<'a> = {
+    Element: Item<'a>
+    Children: Tree<'a> list
+}
+
 type private OriginRule = {
     Path: RelativePath
     SourceRule: SyncRules
@@ -65,6 +70,17 @@ let private buildTree
     (sourceRules: Rule list)
     (backupItems: RelativePath list)
     (backupRules: Rule list) =
+    let rec buildTree' (tree: Tree<OriginRule> list) (item: Item<OriginRule>) =
+        if tree |> List.exists (fun treeItem -> RelativePath.contains item.Item.Path treeItem.Element.Item.Path)
+        then
+            tree
+            |> List.map (fun treeItem ->
+                if RelativePath.contains item.Item.Path treeItem.Element.Item.Path
+                then { treeItem with Children = buildTree' treeItem.Children item }
+                else treeItem
+            )
+        else tree@[{ Element = item; Children = [] }]
+
     let paths =
         sourceItems@(sourceRules |> List.map _.Path)@backupItems@(backupRules |> List.map _.Path)
         |> List.distinctBy _.Value
@@ -75,7 +91,7 @@ let private buildTree
     let backupRules = backupRules |> List.map (fun x -> x.Path.Value, x.SyncRule) |> Map
 
     paths
-    |> List.collect (fun path ->
+    |> Seq.collect (fun path ->
         let sourceItem = sourceItems |> Map.containsKey path.Value
         let sourceRule = sourceRules |> Map.tryFind path.Value
         let backupItem = backupItems |> Map.containsKey path.Value
@@ -96,7 +112,8 @@ let private buildTree
         | true, None, true, Some backupRule -> [BothItem { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
         | true, Some sourceRule, true, Some backupRule -> [BothItem { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
     )
-    |> List.sortBy _.Item.Path.Value
+    |> Seq.sortBy _.Item.Path.Value
+    |> Seq.fold buildTree' []
 
 let private spreadRules =
     let computeSourceRule (lastRule: SourceRule) = function
@@ -128,15 +145,14 @@ let private spreadRules =
 
     let rec spreadRules' (lastSourceRule: SourceRule) (lastBackupRule: BackupRule) = function
         | [] -> Ok []
-        | item::items ->
+        | treeItem::items ->
             result {
-                let item: Item<OriginRule> = item
-                let subPathRules, others = items |> List.partition (fun possibleChild -> RelativePath.contains possibleChild.Item.Path item.Item.Path)
-                let! appliedSourceRule, appliedBackupRule = computeRule lastSourceRule lastBackupRule item.Item
-                let! childrenWithSpreadRules = spreadRules' appliedSourceRule appliedBackupRule subPathRules
+                let treeItem: Tree<OriginRule> = treeItem
+                let! appliedSourceRule, appliedBackupRule = computeRule lastSourceRule lastBackupRule treeItem.Element.Item
+                let! childrenWithSpreadRules = spreadRules' appliedSourceRule appliedBackupRule treeItem.Children
                 let appliedSourceRule, appliedBackupRule = correctRule childrenWithSpreadRules appliedSourceRule appliedBackupRule
-                let itemsWithSpreadRules = item.map (fun origin -> { Path = origin.Path; SourceRule = appliedSourceRule; BackupRule = appliedBackupRule })
-                let! otherItems = spreadRules' lastSourceRule lastBackupRule others
+                let itemsWithSpreadRules = treeItem.Element.map (fun origin -> { Path = origin.Path; SourceRule = appliedSourceRule; BackupRule = appliedBackupRule })
+                let! otherItems = spreadRules' lastSourceRule lastBackupRule items
                 return [itemsWithSpreadRules]@childrenWithSpreadRules@otherItems
             }
 
