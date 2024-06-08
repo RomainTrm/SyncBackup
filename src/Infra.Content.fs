@@ -95,10 +95,11 @@ module ScanFile =
         |> Seq.map parseSyncResult
         |> Seq.fold (fun result content ->
             match result, content with
-            | Ok result, Ok content -> Ok (result@[content])
+            | Ok result, Ok content -> Ok (content::result)
             | _, Error error
             | Error error, _ -> Error error
         ) (Ok [])
+        |> Result.map List.rev
 
 module TrackFile =
     let save (repositoryPath: RepositoryPath) (contentPaths: RelativePath list) =
