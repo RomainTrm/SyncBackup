@@ -95,7 +95,7 @@ module Rules =
         ) (Ok [])
         >> Result.map (updateRulesAfterEdition oldRules)
 
-    let editRules (infra: Infra) () =
+    let editRules (infra: Infra) =
         result {
             let! config = infra.LoadConfig ()
             let! trackedElements = infra.LoadTrackFile ()

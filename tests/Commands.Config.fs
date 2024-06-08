@@ -451,7 +451,7 @@ module Rules =
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let result = Rules.editRules infra ()
+            let result = Rules.editRules infra
             test <@ result = Ok () @>
 
             let expectedSaveRulesFile = RepositoryType.Source, [
@@ -497,6 +497,6 @@ module Rules =
                     UpdateConfig = calls.Add >> Ok
             }
 
-            let result = Rules.editRules infra ()
+            let result = Rules.editRules infra
             test <@ result = Error $"The rule \"{SyncRules.getValue invalidRule}\" can't be applied to this repository type." @>
             test <@ calls |> Seq.isEmpty @>
