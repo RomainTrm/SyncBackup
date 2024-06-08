@@ -12,8 +12,8 @@ let configCommandInfra logger currentDirectory : SyncBackup.Commands.Config.Infr
     OpenRulesFile = fun () ->
         SyncBackup.Infra.Dsl.getRulesEditionFilePath currentDirectory
         |> SyncBackup.Infra.Editor.VsCode.runEditor
-    ReadRulesFile = fun _ -> failwith "not implemented"
-    SaveRulesFile = fun _ -> failwith "not implemented"
+    ReadRulesFile = fun () -> SyncBackup.Infra.Config.RuleEditionFile.loadFile currentDirectory
+    SaveRulesFile = SyncBackup.Infra.Config.RuleEditionFile.saveFile currentDirectory
 }
 
 let configQueryInfra currentDirectory : SyncBackup.Queries.Config.Infra = {
