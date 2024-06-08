@@ -22,9 +22,10 @@ let private updateRules repositoryType oldRules =
         result {
             let! rules = rules
             do! Rules.validateRule repositoryType rule.Rule.SyncRule
-            return rules@[rule.Rule]
+            return rule.Rule::rules
         }
     ) (Ok [])
+    >> Result.map List.rev
     >> Result.map (Rules.updateRulesAfterEdition oldRules)
 
 let scanRepositoryContent (infra: Infra) () =

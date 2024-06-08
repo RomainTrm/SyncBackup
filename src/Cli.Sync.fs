@@ -28,6 +28,7 @@ let runCommand commandInfraFactory logger = function
     | BackupPath path ->
         match confirmProcess logger with
         | true ->
+            logger "Computing instructions, it may take a few seconds."
             SyncBackup.Domain.Dsl.DirectoryPath.build path
             |> commandInfraFactory
             |> SyncBackup.Commands.Sync.sync
