@@ -12,8 +12,9 @@ with
             | Run -> "Scan repository content and display every changes since last scan."
             | Reset -> "Reset scan state, next scan will display all content like a new repository."
 
-let runCommand commandInfra = function
+let runCommand commandInfra logger = function
     | Run ->
+        logger "Scanning repository, it may take a few seconds."
         SyncBackup.Commands.Scan.scanRepositoryContent commandInfra ()
         |> Result.map (fun () -> "Scan completed.")
     | Reset ->
