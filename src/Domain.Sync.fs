@@ -211,3 +211,13 @@ let synchronize
             | InnerDelete path -> [Delete path]
         )
     )
+
+let replicate
+    (rules: Rule list)
+    (sourceItems: RelativePath list)
+    (backupItems: RelativePath list) =
+    Set backupItems
+    |> Set.difference (Set sourceItems)
+    |> Set.toList
+    |> List.map Add
+    |> Ok

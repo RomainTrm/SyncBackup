@@ -55,4 +55,29 @@ type ReplicateBackupInfra = {
 }
 
 let replicateBackup (infra: ReplicateBackupInfra) =
-    Error "not implemented"
+    result {
+        let! sourceBackupConfig = infra.LoadSourceBackup.LoadConfig ()
+        let! targetBackupConfig = infra.LoadTargetBackup.LoadConfig ()
+
+        do! if sourceBackupConfig.Type = RepositoryType.Backup
+            then Ok ()
+            else Error "Invalid repository type."
+
+        do! if targetBackupConfig.Type = RepositoryType.Backup
+            then Ok ()
+            else Error "Invalid repository type."
+
+        let! sourceElements = infra.LoadSourceBackup.LoadElements ()
+        let! targetElements = infra.LoadTargetBackup.LoadElements ()
+
+        let! instructions = replicate sourceBackupConfig.Rules sourceElements targetElements
+        do! infra.SaveSyncInstructionsFile instructions
+        do! infra.OpenSyncInstructionsForUserEdition ()
+
+        match! infra.AreInstructionsAccepted () with
+        | true ->
+            do! infra.SubmitSyncInstructions instructions
+            do! infra.SaveTargetBackupRules sourceBackupConfig.Rules
+            return "Synchronization completed!"
+        | false -> return "Synchronization aborted!"
+    }
