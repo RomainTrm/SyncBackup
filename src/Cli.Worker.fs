@@ -14,6 +14,7 @@ type Commands =
     | [<CliPrefix(CliPrefix.None)>] Rules of ParseResults<Rules.Rule>
     | [<CliPrefix(CliPrefix.None)>] Scan of ParseResults<Scan.Scan>
     | [<CliPrefix(CliPrefix.None)>] Process of ParseResults<Sync.Process>
+    | [<CliPrefix(CliPrefix.None)>] Replicate of ParseResults<Sync.Replicate>
 with
     interface IArgParserTemplate with
         member this.Usage =
@@ -23,6 +24,7 @@ with
             | Rules _ -> "Manage rules for synchronization."
             | Scan _ -> "Reference all directories and files in the repository."
             | Process _ -> "Run synchronization process between two repositories."
+            | Replicate _ -> "Replicate a backup repository (rules and content), rules like replace, preserve are applied."
 
 let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv =
     let currentDirectory = Environment.CurrentDirectory
@@ -30,6 +32,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
     let configQueryInfra = Factory.configQueryInfra currentDirectory
     let contentCommandInfra = Factory.contentCommandInfra currentDirectory
     let syncCommandInfraFactory = Factory.syncCommandInfra logger currentDirectory
+    let replicateBackupCommandInfraFactory = Factory.replicateBackupCommandInfra logger currentDirectory
 
     let results = parser.ParseCommandLine(inputs = argv, raiseOnUsage = true)
     results.TryGetSubCommand()
@@ -38,7 +41,8 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
         | Alias command -> command |> executeCommand (Aliases.runCommand configCommandInfra configQueryInfra)
         | Rules command -> command |> executeCommand (Rules.runCommand configCommandInfra configQueryInfra)
         | Scan command -> command |> executeCommand (Scan.runCommand contentCommandInfra logger)
-        | Process command -> command |> executeCommand (Sync.runCommand syncCommandInfraFactory logger)
+        | Process command -> command |> executeCommand (Sync.runSyncCommand syncCommandInfraFactory logger)
+        | Replicate command -> command |> executeCommand (Sync.runReplicateCommand replicateBackupCommandInfraFactory logger)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function

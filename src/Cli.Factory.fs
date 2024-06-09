@@ -37,7 +37,7 @@ let contentCommandInfra currentDirectory : SyncBackup.Commands.Scan.Infra = {
     ResetScan = fun () -> SyncBackup.Infra.Content.TrackFile.reset currentDirectory
 }
 
-let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Commands.Sync.Infra = {
+let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Commands.Sync.SyncInfra = {
     LoadSource = {
         LoadConfig = fun () -> SyncBackup.Infra.Config.load sourceDirectory
         LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load sourceDirectory
@@ -52,4 +52,25 @@ let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Command
         |> SyncBackup.Infra.Editor.VsCode.runEditor
     AreInstructionsAccepted = fun () -> SyncBackup.Infra.Sync.InstructionsFile.areInstructionsAccepted sourceDirectory
     SubmitSyncInstructions = SyncBackup.Infra.Sync.Process.run sourceDirectory backupDirectory logger
+}
+
+let replicateBackupCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Commands.Sync.ReplicateBackupInfra = {
+    LoadSourceBackup = {
+        LoadConfig = fun () -> SyncBackup.Infra.Config.load sourceDirectory
+        LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load sourceDirectory
+    }
+    LoadTargetBackup = {
+        LoadConfig = fun () -> SyncBackup.Infra.Config.load backupDirectory
+        LoadElements = fun () -> SyncBackup.Infra.Content.TrackFile.load backupDirectory
+    }
+    SaveSyncInstructionsFile = SyncBackup.Infra.Sync.InstructionsFile.save sourceDirectory backupDirectory
+    OpenSyncInstructionsForUserEdition = fun () ->
+        SyncBackup.Infra.Dsl.getSyncInstructionsFilePath sourceDirectory
+        |> SyncBackup.Infra.Editor.VsCode.runEditor
+    AreInstructionsAccepted = fun () -> SyncBackup.Infra.Sync.InstructionsFile.areInstructionsAccepted sourceDirectory
+    SubmitSyncInstructions = SyncBackup.Infra.Sync.Process.run sourceDirectory backupDirectory logger []
+    SaveTargetBackupRules = fun rules ->
+        SyncBackup.Infra.Config.load backupDirectory
+        |> Result.map (fun config -> { config with Rules = rules })
+        |> Result.bind (SyncBackup.Infra.Config.update backupDirectory)
 }

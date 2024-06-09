@@ -4,7 +4,7 @@ open SyncBackup
 open SyncBackup.Domain.Dsl
 open SyncBackup.Domain.Sync
 
-type Infra = {
+type SyncInfra = {
     LoadSource: LoadInfra
     LoadBackup: LoadInfra
     SaveSyncInstructionsFile: SyncInstruction list -> Result<unit, string>
@@ -17,7 +17,7 @@ and LoadInfra = {
     LoadElements: unit -> Result<RelativePath list, string>
 }
 
-let sync (infra: Infra) =
+let sync (infra: SyncInfra) =
     result {
         let! sourceConfig = infra.LoadSource.LoadConfig ()
         let! backupConfig = infra.LoadBackup.LoadConfig ()
@@ -43,3 +43,16 @@ let sync (infra: Infra) =
             return "Synchronization completed!"
         | false -> return "Synchronization aborted!"
     }
+
+type ReplicateBackupInfra = {
+    LoadSourceBackup: LoadInfra
+    LoadTargetBackup: LoadInfra
+    SaveSyncInstructionsFile: SyncInstruction list -> Result<unit, string>
+    OpenSyncInstructionsForUserEdition: unit -> Result<unit, string>
+    AreInstructionsAccepted: unit -> Result<bool, string>
+    SubmitSyncInstructions: SyncInstruction list -> Result<unit, string>
+    SaveTargetBackupRules: Rule list -> Result<unit, string>
+}
+
+let replicateBackup (infra: ReplicateBackupInfra) =
+    Error "not implemented"
