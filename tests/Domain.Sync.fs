@@ -22,6 +22,9 @@ let d3f1 = { Type = Source; Value = "d3/f1"; ContentType = File }
 let d3f2 = { Type = Source; Value = "d3/f2"; ContentType = File }
 let d3f3 = { Type = Source; Value = "d3/f3"; ContentType = File }
 
+let rnd = Random();
+let randomizeOrder _ _ = rnd.Next ()
+
 module ``synchronize should`` =
     [<Fact>]
     let ``compute synchronize instructions when empty backup`` () =
@@ -220,9 +223,6 @@ module ``synchronize should`` =
         ]
         test <@ result = Ok expected @>
 
-    let rnd = Random();
-    let randomizeOrder _ _ = rnd.Next ()
-
     [<Fact>]
     let ``compute add order`` () =
         let sourceItems = List.sortWith randomizeOrder [
@@ -310,7 +310,7 @@ module ``synchronize should`` =
         test <@ result = Ok expected @>
 
     [<Fact>]
-    let ``not delete element event if excluded`` () =
+    let ``not delete element even if excluded`` () =
         let sourceItems = [
             d2
             d2f1
@@ -414,3 +414,160 @@ module ``replicate should`` =
             Add d3f3
         ]
         test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute synchronize instructions when not empty backup`` () =
+        let sourceItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+            d3f1
+            d3f2
+            d3f3
+        ]
+
+        let backupItems = [
+            d1
+            d3
+            d3f1
+            d3f2
+            d3f3
+        ]
+
+        let rules = [
+            { Path = d3f1; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3f2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3f3; SyncRule = SyncRules.AlwaysReplace }
+        ]
+
+        let result = Replicate.run rules sourceItems backupItems
+
+        let expected = [
+            Add d2
+            Add d2f1
+            Add d2f2
+            Add d2f3
+            Replace d3f1
+            Replace d3f2
+            Replace d3f3
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute synchronize instructions should only replace files`` () =
+        let sourceItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+        ]
+
+        let backupItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+        ]
+
+        let rules = [
+            { Path = d1; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f1; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
+        ]
+
+        let result = Replicate.run rules sourceItems backupItems
+
+        let expected = [
+            Replace d2f1
+            Replace d2f2
+            Replace d2f3
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute add order`` () =
+        let sourceItems = List.sortWith randomizeOrder [
+            d1
+            d1s1
+            d1s1f1
+            d1s1f2
+            d1s2
+            d1s2f1
+            d2
+            d2f1
+            d2f2
+        ]
+
+        let result = Replicate.run [] sourceItems []
+
+        let expected = [
+            Add d1
+            Add d1s1
+            Add d1s1f1
+            Add d1s1f2
+            Add d1s2
+            Add d1s2f1
+            Add d2
+            Add d2f1
+            Add d2f2
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``compute delete order`` () =
+        let backupItems = List.sortWith randomizeOrder [
+            d1
+            d1s1
+            d1s1f1
+            d1s1f2
+            d1s2
+            d1s2f1
+            d2
+            d2f1
+            d2f2
+        ]
+
+        let rules = [
+            { Path = d2f1; SyncRule = NotSave }
+            { Path = d2f2; SyncRule = AlwaysReplace }
+        ]
+
+        let result = Replicate.run rules [] backupItems
+
+        let expected = [
+            Delete d1s1f1
+            Delete d1s1f2
+            Delete d1s1
+            Delete d1s2f1
+            Delete d1s2
+            Delete d1
+            Delete d2f1
+            Delete d2f2
+            Delete d2
+        ]
+        test <@ result = Ok expected @>
+
+    [<Fact>]
+    let ``apply 'preserve' rule`` () =
+        let backupItems = [
+            d2
+            d2f1
+            d2f2
+        ]
+
+        let rules = [
+            { Path = d2; SyncRule = NotDelete }
+        ]
+        let result = Replicate.run rules [] backupItems
+
+        test <@ result = Ok [] @>
