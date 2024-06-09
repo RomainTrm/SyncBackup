@@ -6,18 +6,23 @@ open Xunit
 open Swensen.Unquote
 open SyncBackup.Domain.Sync
 
-module ``synchronize should`` =
-    let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
-    let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
-    let d3 = { Type = Source; Value = "d3"; ContentType = Directory }
-    let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
-    let d2f2 = { Type = Source; Value = "d2/f2"; ContentType = File }
-    let d2f3 = { Type = Source; Value = "d2/f3"; ContentType = File }
-    let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
-    let d3f1 = { Type = Source; Value = "d3/f1"; ContentType = File }
-    let d3f2 = { Type = Source; Value = "d3/f2"; ContentType = File }
-    let d3f3 = { Type = Source; Value = "d3/f3"; ContentType = File }
+let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
+let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
+let d3 = { Type = Source; Value = "d3"; ContentType = Directory }
+let d1s1 = { Type = Source; Value = "d1/s1"; ContentType = Directory }
+let d1s2 = { Type = Source; Value = "d1/s2"; ContentType = Directory }
+let d1s1f1 = { Type = Source; Value = "d1/s1/f1"; ContentType = File }
+let d1s1f2 = { Type = Source; Value = "d1/s1/f2"; ContentType = File }
+let d1s2f1 = { Type = Source; Value = "d1/s2/f1"; ContentType = File }
+let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
+let d2f2 = { Type = Source; Value = "d2/f2"; ContentType = File }
+let d2f3 = { Type = Source; Value = "d2/f3"; ContentType = File }
+let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
+let d3f1 = { Type = Source; Value = "d3/f1"; ContentType = File }
+let d3f2 = { Type = Source; Value = "d3/f2"; ContentType = File }
+let d3f3 = { Type = Source; Value = "d3/f3"; ContentType = File }
 
+module ``synchronize should`` =
     [<Fact>]
     let ``compute synchronize instructions when empty backup`` () =
         let sourceItems = [
@@ -41,7 +46,7 @@ module ``synchronize should`` =
             { Path = d3f3; SyncRule = SyncRules.Exclude }
         ]
 
-        let result = synchronize sourceItems sourceRules [] []
+        let result = Synchronize.run sourceItems sourceRules [] []
 
         let expected = [
             Add d1
@@ -84,7 +89,7 @@ module ``synchronize should`` =
             { Path = d3f3; SyncRule = SyncRules.NotDelete }
         ]
 
-        let result = synchronize sourceItems [] backupItems backupRules
+        let result = Synchronize.run sourceItems [] backupItems backupRules
 
         let expected = [
             Delete d1
@@ -136,7 +141,7 @@ module ``synchronize should`` =
             { Path = d3f2; SyncRule = SyncRules.AlwaysReplace }
         ]
 
-        let result = synchronize sourceItems sourceRules backupItems backupRules
+        let result = Synchronize.run sourceItems sourceRules backupItems backupRules
 
         let expected = [
             Delete d2f1
@@ -169,7 +174,7 @@ module ``synchronize should`` =
             { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
         ]
 
-        let result = synchronize sourceItems [] backupItems backupRules
+        let result = Synchronize.run sourceItems [] backupItems backupRules
 
         let expected = [
             Replace { d2f2 with Type = Alias }
@@ -206,7 +211,7 @@ module ``synchronize should`` =
             { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
         ]
 
-        let result = synchronize sourceItems [] backupItems backupRules
+        let result = Synchronize.run sourceItems [] backupItems backupRules
 
         let expected = [
             Replace d2f1
@@ -214,12 +219,6 @@ module ``synchronize should`` =
             Replace d2f3
         ]
         test <@ result = Ok expected @>
-
-    let d1s1 = { Type = Source; Value = "d1/s1"; ContentType = Directory }
-    let d1s2 = { Type = Source; Value = "d1/s2"; ContentType = Directory }
-    let d1s1f1 = { Type = Source; Value = "d1/s1/f1"; ContentType = File }
-    let d1s1f2 = { Type = Source; Value = "d1/s1/f2"; ContentType = File }
-    let d1s2f1 = { Type = Source; Value = "d1/s2/f1"; ContentType = File }
 
     let rnd = Random();
     let randomizeOrder _ _ = rnd.Next ()
@@ -238,7 +237,7 @@ module ``synchronize should`` =
             d2f2
         ]
 
-        let result = synchronize sourceItems [] [] []
+        let result = Synchronize.run sourceItems [] [] []
 
         let expected = [
             Add d1
@@ -267,7 +266,7 @@ module ``synchronize should`` =
             d2f2
         ]
 
-        let result = synchronize [] [] backupItems []
+        let result = Synchronize.run [] [] backupItems []
 
         let expected = [
             Delete d1s1f1
@@ -301,7 +300,7 @@ module ``synchronize should`` =
             { Path = d2; SyncRule = SyncRules.NotDelete }
         ]
 
-        let result = synchronize [] [] backupItems backupRules
+        let result = Synchronize.run [] [] backupItems backupRules
 
         let expected = [
             Delete d1s1f1
@@ -330,7 +329,7 @@ module ``synchronize should`` =
             { Path = d2f1; SyncRule = SyncRules.NotDelete }
         ]
 
-        let result = synchronize sourceItems sourceRules backupItems backupRules
+        let result = Synchronize.run sourceItems sourceRules backupItems backupRules
 
         test <@ result = Ok [] @>
 
@@ -357,7 +356,7 @@ module ``synchronize should`` =
             { Path = d3; SyncRule = SyncRules.NotSave }
         ]
 
-        let result = synchronize sourceItems sourceRules [] backupRules
+        let result = Synchronize.run sourceItems sourceRules [] backupRules
 
         test <@ result = Ok [] @>
 
@@ -380,8 +379,38 @@ module ``synchronize should`` =
             { Path = d3f1; SyncRule = SyncRules.AlwaysReplace }
         ]
 
-        let result = synchronize sourceItems [] backupItems backupRules
+        let result = Synchronize.run sourceItems [] backupItems backupRules
 
         test <@ result = Ok [
             Replace d3f1
         ] @>
+
+module ``replicate should`` =
+    [<Fact>]
+    let ``compute synchronize instructions when empty backup`` () =
+        let sourceItems = [
+            d1
+            d2
+            d3
+            d2f1
+            d2f2
+            d2f3
+            d3f1
+            d3f2
+            d3f3
+        ]
+
+        let result = Replicate.run [] sourceItems []
+
+        let expected = [
+            Add d1
+            Add d2
+            Add d2f1
+            Add d2f2
+            Add d2f3
+            Add d3
+            Add d3f1
+            Add d3f2
+            Add d3f3
+        ]
+        test <@ result = Ok expected @>

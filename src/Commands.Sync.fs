@@ -33,7 +33,7 @@ let sync (infra: SyncInfra) =
         let! sourceElements = infra.LoadSource.LoadElements ()
         let! backupElements = infra.LoadBackup.LoadElements ()
 
-        let! instructions = synchronize sourceElements sourceConfig.Rules backupElements backupConfig.Rules
+        let! instructions = Synchronize.run sourceElements sourceConfig.Rules backupElements backupConfig.Rules
         do! infra.SaveSyncInstructionsFile instructions
         do! infra.OpenSyncInstructionsForUserEdition ()
 
@@ -70,7 +70,7 @@ let replicateBackup (infra: ReplicateBackupInfra) =
         let! sourceElements = infra.LoadSourceBackup.LoadElements ()
         let! targetElements = infra.LoadTargetBackup.LoadElements ()
 
-        let! instructions = replicate sourceBackupConfig.Rules sourceElements targetElements
+        let! instructions = Replicate.run sourceBackupConfig.Rules sourceElements targetElements
         do! infra.SaveSyncInstructionsFile instructions
         do! infra.OpenSyncInstructionsForUserEdition ()
 
