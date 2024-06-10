@@ -6,12 +6,10 @@ Homemade tools to synchronize my backups with some custom rules.
 It's a CLI tool influenced by my daily Git CLI usage.  
 It provides a set of rules to handle delta between repositories, you may want to save different subsets of your data depending on your backup support (Cloud, hard-drive).
 
-**WARNING** : the current state of the software is not production ready, do not attempt to synchronize your backups, you may lose data.
-
 ## Technical requirements
 
-- .Net runtime 8.0 or greater is installed
-- VS Code is installed on your computer and open if you type ``code`` on a terminal
+- [.Net 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) or greater is installed
+- [VS Code](https://code.visualstudio.com/Download) is installed on your computer and open if you type ``code`` on a terminal
 
 ## Installation
 
@@ -44,13 +42,13 @@ OPTIONS:
 - Initialize repository: ``sync init --source``
 - (optional) Add aliases to add content placed outside the current directory: ``sync alias --add [name] [path]``
 - Scan repository content: ``sync scan --run``, it will display changes since the last scan, you can specify rules 
-- (optional) Add some rules: ``sync rules --add [Path] [Rule]``
+- (optional) Add some rules: ``sync rules --add [Path] [Rule]`` or edit existing ones: ``sync rules --edit``
 
 ### Setup Backup repository
 
 - Initialize repository ``sync init --backup``
 - Scan repository content: ``sync scan --run``, it will display changes since the last scan, you can specify rules
-- (optional) Add some rules: ``sync rules --add [Path] [Rule]``
+- (optional) Add some rules: ``sync rules --add [Path] [Rule]`` or edit existing ones: ``sync rules --edit``
 
 ### Run synchronization
 
