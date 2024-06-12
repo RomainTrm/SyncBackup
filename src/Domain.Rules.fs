@@ -1,6 +1,5 @@
 ﻿module SyncBackup.Domain.Rules
 
-open SyncBackup
 open SyncBackup.Domain.Dsl
 
 type Rule = Dsl.Rule

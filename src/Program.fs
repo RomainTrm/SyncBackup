@@ -9,8 +9,10 @@ let logger = printfn "%s"
 
 let logError e =
     let currentDirectory = Environment.CurrentDirectory
-    let logFilePath = SyncBackup.Infra.Dsl.getErrorLogFilePath currentDirectory DateTime.Now
-    File.WriteAllText (logFilePath, e.ToString())
+    if SyncBackup.Infra.Dsl.isInRepository currentDirectory
+    then
+        let logFilePath = SyncBackup.Infra.Dsl.getErrorLogFilePath currentDirectory DateTime.Now
+        File.WriteAllText (logFilePath, e.ToString())
 
 [<EntryPoint>]
 let main argv =

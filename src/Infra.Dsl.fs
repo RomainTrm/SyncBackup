@@ -11,6 +11,7 @@ let [<Literal>] RulesFile = "TMP-RULES"
 let [<Literal>] TrackFile = "TRACK"
 let [<Literal>] ErrorLogFilePrefix = "log"
 
+let isInRepository repositoryPath = Path.Combine(repositoryPath, ConfigDirectory) |> Directory.Exists
 let getFullConfigFilePath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory, ConfigFile)
 let getScanFileFilePath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory, ScanFile)
 let getTrackFileFilePath repositoryPath = Path.Combine(repositoryPath, ConfigDirectory, TrackFile)

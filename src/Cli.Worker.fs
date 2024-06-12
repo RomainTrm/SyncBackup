@@ -1,7 +1,9 @@
 ﻿module SyncBackup.Cli.Worker
 
-open System
 open Argu
+open System
+
+let [<Literal>] CurrentVersion = "1.0.0"
 
 let private executeCommand<'c when 'c :> IArgParserTemplate> run (command: ParseResults<'c>) =
     command.GetAllResults ()
@@ -15,6 +17,7 @@ type Commands =
     | [<CliPrefix(CliPrefix.None)>] Scan of ParseResults<Scan.Scan>
     | [<CliPrefix(CliPrefix.None)>] Process of ParseResults<Sync.Process>
     | [<CliPrefix(CliPrefix.None)>] Replicate of ParseResults<Sync.Replicate>
+    | [<CliPrefix(CliPrefix.None)>] Version of ParseResults<Nothing>
 with
     interface IArgParserTemplate with
         member this.Usage =
@@ -25,6 +28,10 @@ with
             | Scan _ -> "Reference all directories and files in the repository."
             | Process _ -> "Run synchronization process between two repositories."
             | Replicate _ -> "Replicate a backup repository (rules and content), rules like replace, preserve are applied."
+            | Version _ -> "Display version of the software."
+
+and Nothing = | [<Hidden>] Nothing
+with interface IArgParserTemplate with member this.Usage = ""
 
 let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv =
     let currentDirectory = Environment.CurrentDirectory
@@ -43,6 +50,7 @@ let runCommand (parser: ArgumentParser<Commands>) (logger: string -> unit) argv 
         | Scan command -> command |> executeCommand (Scan.runCommand contentCommandInfra logger)
         | Process command -> command |> executeCommand (Sync.runSyncCommand syncCommandInfraFactory logger)
         | Replicate command -> command |> executeCommand (Sync.runReplicateCommand replicateBackupCommandInfraFactory logger)
+        | Version _ -> Some (Ok CurrentVersion)
     )
     |> Option.defaultWith (fun () -> Ok (parser.PrintUsage()))
     |> function
