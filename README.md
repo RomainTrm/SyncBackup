@@ -8,13 +8,24 @@ It provides a set of rules to handle delta between repositories, you may want to
 
 ## Technical requirements
 
-- [.Net 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) or greater is installed
 - [VS Code](https://code.visualstudio.com/Download) is installed on your computer and open if you type ``code`` on a terminal
 
 ## Installation
 
+### Option 1: Release
+
+- Download it
+- Unzip the archive wherever you want
+- Add the directory containing the `Sync.exe` to the PATH in your Environment Variables
+
+### Option 2: Compile it
+
+- Make sure [.Net 8.0 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) or greater is installed on your computer
 - Clone the repository then build the project
 - Add the output directory to the PATH in your Environment Variables
+
+### Test your installation
+
 - Run a new terminal and type ``sync``, it should display:
 
 ```text
@@ -68,6 +79,7 @@ From the source repository:
 [Instructions...]
 ```
 
+- Close the file
 - Wait until synchronization is completed
 
 ## Limitations

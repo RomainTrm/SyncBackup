@@ -9,3 +9,6 @@ packages/
 .paket/Paket.Restore.targets
 paket-files/
 .fake/
+
+# Versions packages
+versions/
