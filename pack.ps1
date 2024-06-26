@@ -14,3 +14,6 @@ else {
     Compress-Archive -Path .\src\bin\Release\net8.0\win-x64\* -DestinationPath $archivePath
     echo "Zip available in the versions directory."
 }
+
+git tag $syncVersion
+git push origin $syncVersion
