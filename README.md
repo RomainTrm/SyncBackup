@@ -88,8 +88,3 @@ From the source repository:
 
 - renaming and moving are handled if you don't specify rules, existing backup will be deleted and new version saved
 - updating can be handled if you specify a `replace` rule (note: it replaces items at every synchronization)
-
-## Upcoming features
-
-- editing rules through the scan file
-- duplicating a backup repository (not a restore backup feature)
