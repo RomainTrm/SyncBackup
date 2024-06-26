@@ -52,7 +52,10 @@ let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Command
         |> SyncBackup.Infra.Editor.VsCode.runEditor
     AreInstructionsAccepted = fun () -> SyncBackup.Infra.Sync.InstructionsFile.areInstructionsAccepted sourceDirectory
     SubmitSyncInstructions = SyncBackup.Infra.Sync.Process.run sourceDirectory backupDirectory logger
-    UpdateTargetTrackFile = fun () -> Error "not implemented"
+    UpdateTargetTrackFile = fun () ->
+        logger "Updating referential..."
+        SyncBackup.Infra.Content.Scan.run backupDirectory []
+        |> SyncBackup.Infra.Content.TrackFile.save backupDirectory
 }
 
 let replicateBackupCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Commands.Sync.ReplicateBackupInfra = {
@@ -74,5 +77,8 @@ let replicateBackupCommandInfra logger sourceDirectory backupDirectory : SyncBac
         SyncBackup.Infra.Config.load backupDirectory
         |> Result.map (fun config -> { config with Rules = rules })
         |> Result.bind (SyncBackup.Infra.Config.update backupDirectory)
-    UpdateTargetTrackFile = fun () -> Error "not implemented"
+    UpdateTargetTrackFile = fun () ->
+        logger "Updating referential..."
+        SyncBackup.Infra.Content.Scan.run backupDirectory []
+        |> SyncBackup.Infra.Content.TrackFile.save backupDirectory
 }
