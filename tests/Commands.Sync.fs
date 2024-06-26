@@ -20,6 +20,7 @@ module ``sync should`` =
         OpenSyncInstructionsForUserEdition = fun _ -> failwith "not implemented"
         AreInstructionsAccepted = fun _ -> failwith "not implemented"
         SubmitSyncInstructions = fun _ -> failwith "not implemented"
+        UpdateTargetTrackFile = fun _ -> failwith "not implemented"
     }
 
     [<Fact>]
@@ -111,6 +112,7 @@ module ``sync should`` =
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok true
             SubmitSyncInstructions = fun _ -> instructionsSubmitted.AddRange >> Ok
+            UpdateTargetTrackFile = Ok
         }
 
         let result = sync infra
@@ -154,6 +156,7 @@ module ``sync should`` =
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok false
             SubmitSyncInstructions = fun _ -> instructionsSubmitted.AddRange >> Ok
+            UpdateTargetTrackFile = fun () -> Error "Should not be called"
         }
 
         let result = sync infra
@@ -175,6 +178,7 @@ module ``replicate should`` =
         AreInstructionsAccepted = fun _ -> failwith "not implemented"
         SubmitSyncInstructions = fun _ -> failwith "not implemented"
         SaveTargetBackupRules = fun _ -> failwith "not implemented"
+        UpdateTargetTrackFile = fun _ -> failwith "not implemented"
     }
 
     [<Fact>]
@@ -270,6 +274,7 @@ module ``replicate should`` =
             AreInstructionsAccepted = fun () -> Ok true
             SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
             SaveTargetBackupRules = rulesSaved.AddRange >> Ok
+            UpdateTargetTrackFile = Ok
         }
 
         let result = replicateBackup infra
@@ -288,7 +293,6 @@ module ``replicate should`` =
     [<Fact>]
     let ``load data then not submit instructions and save rules when refused`` () =
         let instructionsSubmitted = System.Collections.Generic.List<_> ()
-        let rulesSaved = System.Collections.Generic.List<_> ()
         let infra = {
             LoadSourceBackup = {
                 LoadElements = fun () -> Ok [d1; d2; d2f1; d2f2; d2f3]
@@ -316,10 +320,10 @@ module ``replicate should`` =
             OpenSyncInstructionsForUserEdition = fun () -> Ok ()
             AreInstructionsAccepted = fun () -> Ok false
             SubmitSyncInstructions = instructionsSubmitted.AddRange >> Ok
-            SaveTargetBackupRules = rulesSaved.AddRange >> Ok
+            SaveTargetBackupRules = fun _ -> Error "Should not be called"
+            UpdateTargetTrackFile = fun () -> Error "Should not be called"
         }
 
         let result = replicateBackup infra
         test <@ result = Ok "Synchronization aborted!" @>
         test <@ instructionsSubmitted |> Seq.isEmpty @>
-        test <@ rulesSaved |> Seq.isEmpty @>

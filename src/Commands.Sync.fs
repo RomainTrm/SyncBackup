@@ -11,6 +11,7 @@ type SyncInfra = {
     OpenSyncInstructionsForUserEdition: unit -> Result<unit, string>
     AreInstructionsAccepted: unit -> Result<bool, string>
     SubmitSyncInstructions: Alias list -> SyncInstruction list -> Result<unit, string>
+    UpdateTargetTrackFile: unit -> Result<unit, string>
 }
 and LoadInfra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
@@ -40,6 +41,7 @@ let sync (infra: SyncInfra) =
         match! infra.AreInstructionsAccepted () with
         | true ->
             do! infra.SubmitSyncInstructions sourceConfig.Aliases instructions
+            do! infra.UpdateTargetTrackFile ()
             return "Synchronization completed!"
         | false -> return "Synchronization aborted!"
     }
@@ -52,6 +54,7 @@ type ReplicateBackupInfra = {
     AreInstructionsAccepted: unit -> Result<bool, string>
     SubmitSyncInstructions: SyncInstruction list -> Result<unit, string>
     SaveTargetBackupRules: Rule list -> Result<unit, string>
+    UpdateTargetTrackFile: unit -> Result<unit, string>
 }
 
 let replicateBackup (infra: ReplicateBackupInfra) =
@@ -78,6 +81,7 @@ let replicateBackup (infra: ReplicateBackupInfra) =
         | true ->
             do! infra.SubmitSyncInstructions instructions
             do! infra.SaveTargetBackupRules sourceBackupConfig.Rules
+            do! infra.UpdateTargetTrackFile ()
             return "Synchronization completed!"
         | false -> return "Synchronization aborted!"
     }
