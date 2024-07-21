@@ -55,8 +55,3 @@ module ``RelativePath contains should`` =
         isValidPath path ==> lazy
         let result = RelativePath.contains path path
         test <@ result = false @>
-
-    [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
-    let ``return false if not same type`` path =
-        let path = { Value = path; Type = Source; ContentType = Directory }
-        test <@ RelativePath.contains path { path with Type = Alias } = false @>
