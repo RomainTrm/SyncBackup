@@ -200,8 +200,8 @@ module TrackFile =
 
             let fileContent = Dsl.getTrackFileFilePath path |> System.IO.File.ReadAllLines |> Seq.toList
             test <@ fileContent = [
-                "file::\"line1\""
-                "file::\"*line2\""
+                "file::\"line1\"::2024-08-09-20-37-30"
+                "file::\"*line2\"::2024-08-09-20-37-30"
                 "dir::\"*line3\""
             ] @>
 
@@ -212,8 +212,8 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = None } // TODO : set write time
-                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = None }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
                 { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
             let result = TrackFile.save path content
