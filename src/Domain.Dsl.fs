@@ -1,5 +1,7 @@
 ﻿module SyncBackup.Domain.Dsl
 
+open System
+
 let [<Literal>] RepositoryConfigVersion = "1.0"
 
 type DirectoryPath = string
@@ -51,6 +53,10 @@ and ScanResult = {
     SyncRule: SyncRules
     Diff: ScanDiff
 } with member this.Rule = { Path = this.Path; SyncRule = this.SyncRule }
+and Content = {
+    Path: RelativePath
+    LastWriteTime: DateTime option
+}
 
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"

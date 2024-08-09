@@ -42,7 +42,9 @@ module Scan =
                 { Type = Source; Value = "3. twoLevelsDir\\subdir2"; ContentType = Directory }
                 { Type = Source; Value = "3. twoLevelsDir\\subdir2\\file"; ContentType = File }
             ]
-            test <@ result = expected @>
+            test <@ result |> List.map _.Path = expected @>
+            test <@ result |> List.filter (fun c -> c.Path.ContentType = File) |> List.forall (fun c -> c.LastWriteTime |> Option.isSome) @>
+            test <@ result |> List.filter (fun c -> c.Path.ContentType = Directory) |> List.forall (fun c -> c.LastWriteTime |> Option.isNone) @>
 
         [<Fact>]
         let ``ignore config directory`` () =
@@ -87,7 +89,7 @@ module Scan =
                 { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory }
                 { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File }
             ]
-            test <@ result = expected @>
+            test <@ result |> List.map _.Path = expected @>
 
 module ScanFile =
     let content = [
@@ -237,7 +239,7 @@ module TrackFile =
                 { Type = Alias; Value = "line2"; ContentType = File }
                 { Type = Alias; Value = "line3"; ContentType = Directory }
             ]
-            let result = TrackFile.save path content
+            let _ = TrackFile.save path content
             let result = TrackFile.reset path
 
             test <@ result = Ok () @>

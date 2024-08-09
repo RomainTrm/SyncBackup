@@ -73,9 +73,9 @@ module ``scanRepositoryContent should`` =
                 }
                 LoadTrackFile = fun () -> Ok []
                 ScanRepositoryContent = fun _ -> [
-                    { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }
-                    { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
-                    { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }; LastWriteTime = None }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; LastWriteTime = None }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }; LastWriteTime = None }
                 ]
                 SaveScanFileContent = fun repositoryType rules ->
                     test <@ repositoryType = defaultConfig.Type @>
@@ -119,9 +119,9 @@ module ``scanRepositoryContent should`` =
                     { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
                 ]
                 ScanRepositoryContent = fun _ -> [
-                    { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
-                    { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
-                    { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; LastWriteTime = None }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }; LastWriteTime = None }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }; LastWriteTime = None }
                 ]
                 SaveScanFileContent = fun _ -> scanResult.AddRange >> Ok
                 OpenScanFileForUserEdition = Ok
@@ -150,7 +150,7 @@ module ``scanRepositoryContent should`` =
                 }
                 LoadTrackFile = fun () -> Ok []
                 ScanRepositoryContent = fun _ -> [
-                    { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }; LastWriteTime = None }
                 ]
                 SaveScanFileContent = fun repositoryType _ ->
                     test <@ repositoryType = defaultConfig.Type @>

@@ -55,6 +55,7 @@ let syncCommandInfra logger sourceDirectory backupDirectory : SyncBackup.Command
     UpdateTargetTrackFile = fun () ->
         logger "Updating referential..."
         SyncBackup.Infra.Content.Scan.run backupDirectory []
+        |> List.map _.Path
         |> SyncBackup.Infra.Content.TrackFile.save backupDirectory
 }
 
@@ -80,5 +81,6 @@ let replicateBackupCommandInfra logger sourceDirectory backupDirectory : SyncBac
     UpdateTargetTrackFile = fun () ->
         logger "Updating referential..."
         SyncBackup.Infra.Content.Scan.run backupDirectory []
+        |> List.map _.Path
         |> SyncBackup.Infra.Content.TrackFile.save backupDirectory
 }

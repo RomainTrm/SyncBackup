@@ -22,7 +22,11 @@ module Scan =
     let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> ContentType -> RelativePath) =
         let files =
             Directory.GetFiles currentDirectoryPath
-            |> Seq.map (fun fullFilePath -> buildRelativePath fullFilePath ContentType.File)
+            |> Seq.map (fun fullFilePath ->
+                let path = buildRelativePath fullFilePath ContentType.File
+                let lastWriteTime = File.GetLastWriteTimeUtc fullFilePath
+                { Path = path; LastWriteTime = Some lastWriteTime }
+            )
             |> Seq.toList
 
         let directories =
@@ -35,7 +39,7 @@ module Scan =
                         scan' directoryPath buildRelativePath
                     with // Windows may detect a directory but fail to access it because it's not there
                     | :? UnauthorizedAccessException -> []
-                acc@[path]@children
+                acc@[{ Path = path; LastWriteTime = None }]@children
             ) []
 
         files@directories
@@ -45,7 +49,11 @@ module Scan =
         let aliasesDirectoriesContent =
             List.collect (fun (alias: Alias) ->
                 let aliasContent = scan' alias.Path (aliasRelativePath alias)
-                { Value = alias.Name; Type = Alias; ContentType = Directory }::aliasContent
+                let aliasRoot = {
+                    Path = { Value = alias.Name; Type = Alias; ContentType = Directory }
+                    LastWriteTime = None
+                }
+                aliasRoot::aliasContent
             ) aliases
         sourceDirectoryContent@aliasesDirectoriesContent
 

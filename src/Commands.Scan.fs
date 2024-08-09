@@ -7,7 +7,7 @@ open SyncBackup.Domain.Dsl
 
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
-    ScanRepositoryContent: Alias list -> RelativePath list
+    ScanRepositoryContent: Alias list -> Content list
     SaveScanFileContent: RepositoryType -> ScanResult list -> Result<unit, string>
     OpenScanFileForUserEdition: unit -> Result<unit, string>
     ReadScanFileContent: unit -> Result<ScanResult list, string>
@@ -35,6 +35,7 @@ let scanRepositoryContent (infra: Infra) () =
         let! repositoryContent =
             config.Aliases
             |> infra.ScanRepositoryContent
+            |> List.map _.Path
             |> Scan.buildScanResult config.Rules trackedElements
 
         do! infra.SaveScanFileContent config.Type repositoryContent
