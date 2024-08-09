@@ -182,6 +182,8 @@ module ScanFile =
             test <@ result = Error "Invalid format" @>
 
 module TrackFile =
+    let lastWriteTime = System.DateTime(2024, 08, 09, 20, 37, 30)
+
     module ``save should`` =
         [<Fact>]
         let ``register tracked elements`` () =
@@ -189,9 +191,9 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Type = Source; Value = "line1"; ContentType = File }
-                { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = Directory }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
@@ -210,9 +212,9 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Type = Source; Value = "line1"; ContentType = File }
-                { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = Directory }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = None } // TODO : set write time
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = None }
+                { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
@@ -235,9 +237,9 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Type = Source; Value = "line1"; ContentType = File }
-                { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = Directory }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
             let _ = TrackFile.save path content
             let result = TrackFile.reset path

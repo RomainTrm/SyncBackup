@@ -110,9 +110,9 @@ module ScanFile =
         |> Result.map List.rev
 
 module TrackFile =
-    let save (repositoryPath: RepositoryPath) (contentPaths: RelativePath list) =
+    let save (repositoryPath: RepositoryPath) (contents: Content list) =
         let filePath = Dsl.getTrackFileFilePath repositoryPath
-        let contentLines = contentPaths |> List.map RelativePath.serialize
+        let contentLines = contents |> List.map (fun c -> RelativePath.serialize c.Path)
         File.WriteAllLines (filePath, contentLines)
         Ok ()
 
@@ -124,9 +124,9 @@ module TrackFile =
             File.ReadAllLines filePath
             |> Seq.fold (fun paths line ->
                 paths
-                |> Result.bind (fun paths ->
+                |> Result.bind (fun contents ->
                     RelativePath.deserialize line
-                    |> Result.map (fun path -> path::paths)
+                    |> Result.map (fun path -> { Path = path; LastWriteTime = None }::contents)
                 )
             ) (Ok [])
             |> Result.map List.rev

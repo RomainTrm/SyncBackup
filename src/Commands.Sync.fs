@@ -15,7 +15,7 @@ type SyncInfra = {
 }
 and LoadInfra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
-    LoadElements: unit -> Result<RelativePath list, string>
+    LoadElements: unit -> Result<Content list, string>
 }
 
 let sync (infra: SyncInfra) =
@@ -34,7 +34,7 @@ let sync (infra: SyncInfra) =
         let! sourceElements = infra.LoadSource.LoadElements ()
         let! backupElements = infra.LoadBackup.LoadElements ()
 
-        let! instructions = Synchronize.run sourceElements sourceConfig.Rules backupElements backupConfig.Rules
+        let! instructions = Synchronize.run (sourceElements |> List.map _.Path) sourceConfig.Rules (backupElements |> List.map _.Path) backupConfig.Rules
         do! infra.SaveSyncInstructionsFile instructions
         do! infra.OpenSyncInstructionsForUserEdition ()
 
@@ -73,7 +73,7 @@ let replicateBackup (infra: ReplicateBackupInfra) =
         let! sourceElements = infra.LoadSourceBackup.LoadElements ()
         let! targetElements = infra.LoadTargetBackup.LoadElements ()
 
-        let! instructions = Replicate.run sourceBackupConfig.Rules sourceElements targetElements
+        let! instructions = Replicate.run sourceBackupConfig.Rules (sourceElements |> List.map _.Path) (targetElements |> List.map _.Path)
         do! infra.SaveSyncInstructionsFile instructions
         do! infra.OpenSyncInstructionsForUserEdition ()
 

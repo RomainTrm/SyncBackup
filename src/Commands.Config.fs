@@ -11,7 +11,7 @@ type Infra = {
     UpdateConfig: RepositoryConfig -> Result<unit, string>
     SolveRuleConflict: Rule -> Rule -> Result<Rule, string>
     SolveContentType: unit -> Result<ContentType, string>
-    LoadTrackFile: unit -> Result<RelativePath list, string>
+    LoadTrackFile: unit -> Result<Content list, string>
     SaveRulesFile: RepositoryType -> Rule list -> Result<unit, string>
     OpenRulesFile: unit -> Result<unit, string>
     ReadRulesFile: unit -> Result<Rule list, string>
@@ -100,7 +100,7 @@ module Rules =
         result {
             let! config = infra.LoadConfig ()
             let! trackedElements = infra.LoadTrackFile ()
-            let! repositoryContent = buildTreeWithRules config.Rules trackedElements
+            let! repositoryContent = buildTreeWithRules config.Rules (trackedElements |> List.map _.Path)
 
             do! infra.SaveRulesFile config.Type repositoryContent
             do! infra.OpenRulesFile ()

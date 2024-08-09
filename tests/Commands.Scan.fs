@@ -29,9 +29,16 @@ let defaultConfig : Dsl.RepositoryConfig = {
 
 module ``scanRepositoryContent should`` =
     [<Property(Arbitrary = [| typeof<NonWhiteSpaceStringGenerator>; typeof<SourceRepositoryRulesOnlyGenerator> |])>]
-    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases content (contentEdited: Dsl.ScanResult list) =
+    let ``retrieve content for repository, save it then open editor, then save track file and rules`` aliases (content: (Dsl.RelativePath * Dsl.Content * Dsl.ScanResult) list) =
         content <> [] ==> lazy
-        let contentEdited = contentEdited |> List.distinctBy _.Path
+        let contentEdited =
+            content
+            |> List.map (fun (path, _, scanResult) -> { scanResult with Path = path })
+            |> List.distinctBy _.Path
+        let content =
+            content
+            |> List.map (fun (path, content, _) -> { content with Path = path })
+
         let calls = System.Collections.Generic.List<_> ()
         let infra = {
             defaultInfra with
@@ -47,6 +54,7 @@ module ``scanRepositoryContent should`` =
                 ReadScanFileContent = fun () -> Ok contentEdited
                 SaveTrackFile = fun c ->
                     let expected = contentEdited |> List.filter (fun scan -> scan.Diff = Dsl.AddedToRepository) |> List.map _.Path
+                    let c = c |> List.map _.Path
                     test <@ Set c = Set expected @>
                     calls.Add "save track file" |> Ok
                 SaveRules = fun rules ->
@@ -114,9 +122,9 @@ module ``scanRepositoryContent should`` =
             defaultInfra with
                 LoadConfig = fun () -> Ok defaultConfig
                 LoadTrackFile = fun () -> Ok [
-                    { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }
-                    { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
-                    { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path1"; ContentType = Dsl.Directory }; LastWriteTime = None }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; LastWriteTime = None }
+                    { Path = { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }; LastWriteTime = None }
                 ]
                 ScanRepositoryContent = fun _ -> [
                     { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; LastWriteTime = None }
@@ -132,10 +140,10 @@ module ``scanRepositoryContent should`` =
 
         let _ = scanRepositoryContent infra ()
 
-        let expected : Dsl.RelativePath list = [
-            { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }
-            { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }
-            { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }
+        let expected : Dsl.Content list = [
+            { Path = { Type = Dsl.PathType.Source; Value = "path2"; ContentType = Dsl.Directory }; LastWriteTime = None }
+            { Path = { Type = Dsl.PathType.Source; Value = "path3"; ContentType = Dsl.Directory }; LastWriteTime = None }
+            { Path = { Type = Dsl.PathType.Source; Value = "path4"; ContentType = Dsl.Directory }; LastWriteTime = None }
         ]
         test <@ savedTrackedElements |> Seq.toList = expected @>
 
