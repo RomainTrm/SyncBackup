@@ -115,19 +115,19 @@ module Synchronize =
             let backupRule = backupRules |> Map.tryFind content.Path.Value
 
             match sourceItem, sourceRule, backupItem, backupRule with
-            | false, _, false, _ -> ([]: Item<OriginRule> list)
-            | true, None, false, None -> [SourceItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
-            | true, Some sourceRule, false, None -> [SourceItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
-            | true, None, false, Some backupRule -> [SourceItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
-            | true, Some sourceRule, false, Some backupRule -> [SourceItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
-            | false, None, true, None -> [BackupItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
-            | false, Some sourceRule, true, None -> [BackupItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
-            | false, None, true, Some backupRule -> [BackupItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
-            | false, Some sourceRule, true, Some backupRule -> [BackupItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
-            | true, None, true, None -> [BothItem { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
-            | true, Some sourceRule, true, None -> [BothItem { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
-            | true, None, true, Some backupRule -> [BothItem { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
-            | true, Some sourceRule, true, Some backupRule -> [BothItem { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
+            | false,    _,                  false,  _ ->                ([]: Item<OriginRule> list)
+            | true,     None,               false,  None ->             [SourceItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
+            | true,     Some sourceRule,    false,  None ->             [SourceItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
+            | true,     None,               false,  Some backupRule ->  [SourceItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
+            | true,     Some sourceRule,    false,  Some backupRule ->  [SourceItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
+            | false,    None,               true,   None ->             [BackupItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
+            | false,    Some sourceRule,    true,   None ->             [BackupItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
+            | false,    None,               true,   Some backupRule ->  [BackupItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
+            | false,    Some sourceRule,    true,   Some backupRule ->  [BackupItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
+            | true,     None,               true,   None ->             [BothItem { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
+            | true,     Some sourceRule,    true,   None ->             [BothItem { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
+            | true,     None,               true,   Some backupRule ->  [BothItem { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
+            | true,     Some sourceRule,    true,   Some backupRule ->  [BothItem { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
         )
         |> Seq.sortBy _.Item.Path.Value
         |> Seq.fold buildTree' []
@@ -176,26 +176,26 @@ module Synchronize =
         spreadRules' Include Save
 
     let private computeInstructions = function
-        | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = Save } -> [InnerAdd path]
-        | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = Replace } -> [InnerAdd path]
-        | SourceItemOnly { Path = _; SourceRule = Include; BackupRule = NotSave } -> []
-        | SourceItemOnly { Path = path; SourceRule = Include; BackupRule = NotDelete } -> [InnerAdd path]
-        | SourceItemOnly { Path = _; SourceRule = Exclude; BackupRule = _ } -> []
+        | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = Save }                             -> [InnerAdd path]
+        | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = Replace }                          -> [InnerAdd path]
+        | SourceItemOnly { Path = _;    SourceRule = Include;   BackupRule = NotSave }                          -> []
+        | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = NotDelete }                        -> [InnerAdd path]
+        | SourceItemOnly { Path = _;    SourceRule = Exclude;   BackupRule = _ }                                -> []
 
-        | BackupItemOnly { Path = path; SourceRule = _; BackupRule = Save } -> [InnerDelete path]
-        | BackupItemOnly { Path = path; SourceRule = _; BackupRule = Replace } -> [InnerDelete path]
-        | BackupItemOnly { Path = path; SourceRule = _; BackupRule = NotSave } -> [InnerDelete path]
-        | BackupItemOnly { Path = path; SourceRule = _; BackupRule = NotDelete } -> [InnerKeep path]
+        | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = Save }                             -> [InnerDelete path]
+        | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = Replace }                          -> [InnerDelete path]
+        | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = NotSave }                          -> [InnerDelete path]
+        | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = NotDelete }                        -> [InnerKeep path]
 
-        | BothItem { Path = path; SourceRule = Include; BackupRule = Save } -> [InnerKeep path]
-        | BothItem { Path = { ContentType = File } as path; SourceRule = Include; BackupRule = Replace } -> [InnerReplace path]
-        | BothItem { Path = { ContentType = Directory } as path; SourceRule = Include; BackupRule = Replace } -> [InnerKeep path]
-        | BothItem { Path = path; SourceRule = Include; BackupRule = NotSave } -> [InnerDelete path]
-        | BothItem { Path = path; SourceRule = Include; BackupRule = NotDelete } -> [InnerKeep path]
-        | BothItem { Path = path; SourceRule = Exclude; BackupRule = Save } -> [InnerDelete path]
-        | BothItem { Path = path; SourceRule = Exclude; BackupRule = Replace } -> [InnerDelete path]
-        | BothItem { Path = path; SourceRule = Exclude; BackupRule = NotSave } -> [InnerDelete path]
-        | BothItem { Path = path; SourceRule = Exclude; BackupRule = NotDelete } -> [InnerKeep path]
+        | BothItem { Path = path;       SourceRule = Include;   BackupRule = Save }                             -> [InnerKeep path]
+        | BothItem { Path = { ContentType = File } as path; SourceRule = Include; BackupRule = Replace }        -> [InnerReplace path]
+        | BothItem { Path = { ContentType = Directory } as path; SourceRule = Include; BackupRule = Replace }   -> [InnerKeep path]
+        | BothItem { Path = path;       SourceRule = Include;   BackupRule = NotSave }                          -> [InnerDelete path]
+        | BothItem { Path = path;       SourceRule = Include;   BackupRule = NotDelete }                        -> [InnerKeep path]
+        | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = Save }                             -> [InnerDelete path]
+        | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = Replace }                          -> [InnerDelete path]
+        | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = NotSave }                          -> [InnerDelete path]
+        | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = NotDelete }                        -> [InnerKeep path]
 
     let run
         (sourceItems: Content list)
@@ -256,13 +256,13 @@ module Replicate =
             let backupItem = backupItems |> Map.containsKey content.Path.Value
 
             match sourceItem, backupItem, rules with
-            | false, false, _ -> ([]: Item<OriginRule> list)
-            | true, false, None -> [SourceItemOnly { Path = content.Path; Rule = NoRule }]
-            | true, false, Some backupRule -> [SourceItemOnly { Path = content.Path; Rule = backupRule }]
-            | false, true, None -> [BackupItemOnly { Path = content.Path; Rule = NoRule }]
-            | false, true, Some backupRule -> [BackupItemOnly { Path = content.Path; Rule = backupRule }]
-            | true, true, None -> [BothItem { Path = content.Path; Rule = NoRule }]
-            | true, true, Some backupRule -> [BothItem { Path = content.Path; Rule = backupRule }]
+            | false,    false,  _ ->                ([]: Item<OriginRule> list)
+            | true,     false,  None ->             [SourceItemOnly { Path = content.Path; Rule = NoRule }]
+            | true,     false,  Some backupRule ->  [SourceItemOnly { Path = content.Path; Rule = backupRule }]
+            | false,    true,   None ->             [BackupItemOnly { Path = content.Path; Rule = NoRule }]
+            | false,    true,   Some backupRule ->  [BackupItemOnly { Path = content.Path; Rule = backupRule }]
+            | true,     true,   None ->             [BothItem { Path = content.Path; Rule = NoRule }]
+            | true,     true,   Some backupRule ->  [BothItem { Path = content.Path; Rule = backupRule }]
         )
         |> Seq.sortBy _.Item.Path.Value
         |> Seq.fold buildTree' []
@@ -296,16 +296,16 @@ module Replicate =
         spreadRules' Save
 
     let private computeInstructions = function
-        | SourceItemOnly { Path = path; BackupRule = _ } -> [InnerAdd path]
+        | SourceItemOnly { Path = path; BackupRule = _ }                                    -> [InnerAdd path]
 
-        | BackupItemOnly { Path = path; BackupRule = Save } -> [InnerDelete path]
-        | BackupItemOnly { Path = path; BackupRule = Replace } -> [InnerDelete path]
-        | BackupItemOnly { Path = path; BackupRule = NotSave } -> [InnerDelete path]
-        | BackupItemOnly { Path = path; BackupRule = NotDelete } -> [InnerKeep path]
+        | BackupItemOnly { Path = path; BackupRule = Save }                                 -> [InnerDelete path]
+        | BackupItemOnly { Path = path; BackupRule = Replace }                              -> [InnerDelete path]
+        | BackupItemOnly { Path = path; BackupRule = NotSave }                              -> [InnerDelete path]
+        | BackupItemOnly { Path = path; BackupRule = NotDelete }                            -> [InnerKeep path]
 
-        | BothItem { Path = { ContentType = File } as path; BackupRule = Replace } -> [InnerReplace path]
-        | BothItem { Path = { ContentType = Directory } as path; BackupRule = Replace } -> [InnerKeep path]
-        | BothItem { Path = path; BackupRule = _ } -> [InnerKeep path]
+        | BothItem { Path = { ContentType = File } as path; BackupRule = Replace }          -> [InnerReplace path]
+        | BothItem { Path = { ContentType = Directory } as path; BackupRule = Replace }     -> [InnerKeep path]
+        | BothItem { Path = path; BackupRule = _ }                                          -> [InnerKeep path]
 
     let run
         (rules: Rule list)
