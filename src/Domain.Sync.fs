@@ -67,6 +67,8 @@ let private orderInstructions left right =
     | InnerAdd left, InnerAdd right when right |> RelativePath.contains left -> 1
     | Instruction left, Instruction right -> compare left right
 
+let private ruleToContent (rule: Rule) = { Path = rule.Path; LastWriteTime = None }
+
 module Synchronize =
     type private OriginRule = {
         Path: RelativePath
@@ -81,9 +83,9 @@ module Synchronize =
     }
 
     let private buildTree
-        (sourceItems: RelativePath list)
+        (sourceItems: Content list)
         (sourceRules: Rule list)
-        (backupItems: RelativePath list)
+        (backupItems: Content list)
         (backupRules: Rule list) =
         let rec buildTree' (tree: Tree<OriginRule> list) (item: Item<OriginRule>) =
             if tree |> List.exists (fun treeItem -> RelativePath.contains item.Item.Path treeItem.Element.Item.Path)
@@ -97,35 +99,35 @@ module Synchronize =
             else { Element = item; Children = [] }::tree
 
         let paths =
-            sourceItems@(sourceRules |> List.map _.Path)@backupItems@(backupRules |> List.map _.Path)
-            |> List.distinctBy _.Value
+            sourceItems@(sourceRules |> List.map ruleToContent)@backupItems@(backupRules |> List.map ruleToContent)
+            |> List.distinctBy _.Path.Value
 
-        let sourceItems = sourceItems |> List.map (fun x -> x.Value, x) |> Map
+        let sourceItems = sourceItems |> List.map (fun x -> x.Path.Value, x) |> Map
         let sourceRules = sourceRules |> List.map (fun x -> x.Path.Value, x.SyncRule) |> Map
-        let backupItems = backupItems |> List.map (fun x -> x.Value, x) |> Map
+        let backupItems = backupItems |> List.map (fun x -> x.Path.Value, x) |> Map
         let backupRules = backupRules |> List.map (fun x -> x.Path.Value, x.SyncRule) |> Map
 
         paths
-        |> Seq.collect (fun path ->
-            let sourceItem = sourceItems |> Map.containsKey path.Value
-            let sourceRule = sourceRules |> Map.tryFind path.Value
-            let backupItem = backupItems |> Map.containsKey path.Value
-            let backupRule = backupRules |> Map.tryFind path.Value
+        |> Seq.collect (fun content ->
+            let sourceItem = sourceItems |> Map.containsKey content.Path.Value
+            let sourceRule = sourceRules |> Map.tryFind content.Path.Value
+            let backupItem = backupItems |> Map.containsKey content.Path.Value
+            let backupRule = backupRules |> Map.tryFind content.Path.Value
 
             match sourceItem, sourceRule, backupItem, backupRule with
             | false, _, false, _ -> ([]: Item<OriginRule> list)
-            | true, None, false, None -> [SourceItemOnly { Path = path; SourceRule = NoRule; BackupRule = NoRule }]
-            | true, Some sourceRule, false, None -> [SourceItemOnly { Path = path; SourceRule = sourceRule; BackupRule = NoRule }]
-            | true, None, false, Some backupRule -> [SourceItemOnly { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
-            | true, Some sourceRule, false, Some backupRule -> [SourceItemOnly { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
-            | false, None, true, None -> [BackupItemOnly { Path = path; SourceRule = NoRule; BackupRule = NoRule }]
-            | false, Some sourceRule, true, None -> [BackupItemOnly { Path = path; SourceRule = sourceRule; BackupRule = NoRule }]
-            | false, None, true, Some backupRule -> [BackupItemOnly { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
-            | false, Some sourceRule, true, Some backupRule -> [BackupItemOnly { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
-            | true, None, true, None -> [BothItem { Path = path; SourceRule = NoRule; BackupRule = NoRule }]
-            | true, Some sourceRule, true, None -> [BothItem { Path = path; SourceRule = sourceRule; BackupRule = NoRule }]
-            | true, None, true, Some backupRule -> [BothItem { Path = path; SourceRule = NoRule; BackupRule = backupRule }]
-            | true, Some sourceRule, true, Some backupRule -> [BothItem { Path = path; SourceRule = sourceRule; BackupRule = backupRule }]
+            | true, None, false, None -> [SourceItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
+            | true, Some sourceRule, false, None -> [SourceItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
+            | true, None, false, Some backupRule -> [SourceItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
+            | true, Some sourceRule, false, Some backupRule -> [SourceItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
+            | false, None, true, None -> [BackupItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
+            | false, Some sourceRule, true, None -> [BackupItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
+            | false, None, true, Some backupRule -> [BackupItemOnly { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
+            | false, Some sourceRule, true, Some backupRule -> [BackupItemOnly { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
+            | true, None, true, None -> [BothItem { Path = content.Path; SourceRule = NoRule; BackupRule = NoRule }]
+            | true, Some sourceRule, true, None -> [BothItem { Path = content.Path; SourceRule = sourceRule; BackupRule = NoRule }]
+            | true, None, true, Some backupRule -> [BothItem { Path = content.Path; SourceRule = NoRule; BackupRule = backupRule }]
+            | true, Some sourceRule, true, Some backupRule -> [BothItem { Path = content.Path; SourceRule = sourceRule; BackupRule = backupRule }]
         )
         |> Seq.sortBy _.Item.Path.Value
         |> Seq.fold buildTree' []
@@ -196,9 +198,9 @@ module Synchronize =
         | BothItem { Path = path; SourceRule = Exclude; BackupRule = NotDelete } -> [InnerKeep path]
 
     let run
-        (sourceItems: RelativePath list)
+        (sourceItems: Content list)
         (sourceRules: Rule list)
-        (backupItems: RelativePath list)
+        (backupItems: Content list)
         (backupRules: Rule list) =
         buildTree sourceItems sourceRules backupItems backupRules
         |> spreadRules
@@ -226,8 +228,8 @@ module Replicate =
 
     let private buildTree
         (rules: Rule list)
-        (sourceItems: RelativePath list)
-        (backupItems: RelativePath list) =
+        (sourceItems: Content list)
+        (backupItems: Content list) =
         let rec buildTree' (tree: Tree<OriginRule> list) (item: Item<OriginRule>) =
             if tree |> List.exists (fun treeItem -> RelativePath.contains item.Item.Path treeItem.Element.Item.Path)
             then
@@ -240,27 +242,27 @@ module Replicate =
             else { Element = item; Children = [] }::tree
 
         let paths =
-            sourceItems@(rules |> List.map _.Path)@backupItems
-            |> List.distinctBy _.Value
+            sourceItems@(rules |> List.map ruleToContent)@backupItems
+            |> List.distinctBy _.Path.Value
 
         let rules = rules |> List.map (fun x -> x.Path.Value, x.SyncRule) |> Map
-        let sourceItems = sourceItems |> List.map (fun x -> x.Value, x) |> Map
-        let backupItems = backupItems |> List.map (fun x -> x.Value, x) |> Map
+        let sourceItems = sourceItems |> List.map (fun x -> x.Path.Value, x) |> Map
+        let backupItems = backupItems |> List.map (fun x -> x.Path.Value, x) |> Map
 
         paths
-        |> Seq.collect (fun path ->
-            let sourceItem = sourceItems |> Map.containsKey path.Value
-            let rules = rules |> Map.tryFind path.Value
-            let backupItem = backupItems |> Map.containsKey path.Value
+        |> Seq.collect (fun content ->
+            let sourceItem = sourceItems |> Map.containsKey content.Path.Value
+            let rules = rules |> Map.tryFind content.Path.Value
+            let backupItem = backupItems |> Map.containsKey content.Path.Value
 
             match sourceItem, backupItem, rules with
             | false, false, _ -> ([]: Item<OriginRule> list)
-            | true, false, None -> [SourceItemOnly { Path = path; Rule = NoRule }]
-            | true, false, Some backupRule -> [SourceItemOnly { Path = path; Rule = backupRule }]
-            | false, true, None -> [BackupItemOnly { Path = path; Rule = NoRule }]
-            | false, true, Some backupRule -> [BackupItemOnly { Path = path; Rule = backupRule }]
-            | true, true, None -> [BothItem { Path = path; Rule = NoRule }]
-            | true, true, Some backupRule -> [BothItem { Path = path; Rule = backupRule }]
+            | true, false, None -> [SourceItemOnly { Path = content.Path; Rule = NoRule }]
+            | true, false, Some backupRule -> [SourceItemOnly { Path = content.Path; Rule = backupRule }]
+            | false, true, None -> [BackupItemOnly { Path = content.Path; Rule = NoRule }]
+            | false, true, Some backupRule -> [BackupItemOnly { Path = content.Path; Rule = backupRule }]
+            | true, true, None -> [BothItem { Path = content.Path; Rule = NoRule }]
+            | true, true, Some backupRule -> [BothItem { Path = content.Path; Rule = backupRule }]
         )
         |> Seq.sortBy _.Item.Path.Value
         |> Seq.fold buildTree' []
@@ -307,8 +309,8 @@ module Replicate =
 
     let run
         (rules: Rule list)
-        (sourceItems: RelativePath list)
-        (backupItems: RelativePath list) =
+        (sourceItems: Content list)
+        (backupItems: Content list) =
         buildTree rules sourceItems backupItems
         |> spreadRules
         |> Result.map (
