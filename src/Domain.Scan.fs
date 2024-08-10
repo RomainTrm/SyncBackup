@@ -2,6 +2,7 @@
 
 open SyncBackup.Domain.Dsl
 
+// TODO : list updated files for user display
 let buildScanResult (existingRules: Rule list) (trackedElements: RelativePath list) (scannedElements: RelativePath list) =
     match scannedElements with
     | [] -> Error "Repository is empty."
