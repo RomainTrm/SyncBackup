@@ -38,6 +38,8 @@ SUBCOMMANDS:
     rules <options>       Manage rules for synchronization.
     scan <options>        Reference all directories and files in the repository.
     process <options>     Run synchronization process between two repositories.
+    replicate <options>   Replicate a backup repository (rules and content), rules like replace, preserve are applied.
+    version <options>     Display version of the software.
 
     Use 'Sync <subcommand> --help' for additional information.
 
