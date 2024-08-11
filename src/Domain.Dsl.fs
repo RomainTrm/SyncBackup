@@ -1,5 +1,8 @@
 ﻿module SyncBackup.Domain.Dsl
 
+open System
+open SyncBackup
+
 let [<Literal>] RepositoryConfigVersion = "1.0"
 
 type DirectoryPath = string
@@ -7,7 +10,7 @@ module DirectoryPath =
     let build (value: DirectoryPath) = value.Replace('/', '\\').TrimEnd [| '\\'; '\"' |]
 
 type FilePath = string
-/// Some path provided by the user, code doesn't known if it points to an element in the source or in an alias, neither if it's a directory or a file
+/// Some path provided by the user, code doesn't know if it points to an element in the source or in an alias, neither if it's a directory or a file
 type UnverifiedPath = string
 /// Root path of the repository
 type RepositoryPath = DirectoryPath
@@ -46,11 +49,16 @@ and ScanDiff =
     | AddedToRepository
     | RemovedFromRepository
     | RuleReminder
+    | Updated
 and ScanResult = {
     Path: RelativePath
     SyncRule: SyncRules
     Diff: ScanDiff
 } with member this.Rule = { Path = this.Path; SyncRule = this.SyncRule }
+and Content = {
+    Path: RelativePath
+    LastWriteTime: DateTime option
+}
 
 module RelativePath =
     let [<Literal>] AliasSymbol = "*"
@@ -132,14 +140,39 @@ module ScanDiff =
         | AddedToRepository -> "(added)"
         | RemovedFromRepository -> "(removed)"
         | RuleReminder -> "(nochange)"
+        | Updated -> "(updated)"
 
     let deserialize = function
         | "(added)" -> Ok AddedToRepository
         | "(removed)" -> Ok RemovedFromRepository
         | "(nochange)" -> Ok RuleReminder
+        | "(updated)" -> Ok Updated
         | _ -> Error "Invalid diff"
 
     let activeLine = function
         | AddedToRepository -> ""
         | RemovedFromRepository -> ""
         | RuleReminder -> "# "
+        | Updated -> ""
+
+module Content =
+    let serialize (content: Content) =
+        let path = RelativePath.serialize content.Path
+        let lastWriteTime =
+            content.LastWriteTime
+            |> Option.map (fun dt -> $"::{dt:``yyyy-MM-dd-HH-mm-ss``}")
+            |> Option.defaultValue ""
+        $"{path}{lastWriteTime}"
+
+    let deserialize (contentStr: string) =
+        match contentStr.Split("::") with
+        | [| _; _ |] ->
+            RelativePath.deserialize contentStr
+            |> Result.map (fun path -> { Path = path; LastWriteTime = None })
+        | [| contentType; contentPath; lastWriteTime |] ->
+            result {
+                let! relativePath = RelativePath.deserialize $"{contentType}::{contentPath}"
+                let lastWriteTime =  DateTime.ParseExact(lastWriteTime, "yyyy-MM-dd-HH-mm-ss", System.Globalization.CultureInfo.InvariantCulture)
+                return { Path = relativePath; LastWriteTime = Some lastWriteTime }
+            }
+        | _ ->  Error "Invalid format"

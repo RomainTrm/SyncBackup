@@ -7,12 +7,12 @@ open SyncBackup.Domain.Dsl
 
 type Infra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
-    ScanRepositoryContent: Alias list -> RelativePath list
+    ScanRepositoryContent: Alias list -> Content list
     SaveScanFileContent: RepositoryType -> ScanResult list -> Result<unit, string>
     OpenScanFileForUserEdition: unit -> Result<unit, string>
     ReadScanFileContent: unit -> Result<ScanResult list, string>
-    SaveTrackFile: RelativePath list -> Result<unit, string>
-    LoadTrackFile: unit -> Result<RelativePath list, string>
+    SaveTrackFile: Content list -> Result<unit, string>
+    LoadTrackFile: unit -> Result<Content list, string>
     SaveRules: Rule list -> Result<unit, string>
     ResetScan: unit -> Result<unit, string>
 }
@@ -28,21 +28,32 @@ let private updateRules repositoryType oldRules =
     >> Result.map List.rev
     >> Result.map (Rules.updateRulesAfterEdition oldRules)
 
+let private applyLastWriteTime (repositoryContent: Content list) (trackedElements: RelativePath list) =
+    let repositoryContent = repositoryContent |> Seq.map (fun x -> x.Path, x) |> Map
+    trackedElements |> List.map (fun x -> repositoryContent[x])
+
 let scanRepositoryContent (infra: Infra) () =
     result {
         let! config = infra.LoadConfig ()
         let! trackedElements = infra.LoadTrackFile ()
-        let! repositoryContent =
+        let trackedElementsPaths = trackedElements |> List.map _.Path
+        let repositoryContent =
             config.Aliases
             |> infra.ScanRepositoryContent
+
+        let! scanResult =
+            repositoryContent
             |> Scan.buildScanResult config.Rules trackedElements
 
-        do! infra.SaveScanFileContent config.Type repositoryContent
+        do! infra.SaveScanFileContent config.Type scanResult
         do! infra.OpenScanFileForUserEdition ()
 
         let! editedRules = infra.ReadScanFileContent ()
         let! rulesToSave = updateRules config.Type config.Rules editedRules
-        do! infra.SaveTrackFile (Scan.defineTrackedElements trackedElements editedRules)
+        let contentToTrack =
+            Scan.defineTrackedElements trackedElementsPaths editedRules
+            |> applyLastWriteTime repositoryContent
+        do! infra.SaveTrackFile contentToTrack
         do! infra.SaveRules rulesToSave
 
         return ()

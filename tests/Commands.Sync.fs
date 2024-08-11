@@ -1,10 +1,20 @@
 ﻿module SyncBackup.Tests.Commands.Sync
 
+open System
 open Xunit
 open Swensen.Unquote
 open SyncBackup.Domain.Dsl
 open SyncBackup.Domain.Sync
 open SyncBackup.Commands.Sync
+
+let lastWriteTime = DateTime(2024, 08, 09, 20, 34, 30)
+
+let d1 = { Path = { Type = Source; Value = "d1"; ContentType = Directory }; LastWriteTime = None }
+let d2 = { Path = { Type = Source; Value = "d2"; ContentType = Directory }; LastWriteTime = None }
+let d2f1 = { Path = { Type = Source; Value = "d2/f1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f2 = { Path = { Type = Source; Value = "d2/f2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f3 = { Path = { Type = Source; Value = "d2/f3"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f4 = { Path = { Type = Source; Value = "d2/f4"; ContentType = File }; LastWriteTime = Some lastWriteTime }
 
 module ``sync should`` =
     let defaultInfra = {
@@ -74,13 +84,6 @@ module ``sync should`` =
 
         test <@ Result.isError result @>
 
-    let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
-    let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
-    let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
-    let d2f2 = { Type = Source; Value = "d2/f2"; ContentType = File }
-    let d2f3 = { Type = Source; Value = "d2/f3"; ContentType = File }
-    let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
-
     [<Fact>]
     let ``load data then submit instructions when accepted`` () =
         let instructionsSaved = System.Collections.Generic.List<_> ()
@@ -92,7 +95,7 @@ module ``sync should`` =
                     Version = RepositoryConfigVersion
                     Type = RepositoryType.Source
                     Aliases = []
-                    Rules = [{ Path = d1; SyncRule = Exclude }]
+                    Rules = [{ Path = d1.Path; SyncRule = Exclude }]
                 }
             }
             LoadBackup = {
@@ -102,9 +105,9 @@ module ``sync should`` =
                     Type = RepositoryType.Backup
                     Aliases = []
                     Rules = [
-                        { Path = d2f2; SyncRule = NotSave }
-                        { Path = d2f3; SyncRule = AlwaysReplace }
-                        { Path = d2f4; SyncRule = NotDelete }
+                        { Path = d2f2.Path; SyncRule = NotSave }
+                        { Path = d2f3.Path; SyncRule = AlwaysReplace }
+                        { Path = d2f4.Path; SyncRule = NotDelete }
                     ]
                 }
             }
@@ -119,8 +122,8 @@ module ``sync should`` =
         test <@ result = Ok "Synchronization completed!" @>
 
         let expected = [
-            Add d2f1
-            Replace d2f3
+            Add d2f1.Path
+            Replace d2f3.Path
         ]
 
         test <@ instructionsSaved |> Seq.toList = expected @>
@@ -136,7 +139,7 @@ module ``sync should`` =
                     Version = RepositoryConfigVersion
                     Type = RepositoryType.Source
                     Aliases = []
-                    Rules = [{ Path = d1; SyncRule = Exclude }]
+                    Rules = [{ Path = d1.Path; SyncRule = Exclude }]
                 }
             }
             LoadBackup = {
@@ -146,9 +149,9 @@ module ``sync should`` =
                     Type = RepositoryType.Backup
                     Aliases = []
                     Rules = [
-                        { Path = d2f2; SyncRule = NotSave }
-                        { Path = d2f3; SyncRule = AlwaysReplace }
-                        { Path = d2f4; SyncRule = NotDelete }
+                        { Path = d2f2.Path; SyncRule = NotSave }
+                        { Path = d2f3.Path; SyncRule = AlwaysReplace }
+                        { Path = d2f4.Path; SyncRule = NotDelete }
                     ]
                 }
             }
@@ -232,19 +235,12 @@ module ``replicate should`` =
 
         test <@ Result.isError result @>
 
-    let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
-    let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
-    let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
-    let d2f2 = { Type = Source; Value = "d2/f2"; ContentType = File }
-    let d2f3 = { Type = Source; Value = "d2/f3"; ContentType = File }
-    let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
-
     [<Fact>]
     let ``load data then submit instructions and save rules when accepted`` () =
         let sourceRules = [
-            { Path = d2f2; SyncRule = NotDelete }
-            { Path = d2f3; SyncRule = AlwaysReplace }
-            { Path = d2f4; SyncRule = NotSave }
+            { Path = d2f2.Path; SyncRule = NotDelete }
+            { Path = d2f3.Path; SyncRule = AlwaysReplace }
+            { Path = d2f4.Path; SyncRule = NotSave }
         ]
 
         let instructionsSaved = System.Collections.Generic.List<_> ()
@@ -281,9 +277,9 @@ module ``replicate should`` =
         test <@ result = Ok "Synchronization completed!" @>
 
         let expected = [
-            Add d1
-            Add d2f2
-            Add d2f3
+            Add d1.Path
+            Add d2f2.Path
+            Add d2f3.Path
         ]
 
         test <@ instructionsSaved |> Seq.toList = expected @>
@@ -301,9 +297,9 @@ module ``replicate should`` =
                     Type = RepositoryType.Backup
                     Aliases = []
                     Rules = [
-                        { Path = d2f2; SyncRule = NotSave }
-                        { Path = d2f3; SyncRule = AlwaysReplace }
-                        { Path = d2f4; SyncRule = NotDelete }
+                        { Path = d2f2.Path; SyncRule = NotSave }
+                        { Path = d2f3.Path; SyncRule = AlwaysReplace }
+                        { Path = d2f4.Path; SyncRule = NotDelete }
                     ]
                 }
             }

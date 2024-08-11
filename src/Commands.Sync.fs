@@ -15,7 +15,7 @@ type SyncInfra = {
 }
 and LoadInfra = {
     LoadConfig: unit -> Result<RepositoryConfig, string>
-    LoadElements: unit -> Result<RelativePath list, string>
+    LoadElements: unit -> Result<Content list, string>
 }
 
 let sync (infra: SyncInfra) =

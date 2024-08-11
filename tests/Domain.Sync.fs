@@ -6,21 +6,24 @@ open Xunit
 open Swensen.Unquote
 open SyncBackup.Domain.Sync
 
-let d1 = { Type = Source; Value = "d1"; ContentType = Directory }
-let d2 = { Type = Source; Value = "d2"; ContentType = Directory }
-let d3 = { Type = Source; Value = "d3"; ContentType = Directory }
-let d1s1 = { Type = Source; Value = "d1/s1"; ContentType = Directory }
-let d1s2 = { Type = Source; Value = "d1/s2"; ContentType = Directory }
-let d1s1f1 = { Type = Source; Value = "d1/s1/f1"; ContentType = File }
-let d1s1f2 = { Type = Source; Value = "d1/s1/f2"; ContentType = File }
-let d1s2f1 = { Type = Source; Value = "d1/s2/f1"; ContentType = File }
-let d2f1 = { Type = Source; Value = "d2/f1"; ContentType = File }
-let d2f2 = { Type = Source; Value = "d2/f2"; ContentType = File }
-let d2f3 = { Type = Source; Value = "d2/f3"; ContentType = File }
-let d2f4 = { Type = Source; Value = "d2/f4"; ContentType = File }
-let d3f1 = { Type = Source; Value = "d3/f1"; ContentType = File }
-let d3f2 = { Type = Source; Value = "d3/f2"; ContentType = File }
-let d3f3 = { Type = Source; Value = "d3/f3"; ContentType = File }
+let lastWriteTime = DateTime(2024, 08, 10, 10, 43, 30)
+
+let d1 = { Path = { Type = Source; Value = "d1"; ContentType = Directory }; LastWriteTime = None }
+let d2 = { Path = { Type = Source; Value = "d2"; ContentType = Directory }; LastWriteTime = None }
+let d3 = { Path = { Type = Source; Value = "d3"; ContentType = Directory }; LastWriteTime = None }
+let d1s1 = { Path = { Type = Source; Value = "d1/s1"; ContentType = Directory }; LastWriteTime = None }
+let d1s2 = { Path = { Type = Source; Value = "d1/s2"; ContentType = Directory }; LastWriteTime = None }
+let d1s1f1 = { Path = { Type = Source; Value = "d1/s1/f1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d1s1f2 = { Path = { Type = Source; Value = "d1/s1/f2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d1s2f1 = { Path = { Type = Source; Value = "d1/s2/f1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f1 = { Path = { Type = Source; Value = "d2/f1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f2 = { Path = { Type = Source; Value = "d2/f2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f3 = { Path = { Type = Source; Value = "d2/f3"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f4 = { Path = { Type = Source; Value = "d2/f4"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d2f5 = { Path = { Type = Source; Value = "d2/f5"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d3f1 = { Path = { Type = Source; Value = "d3/f1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d3f2 = { Path = { Type = Source; Value = "d3/f2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+let d3f3 = { Path = { Type = Source; Value = "d3/f3"; ContentType = File }; LastWriteTime = Some lastWriteTime }
 
 let rnd = Random();
 let randomizeOrder _ _ = rnd.Next ()
@@ -41,23 +44,23 @@ module ``synchronize should`` =
         ]
 
         let sourceRules: Rule list = [
-            { Path = d2; SyncRule = SyncRules.Include }
-            { Path = d3; SyncRule = SyncRules.Exclude }
-            { Path = d2f2; SyncRule = SyncRules.Include }
-            { Path = d2f3; SyncRule = SyncRules.Exclude }
-            { Path = d3f2; SyncRule = SyncRules.Include }
-            { Path = d3f3; SyncRule = SyncRules.Exclude }
+            { Path = d2.Path; SyncRule = SyncRules.Include }
+            { Path = d3.Path; SyncRule = SyncRules.Exclude }
+            { Path = d2f2.Path; SyncRule = SyncRules.Include }
+            { Path = d2f3.Path; SyncRule = SyncRules.Exclude }
+            { Path = d3f2.Path; SyncRule = SyncRules.Include }
+            { Path = d3f3.Path; SyncRule = SyncRules.Exclude }
         ]
 
         let result = Synchronize.run sourceItems sourceRules [] []
 
         let expected = [
-            Add d1
-            Add d2
-            Add d2f1
-            Add d2f2
-            Add d3
-            Add d3f2
+            Add d1.Path
+            Add d2.Path
+            Add d2f1.Path
+            Add d2f2.Path
+            Add d3.Path
+            Add d3f2.Path
         ]
         test <@ result = Ok expected @>
 
@@ -84,21 +87,21 @@ module ``synchronize should`` =
         ]
 
         let backupRules = [
-            { Path = d2f1; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f3; SyncRule = SyncRules.NotSave }
-            { Path = d3f1; SyncRule = SyncRules.NotDelete }
-            { Path = d3f2; SyncRule = SyncRules.NotDelete }
-            { Path = d3f3; SyncRule = SyncRules.NotDelete }
+            { Path = d2f1.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3.Path; SyncRule = SyncRules.NotSave }
+            { Path = d3f1.Path; SyncRule = SyncRules.NotDelete }
+            { Path = d3f2.Path; SyncRule = SyncRules.NotDelete }
+            { Path = d3f3.Path; SyncRule = SyncRules.NotDelete }
         ]
 
         let result = Synchronize.run sourceItems [] backupItems backupRules
 
         let expected = [
-            Delete d1
-            Replace d2f1
-            Replace d2f2
-            Delete d2f3
+            Delete d1.Path
+            Replace d2f1.Path
+            Replace d2f2.Path
+            Delete d2f3.Path
         ]
         test <@ result = Ok expected @>
 
@@ -115,12 +118,12 @@ module ``synchronize should`` =
         ]
 
         let sourceRules: Rule list = [
-            { Path = d1; SyncRule = SyncRules.Include }
-            { Path = d2; SyncRule = SyncRules.Include }
-            { Path = d2f1; SyncRule = SyncRules.Exclude }
-            { Path = d2f2; SyncRule = SyncRules.Exclude }
-            { Path = d2f3; SyncRule = SyncRules.Exclude }
-            { Path = d2f4; SyncRule = SyncRules.Exclude }
+            { Path = d1.Path; SyncRule = SyncRules.Include }
+            { Path = d2.Path; SyncRule = SyncRules.Include }
+            { Path = d2f1.Path; SyncRule = SyncRules.Exclude }
+            { Path = d2f2.Path; SyncRule = SyncRules.Exclude }
+            { Path = d2f3.Path; SyncRule = SyncRules.Exclude }
+            { Path = d2f4.Path; SyncRule = SyncRules.Exclude }
         ]
 
         let backupItems = [
@@ -136,32 +139,32 @@ module ``synchronize should`` =
         ]
 
         let backupRules = [
-            { Path = d1; SyncRule = SyncRules.NotDelete }
-            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f3; SyncRule = SyncRules.NotDelete }
-            { Path = d2f4; SyncRule = SyncRules.NotSave }
-            { Path = d3f1; SyncRule = SyncRules.NotSave }
-            { Path = d3f2; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d1.Path; SyncRule = SyncRules.NotDelete }
+            { Path = d2f2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3.Path; SyncRule = SyncRules.NotDelete }
+            { Path = d2f4.Path; SyncRule = SyncRules.NotSave }
+            { Path = d3f1.Path; SyncRule = SyncRules.NotSave }
+            { Path = d3f2.Path; SyncRule = SyncRules.AlwaysReplace }
         ]
 
         let result = Synchronize.run sourceItems sourceRules backupItems backupRules
 
         let expected = [
-            Delete d2f1
-            Delete d2f2
-            Delete d2f4
-            Delete d3f1
-            Delete d3f2
+            Delete d2f1.Path
+            Delete d2f2.Path
+            Delete d2f4.Path
+            Delete d3f1.Path
+            Delete d3f2.Path
         ]
         test <@ result = Ok expected @>
 
     [<Fact>]
     let ``compute synchronize instructions when source repository contains aliases`` () =
         let sourceItems = [
-            { d2 with Type = Alias }
-            { d2f1 with Type = Alias }
-            { d2f2 with Type = Alias }
-            { d2f3 with Type = Alias }
+            { d2 with Path.Type = Alias }
+            { d2f1 with Path.Type = Alias }
+            { d2f2 with Path.Type = Alias }
+            { d2f3 with Path.Type = Alias }
         ]
 
         let backupItems = [
@@ -172,16 +175,16 @@ module ``synchronize should`` =
         ]
 
         let backupRules = [
-            { Path = d2f1; SyncRule = SyncRules.NotDelete }
-            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f1.Path; SyncRule = SyncRules.NotDelete }
+            { Path = d2f2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3.Path; SyncRule = SyncRules.AlwaysReplace }
         ]
 
         let result = Synchronize.run sourceItems [] backupItems backupRules
 
         let expected = [
-            Replace { d2f2 with Type = Alias }
-            Replace { d2f3 with Type = Alias }
+            Replace { d2f2.Path with Type = Alias }
+            Replace { d2f3.Path with Type = Alias }
         ]
         test <@ result = Ok expected @>
 
@@ -206,20 +209,20 @@ module ``synchronize should`` =
         ]
 
         let backupRules = [
-            { Path = d1; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d3; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f1; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d1.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f1.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3.Path; SyncRule = SyncRules.AlwaysReplace }
         ]
 
         let result = Synchronize.run sourceItems [] backupItems backupRules
 
         let expected = [
-            Replace d2f1
-            Replace d2f2
-            Replace d2f3
+            Replace d2f1.Path
+            Replace d2f2.Path
+            Replace d2f3.Path
         ]
         test <@ result = Ok expected @>
 
@@ -240,15 +243,15 @@ module ``synchronize should`` =
         let result = Synchronize.run sourceItems [] [] []
 
         let expected = [
-            Add d1
-            Add d1s1
-            Add d1s1f1
-            Add d1s1f2
-            Add d1s2
-            Add d1s2f1
-            Add d2
-            Add d2f1
-            Add d2f2
+            Add d1.Path
+            Add d1s1.Path
+            Add d1s1f1.Path
+            Add d1s1f2.Path
+            Add d1s2.Path
+            Add d1s2f1.Path
+            Add d2.Path
+            Add d2f1.Path
+            Add d2f2.Path
         ]
         test <@ result = Ok expected @>
 
@@ -269,15 +272,15 @@ module ``synchronize should`` =
         let result = Synchronize.run [] [] backupItems []
 
         let expected = [
-            Delete d1s1f1
-            Delete d1s1f2
-            Delete d1s1
-            Delete d1s2f1
-            Delete d1s2
-            Delete d1
-            Delete d2f1
-            Delete d2f2
-            Delete d2
+            Delete d1s1f1.Path
+            Delete d1s1f2.Path
+            Delete d1s1.Path
+            Delete d1s2f1.Path
+            Delete d1s2.Path
+            Delete d1.Path
+            Delete d2f1.Path
+            Delete d2f2.Path
+            Delete d2.Path
         ]
         test <@ result = Ok expected @>
 
@@ -296,16 +299,16 @@ module ``synchronize should`` =
         ]
 
         let backupRules = [
-            { Path = d1s1f2; SyncRule = SyncRules.NotDelete }
-            { Path = d2; SyncRule = SyncRules.NotDelete }
+            { Path = d1s1f2.Path; SyncRule = SyncRules.NotDelete }
+            { Path = d2.Path; SyncRule = SyncRules.NotDelete }
         ]
 
         let result = Synchronize.run [] [] backupItems backupRules
 
         let expected = [
-            Delete d1s1f1
-            Delete d1s2f1
-            Delete d1s2
+            Delete d1s1f1.Path
+            Delete d1s2f1.Path
+            Delete d1s2.Path
         ]
         test <@ result = Ok expected @>
 
@@ -317,7 +320,7 @@ module ``synchronize should`` =
         ]
 
         let sourceRules = [
-            { Path = d2f1; SyncRule = SyncRules.Exclude }
+            { Path = d2f1.Path; SyncRule = SyncRules.Exclude }
         ]
 
         let backupItems = [
@@ -326,7 +329,7 @@ module ``synchronize should`` =
         ]
 
         let backupRules = [
-            { Path = d2f1; SyncRule = SyncRules.NotDelete }
+            { Path = d2f1.Path; SyncRule = SyncRules.NotDelete }
         ]
 
         let result = Synchronize.run sourceItems sourceRules backupItems backupRules
@@ -346,14 +349,14 @@ module ``synchronize should`` =
         ]
 
         let sourceRules = [
-            { Path = d3f1; SyncRule = SyncRules.Exclude }
-            { Path = d3f2; SyncRule = SyncRules.Include }
+            { Path = d3f1.Path; SyncRule = SyncRules.Exclude }
+            { Path = d3f2.Path; SyncRule = SyncRules.Include }
         ]
 
         let backupRules = List.sortWith randomizeOrder [
-            { Path = d1; SyncRule = SyncRules.NotSave }
-            { Path = d2; SyncRule = SyncRules.NotSave }
-            { Path = d3; SyncRule = SyncRules.NotSave }
+            { Path = d1.Path; SyncRule = SyncRules.NotSave }
+            { Path = d2.Path; SyncRule = SyncRules.NotSave }
+            { Path = d3.Path; SyncRule = SyncRules.NotSave }
         ]
 
         let result = Synchronize.run sourceItems sourceRules [] backupRules
@@ -375,14 +378,40 @@ module ``synchronize should`` =
         ]
 
         let backupRules = List.sortWith randomizeOrder [
-            { Path = d3; SyncRule = SyncRules.NotSave }
-            { Path = d3f1; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3.Path; SyncRule = SyncRules.NotSave }
+            { Path = d3f1.Path; SyncRule = SyncRules.AlwaysReplace }
         ]
 
         let result = Synchronize.run sourceItems [] backupItems backupRules
 
         test <@ result = Ok [
-            Replace d3f1
+            Replace d3f1.Path
+        ] @>
+
+    [<Fact>]
+    let ``replace file when updated`` () =
+        let sourceItems = [
+            d2
+            { d2f1 with LastWriteTime = Some (lastWriteTime.AddDays 1) }
+            { d2f2 with LastWriteTime = Some lastWriteTime }
+            { d2f3 with LastWriteTime = None }
+            { d2f4 with LastWriteTime = Some lastWriteTime }
+            { d2f5 with LastWriteTime = Some lastWriteTime }
+        ]
+
+        let backupItems = [
+            d2
+            { d2f1 with LastWriteTime = Some lastWriteTime }
+            { d2f2 with LastWriteTime = Some lastWriteTime }
+            { d2f3 with LastWriteTime = Some lastWriteTime }
+            { d2f4 with LastWriteTime = None }
+            { d2f5 with LastWriteTime = Some (lastWriteTime.AddDays 1) }
+        ]
+
+        let result = Synchronize.run sourceItems [] backupItems []
+
+        test <@ result = Ok [
+            Replace d2f1.Path
         ] @>
 
 module ``replicate should`` =
@@ -403,15 +432,15 @@ module ``replicate should`` =
         let result = Replicate.run [] sourceItems []
 
         let expected = [
-            Add d1
-            Add d2
-            Add d2f1
-            Add d2f2
-            Add d2f3
-            Add d3
-            Add d3f1
-            Add d3f2
-            Add d3f3
+            Add d1.Path
+            Add d2.Path
+            Add d2f1.Path
+            Add d2f2.Path
+            Add d2f3.Path
+            Add d3.Path
+            Add d3f1.Path
+            Add d3f2.Path
+            Add d3f3.Path
         ]
         test <@ result = Ok expected @>
 
@@ -438,21 +467,21 @@ module ``replicate should`` =
         ]
 
         let rules = [
-            { Path = d3f1; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d3f2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d3f3; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3f1.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3f2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3f3.Path; SyncRule = SyncRules.AlwaysReplace }
         ]
 
         let result = Replicate.run rules sourceItems backupItems
 
         let expected = [
-            Add d2
-            Add d2f1
-            Add d2f2
-            Add d2f3
-            Replace d3f1
-            Replace d3f2
-            Replace d3f3
+            Add d2.Path
+            Add d2f1.Path
+            Add d2f2.Path
+            Add d2f3.Path
+            Replace d3f1.Path
+            Replace d3f2.Path
+            Replace d3f3.Path
         ]
         test <@ result = Ok expected @>
 
@@ -477,20 +506,20 @@ module ``replicate should`` =
         ]
 
         let rules = [
-            { Path = d1; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d3; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f1; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f2; SyncRule = SyncRules.AlwaysReplace }
-            { Path = d2f3; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d1.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d3.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f1.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f2.Path; SyncRule = SyncRules.AlwaysReplace }
+            { Path = d2f3.Path; SyncRule = SyncRules.AlwaysReplace }
         ]
 
         let result = Replicate.run rules sourceItems backupItems
 
         let expected = [
-            Replace d2f1
-            Replace d2f2
-            Replace d2f3
+            Replace d2f1.Path
+            Replace d2f2.Path
+            Replace d2f3.Path
         ]
         test <@ result = Ok expected @>
 
@@ -511,15 +540,15 @@ module ``replicate should`` =
         let result = Replicate.run [] sourceItems []
 
         let expected = [
-            Add d1
-            Add d1s1
-            Add d1s1f1
-            Add d1s1f2
-            Add d1s2
-            Add d1s2f1
-            Add d2
-            Add d2f1
-            Add d2f2
+            Add d1.Path
+            Add d1s1.Path
+            Add d1s1f1.Path
+            Add d1s1f2.Path
+            Add d1s2.Path
+            Add d1s2f1.Path
+            Add d2.Path
+            Add d2f1.Path
+            Add d2f2.Path
         ]
         test <@ result = Ok expected @>
 
@@ -538,22 +567,22 @@ module ``replicate should`` =
         ]
 
         let rules = [
-            { Path = d2f1; SyncRule = NotSave }
-            { Path = d2f2; SyncRule = AlwaysReplace }
+            { Path = d2f1.Path; SyncRule = NotSave }
+            { Path = d2f2.Path; SyncRule = AlwaysReplace }
         ]
 
         let result = Replicate.run rules [] backupItems
 
         let expected = [
-            Delete d1s1f1
-            Delete d1s1f2
-            Delete d1s1
-            Delete d1s2f1
-            Delete d1s2
-            Delete d1
-            Delete d2f1
-            Delete d2f2
-            Delete d2
+            Delete d1s1f1.Path
+            Delete d1s1f2.Path
+            Delete d1s1.Path
+            Delete d1s2f1.Path
+            Delete d1s2.Path
+            Delete d1.Path
+            Delete d2f1.Path
+            Delete d2f2.Path
+            Delete d2.Path
         ]
         test <@ result = Ok expected @>
 
@@ -566,8 +595,34 @@ module ``replicate should`` =
         ]
 
         let rules = [
-            { Path = d2; SyncRule = NotDelete }
+            { Path = d2.Path; SyncRule = NotDelete }
         ]
         let result = Replicate.run rules [] backupItems
 
         test <@ result = Ok [] @>
+
+    [<Fact>]
+    let ``replace file when updated`` () =
+        let sourceItems = [
+            d2
+            { d2f1 with LastWriteTime = Some (lastWriteTime.AddDays 1) }
+            { d2f2 with LastWriteTime = Some lastWriteTime }
+            { d2f3 with LastWriteTime = None }
+            { d2f4 with LastWriteTime = Some lastWriteTime }
+            { d2f5 with LastWriteTime = Some lastWriteTime }
+        ]
+
+        let backupItems = [
+            d2
+            { d2f1 with LastWriteTime = Some lastWriteTime }
+            { d2f2 with LastWriteTime = Some lastWriteTime }
+            { d2f3 with LastWriteTime = Some lastWriteTime }
+            { d2f4 with LastWriteTime = None }
+            { d2f5 with LastWriteTime = Some (lastWriteTime.AddDays 1) }
+        ]
+
+        let result = Replicate.run [] sourceItems backupItems
+
+        test <@ result = Ok [
+            Replace d2f1.Path
+        ] @>

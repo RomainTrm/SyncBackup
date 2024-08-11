@@ -19,10 +19,17 @@ module Scan =
         let relativePath = Path.GetRelativePath(alias.Path, fullPath)
         { Value = Path.Combine(alias.Name, relativePath); ContentType = contentType; Type = Alias }
 
+    let private setPrecision (dateTime: DateTime) =
+        DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, dateTime.Second)
+
     let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> ContentType -> RelativePath) =
         let files =
             Directory.GetFiles currentDirectoryPath
-            |> Seq.map (fun fullFilePath -> buildRelativePath fullFilePath ContentType.File)
+            |> Seq.map (fun fullFilePath ->
+                let path = buildRelativePath fullFilePath ContentType.File
+                let lastWriteTime = File.GetLastWriteTimeUtc fullFilePath
+                { Path = path; LastWriteTime = Some (setPrecision lastWriteTime) }
+            )
             |> Seq.toList
 
         let directories =
@@ -35,7 +42,7 @@ module Scan =
                         scan' directoryPath buildRelativePath
                     with // Windows may detect a directory but fail to access it because it's not there
                     | :? UnauthorizedAccessException -> []
-                acc@[path]@children
+                acc@[{ Path = path; LastWriteTime = None }]@children
             ) []
 
         files@directories
@@ -45,7 +52,11 @@ module Scan =
         let aliasesDirectoriesContent =
             List.collect (fun (alias: Alias) ->
                 let aliasContent = scan' alias.Path (aliasRelativePath alias)
-                { Value = alias.Name; Type = Alias; ContentType = Directory }::aliasContent
+                let aliasRoot = {
+                    Path = { Value = alias.Name; Type = Alias; ContentType = Directory }
+                    LastWriteTime = None
+                }
+                aliasRoot::aliasContent
             ) aliases
         sourceDirectoryContent@aliasesDirectoriesContent
 
@@ -102,9 +113,9 @@ module ScanFile =
         |> Result.map List.rev
 
 module TrackFile =
-    let save (repositoryPath: RepositoryPath) (contentPaths: RelativePath list) =
+    let save (repositoryPath: RepositoryPath) (contents: Content list) =
         let filePath = Dsl.getTrackFileFilePath repositoryPath
-        let contentLines = contentPaths |> List.map RelativePath.serialize
+        let contentLines = contents |> List.map Content.serialize
         File.WriteAllLines (filePath, contentLines)
         Ok ()
 
@@ -116,9 +127,9 @@ module TrackFile =
             File.ReadAllLines filePath
             |> Seq.fold (fun paths line ->
                 paths
-                |> Result.bind (fun paths ->
-                    RelativePath.deserialize line
-                    |> Result.map (fun path -> path::paths)
+                |> Result.bind (fun contents ->
+                    Content.deserialize line
+                    |> Result.map (fun content -> content::contents)
                 )
             ) (Ok [])
             |> Result.map List.rev

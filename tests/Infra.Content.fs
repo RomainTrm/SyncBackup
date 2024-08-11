@@ -42,7 +42,9 @@ module Scan =
                 { Type = Source; Value = "3. twoLevelsDir\\subdir2"; ContentType = Directory }
                 { Type = Source; Value = "3. twoLevelsDir\\subdir2\\file"; ContentType = File }
             ]
-            test <@ result = expected @>
+            test <@ result |> List.map _.Path = expected @>
+            test <@ result |> List.filter (fun c -> c.Path.ContentType = File) |> List.forall (fun c -> c.LastWriteTime |> Option.isSome) @>
+            test <@ result |> List.filter (fun c -> c.Path.ContentType = Directory) |> List.forall (fun c -> c.LastWriteTime |> Option.isNone) @>
 
         [<Fact>]
         let ``ignore config directory`` () =
@@ -87,7 +89,7 @@ module Scan =
                 { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory }
                 { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File }
             ]
-            test <@ result = expected @>
+            test <@ result |> List.map _.Path = expected @>
 
 module ScanFile =
     let content = [
@@ -101,7 +103,8 @@ module ScanFile =
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = File }; Diff = AddedToRepository }
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = File }; Diff = AddedToRepository }
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory }; Diff = AddedToRepository }
-        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File }; Diff = AddedToRepository }
+        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file1"; ContentType = File }; Diff = AddedToRepository }
+        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file2"; ContentType = File }; Diff = Updated }
     ]
 
     module ``writeFile should`` =
@@ -126,7 +129,8 @@ module ScanFile =
                 "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
                 "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
                 "norule (added) dir::\"*MyAlias\\3. twoLevelsDir\\subdir2\""
-                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file1\""
+                "norule (updated) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file2\""
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
@@ -162,7 +166,8 @@ module ScanFile =
                 { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = File }; Diff = AddedToRepository }
                 { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = File }; Diff = AddedToRepository }
                 { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory }; Diff = AddedToRepository }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File }; Diff = AddedToRepository }
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file1"; ContentType = File }; Diff = AddedToRepository }
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file2"; ContentType = File }; Diff = Updated }
             ]
             test <@ result = Ok expected @>
 
@@ -180,6 +185,8 @@ module ScanFile =
             test <@ result = Error "Invalid format" @>
 
 module TrackFile =
+    let lastWriteTime = System.DateTime(2024, 08, 09, 20, 37, 30)
+
     module ``save should`` =
         [<Fact>]
         let ``register tracked elements`` () =
@@ -187,17 +194,17 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Type = Source; Value = "line1"; ContentType = File }
-                { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = Directory }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
 
             let fileContent = Dsl.getTrackFileFilePath path |> System.IO.File.ReadAllLines |> Seq.toList
             test <@ fileContent = [
-                "file::\"line1\""
-                "file::\"*line2\""
+                "file::\"line1\"::2024-08-09-20-37-30"
+                "file::\"*line2\"::2024-08-09-20-37-30"
                 "dir::\"*line3\""
             ] @>
 
@@ -208,9 +215,9 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Type = Source; Value = "line1"; ContentType = File }
-                { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = Directory }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
             let result = TrackFile.save path content
             test <@ result = Ok () @>
@@ -233,11 +240,11 @@ module TrackFile =
             let path = TestHelpers.setupConfigDirectoryTest uniqueTestDirectory
 
             let content = [
-                { Type = Source; Value = "line1"; ContentType = File }
-                { Type = Alias; Value = "line2"; ContentType = File }
-                { Type = Alias; Value = "line3"; ContentType = Directory }
+                { Path = { Type = Source; Value = "line1"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line2"; ContentType = File }; LastWriteTime = Some lastWriteTime }
+                { Path = { Type = Alias; Value = "line3"; ContentType = Directory }; LastWriteTime = None }
             ]
-            let result = TrackFile.save path content
+            let _ = TrackFile.save path content
             let result = TrackFile.reset path
 
             test <@ result = Ok () @>

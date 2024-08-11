@@ -433,10 +433,10 @@ module Rules =
                             ]
                         }
                     LoadTrackFile = fun () -> Ok [
-                        d1
-                        d2
-                        d1s1
-                        d1s2
+                        { Path = d1; LastWriteTime = None }
+                        { Path = d2; LastWriteTime = None }
+                        { Path = d1s1; LastWriteTime = None }
+                        { Path = d1s2; LastWriteTime = None }
                     ]
                     SaveRulesFile = fun repoType rules ->
                         saveRulesCalls.Add(repoType, rules)
@@ -481,10 +481,10 @@ module Rules =
                             ]
                         }
                     LoadTrackFile = fun () -> Ok [
-                        d1
-                        d2
-                        d1s1
-                        d1s2
+                        { Path = d1; LastWriteTime = None }
+                        { Path = d2; LastWriteTime = None }
+                        { Path = d1s1; LastWriteTime = None }
+                        { Path = d1s2; LastWriteTime = None }
                     ]
                     SaveRulesFile = fun _ _ -> Ok ()
                     OpenRulesFile = Ok
