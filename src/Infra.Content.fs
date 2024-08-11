@@ -19,13 +19,16 @@ module Scan =
         let relativePath = Path.GetRelativePath(alias.Path, fullPath)
         { Value = Path.Combine(alias.Name, relativePath); ContentType = contentType; Type = Alias }
 
+    let private setPrecision (dateTime: DateTime) =
+        DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, dateTime.Second)
+
     let rec private scan' (currentDirectoryPath: DirectoryPath) (buildRelativePath: string -> ContentType -> RelativePath) =
         let files =
             Directory.GetFiles currentDirectoryPath
             |> Seq.map (fun fullFilePath ->
                 let path = buildRelativePath fullFilePath ContentType.File
                 let lastWriteTime = File.GetLastWriteTimeUtc fullFilePath
-                { Path = path; LastWriteTime = Some lastWriteTime }
+                { Path = path; LastWriteTime = Some (setPrecision lastWriteTime) }
             )
             |> Seq.toList
 
