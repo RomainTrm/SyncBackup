@@ -2,27 +2,40 @@
 
 open SyncBackup.Domain.Dsl
 
-// TODO : list updated files for user display
-let buildScanResult (existingRules: Rule list) (trackedElements: RelativePath list) (scannedElements: RelativePath list) =
+let buildScanResult (existingRules: Rule list) (trackedElements: Content list) (scannedElements: Content list) =
     match scannedElements with
     | [] -> Error "Repository is empty."
     | _ ->
-        let trackedElements = Set trackedElements
-        let scannedElements = Set scannedElements
+        let trackedElementsPaths = Set (trackedElements |> List.map _.Path)
+        let scannedElementsPaths = Set (scannedElements |> List.map _.Path)
+        let trackedElements = trackedElements |> Seq.map (fun content -> content.Path, content) |> Map.ofSeq
+        let scannedElements = scannedElements |> Seq.map (fun content -> content.Path, content) |> Map.ofSeq
 
         let added =
-            Set.difference scannedElements trackedElements
+            Set.difference scannedElementsPaths trackedElementsPaths
             |> Set.toList
             |> Rules.buildRulesForScanning existingRules
             |> List.map (ScanResult.build AddedToRepository)
 
         let removed =
-            Set.difference trackedElements scannedElements
+            Set.difference trackedElementsPaths scannedElementsPaths
             |> Set.toList
             |> Rules.buildRulesForScanning existingRules
             |> List.map (ScanResult.build RemovedFromRepository)
 
-        let delta = added@removed
+        let updated =
+            Set.intersect trackedElementsPaths scannedElementsPaths
+            |> Set.toSeq
+            |> Seq.choose (fun path ->
+                match Map.tryFind path trackedElements, Map.tryFind path scannedElements with
+                | Some { LastWriteTime = Some trackedTime }, Some { LastWriteTime = Some scanTime } when trackedTime < scanTime -> Some path
+                | _ -> None
+            )
+            |> Seq.toList
+            |> Rules.buildRulesForScanning existingRules
+            |> List.map (ScanResult.build Updated)
+
+        let delta = added@updated@removed
         let rulesReminders =
             existingRules
             |> List.collect (fun existingRule ->

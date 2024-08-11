@@ -43,15 +43,16 @@ let scanRepositoryContent (infra: Infra) () =
 
         let! scanResult =
             repositoryContent
-            |> List.map _.Path
-            |> Scan.buildScanResult config.Rules trackedElementsPaths
+            |> Scan.buildScanResult config.Rules trackedElements
 
         do! infra.SaveScanFileContent config.Type scanResult
         do! infra.OpenScanFileForUserEdition ()
 
         let! editedRules = infra.ReadScanFileContent ()
         let! rulesToSave = updateRules config.Type config.Rules editedRules
-        let contentToTrack = Scan.defineTrackedElements trackedElementsPaths editedRules |> applyLastWriteTime repositoryContent
+        let contentToTrack =
+            Scan.defineTrackedElements trackedElementsPaths editedRules
+            |> applyLastWriteTime repositoryContent
         do! infra.SaveTrackFile contentToTrack
         do! infra.SaveRules rulesToSave
 

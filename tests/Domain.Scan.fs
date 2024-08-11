@@ -20,44 +20,59 @@ module ``buildScanResult should`` =
         test <@ result = Error "Repository is empty." @>
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
-    let ``return all paths as added without rule when no tracked neither rules`` paths =
-        paths <> [] ==> lazy
-        let result = buildScanResult [] [] paths
-        let expected = paths |> List.map (fun path -> { SyncRule = NoRule; Path = path; Diff = AddedToRepository })
+    let ``return all paths as added without rule when no tracked neither rules`` contents =
+        contents <> [] ==> lazy
+        let result = buildScanResult [] [] contents
+        let expected = contents |> List.map (fun content -> { SyncRule = NoRule; Path = content.Path; Diff = AddedToRepository })
         result |> isAsExpected expected
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
-    let ``return path with existing rule`` path syncRule =
-        let rule = { SyncRule = syncRule; Path = path }
-        let result = buildScanResult [rule] [] [path]
+    let ``return path with existing rule`` content syncRule =
+        let rule = { SyncRule = syncRule; Path = content.Path }
+        let result = buildScanResult [rule] [] [content]
         result |> isAsExpected [ScanResult.build AddedToRepository rule]
 
     [<Property(Arbitrary = [| typeof<PathStringGenerator> |])>]
     let ``return only delta between scan and tracked elements`` (paths: RelativePath list) =
-        let paths = List.distinct paths
-        List.length paths > 3 ==> lazy
+        let contents = List.distinct paths |> List.map (fun path -> { Path = path; LastWriteTime = None })
+        List.length contents > 3 ==> lazy
         let added, removed, common =
-            match paths with
+            match contents with
             | added::removed::common -> added, removed, common
             | _ -> failwith "unexpected pattern"
 
         let result = buildScanResult [] (removed::common) (added::common)
         let expected = [
-            { SyncRule = NoRule; Path = removed; Diff = RemovedFromRepository }
-            { SyncRule = NoRule; Path = added; Diff = AddedToRepository }
+            { SyncRule = NoRule; Path = removed.Path; Diff = RemovedFromRepository }
+            { SyncRule = NoRule; Path = added.Path; Diff = AddedToRepository }
         ]
         result |> isAsExpected expected
 
     [<Fact>]
     let ``include rule reminder for the user when one parent has rule but remains unchanged`` () =
-        let subPath = { Value = "dir"; Type = Source; ContentType = ContentType.Directory }
-        let path = { Value = "dir\\file"; Type = Source; ContentType = ContentType.File }
+        let lastWriteTime = System.DateTime(2024, 08, 11, 15, 27, 30)
+        let dir = { Path = { Value = "dir"; Type = Source; ContentType = ContentType.Directory }; LastWriteTime = None }
+        let content1 = { Path = { Value = "dir\\file1"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+        let content2 = { Path = { Value = "dir\\file2"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+        let content3 = { Path = { Value = "dir\\file3"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+        let content4 = { Path = { Value = "dir\\file4"; Type = Source; ContentType = ContentType.File }; LastWriteTime = None }
+        let content5 = { Path = { Value = "dir\\file5"; Type = Source; ContentType = ContentType.File }; LastWriteTime = None }
+        let content6 = { Path = { Value = "dir\\file6"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some (lastWriteTime.AddDays 1) }
 
-        let result = buildScanResult [{ SyncRule = Include; Path = subPath }] [subPath] [subPath; path]
+        let trackedContent = [dir; content1; content2; content3; content4; content5; content6]
+        let scannedContent = [
+            dir
+            { content1 with LastWriteTime = Some (lastWriteTime.AddDays 1) }
+            { content2 with LastWriteTime = Some lastWriteTime }
+            { content3 with LastWriteTime = None }
+            { content4 with LastWriteTime = Some lastWriteTime }
+            { content5 with LastWriteTime = None }
+            { content6 with LastWriteTime = Some lastWriteTime }
+        ]
+        let result = buildScanResult [] trackedContent scannedContent
 
         let expected = [
-            { SyncRule = Include; Path = subPath; Diff = RuleReminder }
-            { SyncRule = NoRule; Path = path; Diff = AddedToRepository }
+            { SyncRule = NoRule; Path = content1.Path; Diff = Updated }
         ]
         result |> isAsExpected expected
 

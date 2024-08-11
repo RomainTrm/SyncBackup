@@ -49,6 +49,7 @@ and ScanDiff =
     | AddedToRepository
     | RemovedFromRepository
     | RuleReminder
+    | Updated
 and ScanResult = {
     Path: RelativePath
     SyncRule: SyncRules
