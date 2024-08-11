@@ -140,17 +140,20 @@ module ScanDiff =
         | AddedToRepository -> "(added)"
         | RemovedFromRepository -> "(removed)"
         | RuleReminder -> "(nochange)"
+        | Updated -> "(updated)"
 
     let deserialize = function
         | "(added)" -> Ok AddedToRepository
         | "(removed)" -> Ok RemovedFromRepository
         | "(nochange)" -> Ok RuleReminder
+        | "(updated)" -> Ok Updated
         | _ -> Error "Invalid diff"
 
     let activeLine = function
         | AddedToRepository -> ""
         | RemovedFromRepository -> ""
         | RuleReminder -> "# "
+        | Updated -> ""
 
 module Content =
     let serialize (content: Content) =

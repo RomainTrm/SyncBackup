@@ -103,7 +103,8 @@ module ScanFile =
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = File }; Diff = AddedToRepository }
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = File }; Diff = AddedToRepository }
         { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory }; Diff = AddedToRepository }
-        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File }; Diff = AddedToRepository }
+        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file1"; ContentType = File }; Diff = AddedToRepository }
+        { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file2"; ContentType = File }; Diff = Updated }
     ]
 
     module ``writeFile should`` =
@@ -128,7 +129,8 @@ module ScanFile =
                 "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file1\""
                 "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir1\\file2\""
                 "norule (added) dir::\"*MyAlias\\3. twoLevelsDir\\subdir2\""
-                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file\""
+                "norule (added) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file1\""
+                "norule (updated) file::\"*MyAlias\\3. twoLevelsDir\\subdir2\\file2\""
             ]
 
             test <@ (Set fileContent) |> Set.isSubset (Set expected)  @>
@@ -164,7 +166,8 @@ module ScanFile =
                 { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file1"; ContentType = File }; Diff = AddedToRepository }
                 { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir1\\file2"; ContentType = File }; Diff = AddedToRepository }
                 { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2"; ContentType = Directory }; Diff = AddedToRepository }
-                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file"; ContentType = File }; Diff = AddedToRepository }
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file1"; ContentType = File }; Diff = AddedToRepository }
+                { SyncRule = NoRule; Path = { Type = Alias; Value = "MyAlias\\3. twoLevelsDir\\subdir2\\file2"; ContentType = File }; Diff = Updated }
             ]
             test <@ result = Ok expected @>
 
