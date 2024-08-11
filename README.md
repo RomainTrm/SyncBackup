@@ -87,4 +87,3 @@ From the source repository:
 `sync` doesn't track file changes (renaming, moving, updating)
 
 - renaming and moving are handled if you don't specify rules, existing backup will be deleted and new version saved
-- updating can be handled if you specify a `replace` rule (note: it replaces items at every synchronization)
