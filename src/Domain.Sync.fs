@@ -21,7 +21,7 @@ type private SourceRule =
 
 type private BackupRule =
     | Save
-    | Replace
+    | AlwaysReplace
     | NotSave
     | NotDelete
 
@@ -49,7 +49,7 @@ type private Tree<'a> = {
 
 let private (|Instruction|) = function
     | Add path
-    | SyncInstruction.Replace path
+    | Replace path
     | Delete path -> path
 
 let private orderInstructions left right =
@@ -142,7 +142,7 @@ module Synchronize =
 
         let computeBackupRule (lastRule: BackupRule) = function
             | Dsl.SyncRules.NoRule -> Ok lastRule
-            | Dsl.SyncRules.AlwaysReplace -> Ok Replace
+            | Dsl.SyncRules.AlwaysReplace -> Ok AlwaysReplace
             | Dsl.SyncRules.NotSave -> Ok NotSave
             | Dsl.SyncRules.NotDelete -> Ok NotDelete
             | rule -> Error $"Rule \"{SyncRules.getValue rule}\" is not supposed to be setup in backup repository."
@@ -178,25 +178,25 @@ module Synchronize =
 
     let private computeInstructions = function
         | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = Save }                             -> [Add path]
-        | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = Replace }                          -> [Add path]
+        | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = AlwaysReplace }                    -> [Add path]
         | SourceItemOnly { Path = _;    SourceRule = Include;   BackupRule = NotSave }                          -> []
         | SourceItemOnly { Path = path; SourceRule = Include;   BackupRule = NotDelete }                        -> [Add path]
         | SourceItemOnly { Path = _;    SourceRule = Exclude;   BackupRule = _ }                                -> []
 
         | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = Save }                             -> [Delete path]
-        | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = Replace }                          -> [Delete path]
+        | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = AlwaysReplace }                    -> [Delete path]
         | BackupItemOnly { Path = path; SourceRule = _;         BackupRule = NotSave }                          -> [Delete path]
         | BackupItemOnly { Path = _;    SourceRule = _;         BackupRule = NotDelete }                        -> []
 
         | BothItem { Path = _;          SourceRule = Include;   BackupRule = Save;      IsUpdated = false }     -> []
-        | BothItem { Path = path;       SourceRule = Include;   BackupRule = Save;      IsUpdated = true }      -> [SyncInstruction.Replace path]
-        | BothItem { Path = { ContentType = File } as path; SourceRule = Include; BackupRule = Replace }        -> [SyncInstruction.Replace path]
-        | BothItem { Path = { ContentType = Directory }; SourceRule = Include; BackupRule = Replace }           -> []
+        | BothItem { Path = path;       SourceRule = Include;   BackupRule = Save;      IsUpdated = true }      -> [Replace path]
+        | BothItem { Path = { ContentType = File } as path; SourceRule = Include; BackupRule = AlwaysReplace }  -> [Replace path]
+        | BothItem { Path = { ContentType = Directory }; SourceRule = Include; BackupRule = AlwaysReplace }     -> []
         | BothItem { Path = path;       SourceRule = Include;   BackupRule = NotSave }                          -> [Delete path]
         | BothItem { Path = _;          SourceRule = Include;   BackupRule = NotDelete; IsUpdated = false }     -> []
-        | BothItem { Path = path;       SourceRule = Include;   BackupRule = NotDelete; IsUpdated = true  }     -> [SyncInstruction.Replace path]
+        | BothItem { Path = path;       SourceRule = Include;   BackupRule = NotDelete; IsUpdated = true  }     -> [Replace path]
         | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = Save }                             -> [Delete path]
-        | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = Replace }                          -> [Delete path]
+        | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = AlwaysReplace }                    -> [Delete path]
         | BothItem { Path = path;       SourceRule = Exclude;   BackupRule = NotSave }                          -> [Delete path]
         | BothItem { Path = _;          SourceRule = Exclude;   BackupRule = NotDelete }                        -> []
 
@@ -269,7 +269,7 @@ module Replicate =
     let private spreadRules =
         let computeRule (lastRule: BackupRule) = function
             | Dsl.SyncRules.NoRule -> Ok lastRule
-            | Dsl.SyncRules.AlwaysReplace -> Ok Replace
+            | Dsl.SyncRules.AlwaysReplace -> Ok AlwaysReplace
             | Dsl.SyncRules.NotSave -> Ok NotSave
             | Dsl.SyncRules.NotDelete -> Ok NotDelete
             | rule -> Error $"Rule \"{SyncRules.getValue rule}\" is not supposed to be setup in backup repository."
@@ -298,14 +298,14 @@ module Replicate =
         | SourceItemOnly { Path = path; BackupRule = _ }                                    -> [Add path]
 
         | BackupItemOnly { Path = path; BackupRule = Save }                                 -> [Delete path]
-        | BackupItemOnly { Path = path; BackupRule = Replace }                              -> [Delete path]
+        | BackupItemOnly { Path = path; BackupRule = AlwaysReplace }                        -> [Delete path]
         | BackupItemOnly { Path = path; BackupRule = NotSave }                              -> [Delete path]
         | BackupItemOnly { Path = _; BackupRule = NotDelete }                               -> []
 
-        | BothItem { Path = { ContentType = File } as path; BackupRule = Replace }          -> [SyncInstruction.Replace path]
-        | BothItem { Path = { ContentType = Directory }; BackupRule = Replace }             -> []
+        | BothItem { Path = { ContentType = File } as path; BackupRule = AlwaysReplace }    -> [Replace path]
+        | BothItem { Path = { ContentType = Directory }; BackupRule = AlwaysReplace }       -> []
         | BothItem { Path = _; BackupRule = _; IsUpdated = false }                          -> []
-        | BothItem { Path = path; BackupRule = _; IsUpdated = true }                        -> [SyncInstruction.Replace path]
+        | BothItem { Path = path; BackupRule = _; IsUpdated = true }                        -> [Replace path]
 
     let run
         (rules: Rule list)
