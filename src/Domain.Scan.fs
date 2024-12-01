@@ -2,6 +2,25 @@
 
 open SyncBackup.Domain.Dsl
 
+let private computeRuleReminders (existingRules: Rule list) (delta: ScanResult list) =
+    delta
+    |> Seq.map _.Path
+    |> Seq.collect (fun deltaPath ->
+        existingRules
+        |> Seq.filter (fun rule -> rule.Path |> RelativePath.contains deltaPath)
+        |> Seq.sortByDescending _.Path.Value
+        |> Seq.tryHead
+        |> Option.filter (fun rule -> rule.Path <> deltaPath)
+        |> Option.map (fun rule ->
+            RelativePath.getParents deltaPath
+            |> List.filter (fun path -> path = rule.Path || RelativePath.contains path rule.Path)
+            |> List.map (fun path -> ScanResult.build RuleReminder { rule with Path = path })
+        )
+        |> Option.defaultValue []
+    )
+    |> Seq.distinct
+    |> Seq.toList
+
 let buildScanResult (existingRules: Rule list) (trackedElements: Content list) (scannedElements: Content list) =
     match scannedElements with
     | [] -> Error "Repository is empty."
@@ -36,17 +55,7 @@ let buildScanResult (existingRules: Rule list) (trackedElements: Content list) (
             |> List.map (ScanResult.build Updated)
 
         let delta = added@updated@removed
-        let rulesReminders =
-            existingRules
-            |> List.collect (fun existingRule ->
-                let deltaPaths = delta |> Seq.map _.Path
-                match deltaPaths |> Seq.contains existingRule.Path with
-                | true -> []
-                | false ->
-                    if deltaPaths |> Seq.exists (fun childPath -> RelativePath.contains childPath existingRule.Path)
-                    then [ScanResult.build RuleReminder existingRule]
-                    else []
-            )
+        let rulesReminders = computeRuleReminders existingRules delta
 
         (delta@rulesReminders)
         |> List.sortBy _.Path.Value
