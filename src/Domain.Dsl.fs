@@ -98,6 +98,20 @@ module RelativePath =
         | _ when child = parent -> false
         | { Value = childPath }, { Value = parentPath } -> childPath.StartsWith parentPath
 
+    let getParents child =
+        child.Value.Split "\\"
+        |> Seq.fold (fun paths name ->
+            paths
+            |> List.tryHead
+            |> Option.map (fun lastPath -> $"{lastPath}\\{name}")
+            |> Option.map (fun newPath -> newPath::paths)
+            |> Option.defaultValue [name]
+        ) []
+        |> Seq.skip 1
+        |> Seq.map (fun path -> { Value = path; ContentType = ContentType.Directory; Type = child.Type })
+        |> Seq.rev
+        |> Seq.toList
+
 module SyncRules =
     let getValue = function
         | NoRule -> "norule"

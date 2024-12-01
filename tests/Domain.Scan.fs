@@ -49,7 +49,7 @@ module ``buildScanResult should`` =
         result |> isAsExpected expected
 
     [<Fact>]
-    let ``include rule reminder for the user when one parent has rule but remains unchanged`` () =
+    let ``return updated content`` () =
         let lastWriteTime = System.DateTime(2024, 08, 11, 15, 27, 30)
         let dir = { Path = { Value = "dir"; Type = Source; ContentType = ContentType.Directory }; LastWriteTime = None }
         let content1 = { Path = { Value = "dir\\file1"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
@@ -73,6 +73,37 @@ module ``buildScanResult should`` =
 
         let expected = [
             { SyncRule = NoRule; Path = content1.Path; Diff = Updated }
+        ]
+        result |> isAsExpected expected
+
+    [<Fact>]
+    let ``include rule reminder for the user when one parent has rule but remains unchanged`` () =
+        let lastWriteTime = System.DateTime(2024, 08, 11, 15, 27, 30)
+        let dir = { Path = { Value = "dir"; Type = Source; ContentType = ContentType.Directory }; LastWriteTime = None }
+        let subDir1 = { Path = { Value = "dir\\subdir1"; Type = Source; ContentType = ContentType.Directory }; LastWriteTime = None }
+        let subDir2 = { Path = { Value = "dir\\subdir1\\subdir2"; Type = Source; ContentType = ContentType.Directory }; LastWriteTime = None }
+        let subDir3 = { Path = { Value = "dir\\subdir1\\subdir2\\subdir3"; Type = Source; ContentType = ContentType.Directory }; LastWriteTime = None }
+        let content1 = { Path = { Value = "dir\\file1"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+        let content2 = { Path = { Value = "dir\\subdir1\\file2"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+        let content3 = { Path = { Value = "dir\\subdir1\\subdir2\\file3"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+        let content4 = { Path = { Value = "dir\\subdir1\\subdir2\\subdir3\\file4"; Type = Source; ContentType = ContentType.File }; LastWriteTime = Some lastWriteTime }
+
+        let trackedContent = [dir; subDir1; subDir2; subDir3; content1]
+        let scannedContent = [dir; subDir1; subDir2; subDir3; content1; content2; content3; content4]
+        let rules = [
+            { Path = dir.Path; SyncRule = Include }
+            { Path = subDir3.Path; SyncRule = Exclude }
+        ]
+        let result = buildScanResult rules trackedContent scannedContent
+
+        let expected = [
+            { SyncRule = Include; Path = dir.Path; Diff = RuleReminder }
+            { SyncRule = Include; Path = subDir1.Path; Diff = RuleReminder } // Inherited from parent
+            { SyncRule = NoRule; Path = content2.Path; Diff = AddedToRepository }
+            { SyncRule = Include; Path = subDir2.Path; Diff = RuleReminder } // Inherited from parent
+            { SyncRule = NoRule; Path = content3.Path; Diff = AddedToRepository }
+            { SyncRule = Exclude; Path = subDir3.Path; Diff = RuleReminder }
+            { SyncRule = NoRule; Path = content4.Path; Diff = AddedToRepository }
         ]
         result |> isAsExpected expected
 
